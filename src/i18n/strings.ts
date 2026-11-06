@@ -106,6 +106,7 @@ export const STRINGS = {
   shadowBand: { en: 'Ridge shadow', az: 'Silsilə kölgəsi' },
   stormBand: { en: 'Particle storm', az: 'Zərrəcik fırtınası' },
   deltaTitle: { en: 'Why the outcome changed', az: 'Nəticə niyə dəyişdi' },
+  deltaSameOutcome: { en: 'What changed between runs', az: 'Gedişlər arasında nə dəyişdi' },
   deltaFinal: { en: 'Final Δ (B − A)', az: 'Yekun Δ (B − A)' },
   noDifference: { en: 'Run B is identical to Run A — pick a different option on any step.', az: 'B Gedişi A Gedişi ilə eynidir — istənilən addımda fərqli seçim edin.' },
   reasonChoice: { en: 'Decision {step}: “{from}” → “{to}”', az: '{step}-ci qərar: “{from}” → “{to}”' },

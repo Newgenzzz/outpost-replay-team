@@ -1,7 +1,7 @@
 import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useI18n } from '../i18n/LanguageContext';
 import type { SimulationResult } from '../engine/simulation';
-import { RADIATION_LIMITS } from '../data/nasaTelemetry';
+import { GAME_CONSTANTS, RADIATION_LIMITS } from '../data/nasaTelemetry';
 import { METRICS, fmt } from './metricMeta';
 
 export default function CompareCharts({ a, b }: { a: SimulationResult; b: SimulationResult | null }) {
@@ -32,8 +32,14 @@ export default function CompareCharts({ a, b }: { a: SimulationResult; b: Simula
         const yMax = m.key === 'radiationMsv' ? Math.max(60, Math.ceil(maxValue / 10) * 10) : 100;
         return (
           <figure key={m.key} className="min-w-0 rounded-xl border border-slate-700/70 bg-slate-950/50 p-3">
-            <figcaption className={`mb-2 flex items-center gap-1.5 text-xs font-semibold ${m.text}`}>
+            <figcaption className={`mb-2 flex flex-wrap items-center gap-1.5 text-xs font-semibold ${m.text}`}>
               <m.icon className="h-3.5 w-3.5" />{t(m.labelKey)} <span className="text-slate-400">({t(m.unitKey)})</span>
+              {m.key === 'powerKwh' && (
+                <span className="inline-flex items-center gap-1.5 font-normal text-amber-200">
+                  <span className="w-4 border-t border-dashed border-amber-200" aria-hidden="true" />
+                  {lang === 'az' ? 'Aşağı ehtiyat həddi' : 'Low reserve threshold'} · {GAME_CONSTANTS.brownoutThresholdKwh} {t('unitKwh')}
+                </span>
+              )}
             </figcaption>
             <div className="h-36" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
@@ -43,6 +49,9 @@ export default function CompareCharts({ a, b }: { a: SimulationResult; b: Simula
                   <ReferenceArea x1={144} x2={192} fill="#f43f5e" fillOpacity={0.14} />
                   <XAxis dataKey="hour" type="number" domain={[0, 216]} ticks={[0, 24, 48, 120, 144, 192, 216]} stroke="#94a3b8" tickLine={false} />
                   <YAxis domain={[0, yMax]} stroke="#94a3b8" tickLine={false} width={39} />
+                  {m.key === 'powerKwh' && (
+                    <ReferenceLine y={GAME_CONSTANTS.brownoutThresholdKwh} stroke="#fde68a" strokeDasharray="4 3" />
+                  )}
                   {m.key === 'radiationMsv' && (
                     <ReferenceLine y={RADIATION_LIMITS.missionWarningMsv} stroke="#fda4af" strokeDasharray="4 3" />
                   )}
