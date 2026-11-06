@@ -48,8 +48,8 @@ const HOTSPOTS: Record<HotspotId, HotspotContent> = {
       az: 'Ayın Cənub Qütbündə Günəş heç vaxt baş üzərinə qalxmır—üfüqdə cəmi 1.5° bucaq altında hərəkət edir. Yaxınlıqdakı dağ silsiləsi alçaq panelləri günlərlə kölgədə qoya bilər. Günəş panellərini 10 metrlik şaquli qülləyə qaldırmaq onları yerli kölgələrdən yuxarı çıxarır və elektrik istehsalını davam etdirir.',
     },
     nasaMeasurement: {
-      en: 'NASA LRO LOLA laser altimetry (Mazarico et al., 2011) mapped Shackleton Rim (89.67°S, 129.78°E): during a 72-hour topographic horizon shadow, ground-level solar visibility drops by 85% (to 15%), while a 10 m mast preserves ~40% solar output.',
-      az: 'NASA LRO LOLA lazer altimetriyası (Mazarico və b., 2011) Şeklton kənarını (89.67°C, 129.78°Ş) xəritələşdirib: 72 saatlıq topoqrafik üfüq kölgəsi zamanı səthdə günəş görünüşü 85% azalır (15%-ə düşür), 10 m-lik dirək isə ~40% gücü qoruyub saxlayır.',
+      en: 'LOLA terrain measurements informed polar illumination research. This fictional exercise assumes a 72-hour shadow, 15% output for low panels, and about 40% with a tall mast.',
+      az: 'LOLA relyef ölçmələri qütb işıqlanması tədqiqatlarında istifadə olunub. Bu uydurma təlimdə kölgə 72 saat çəkir, alçaq panellər 15%, hündür dirək isə təxminən 40% güc verir.',
     },
     whyItMatters: {
       en: 'Without steady power during the 72-hour shadow, batteries drain below 20 kWh (triggering an ECLSS brownout) or hit 0 kWh (a freezing blackout). Backup H₂/O₂ fuel cells or a tall solar mast prevent the crew from freezing!',
@@ -114,12 +114,12 @@ const HOTSPOTS: Record<HotspotId, HotspotContent> = {
       az: 'Ayın atmosferi və qlobal maqnit sahəsi yoxdur. Günəşdə X-sinif alışma baş verdikdə, yüksək enerjili protonlar kosmosda sürətlə yayılır. Astronavtlar protonları udan su divarları və ya qalın Ay torpağı (reqolit) sədləri arxasında sığınırlar.',
     },
     nasaMeasurement: {
-      en: 'NASA CCMC DONKI recorded the May 10–14, 2024 AR 13664 solar superstorm (X5.8 & X8.7 flares), where ≥10 MeV proton flux spiked to ~205 pfu (~46.7 mSv unshielded storm dose; NASA-STD-3001 limit).',
-      az: 'NASA CCMC DONKI 10–14 May 2024-cü ildə AR 13664 Günəş superfırtınasını (X5.8 və X8.7 alışmaları) qeydə alıb: ≥10 MeV proton axını ~205 pfu-ya çatıb (qorunmasız ~46.7 mSv fırtına dozası).',
+      en: 'NOAA reported a GOES peak of 207 pfu near Earth on May 10, 2024. The fictional lunar storm uses that peak in a scripted curve.',
+      az: 'NOAA 10 may 2024-cü ildə Yer yaxınlığında GOES üzrə 207 pfu pik dəyəri bildirdi. Ay üçün uydurma fırtınanın ssenari əyrisi bu pikdən istifadə edir.',
     },
     whyItMatters: {
-      en: 'Staying outside in an EVA suit during a 205 pfu storm adds ~36.8 mSv, pushing total crew dose over the 50 mSv safety threshold. A water-wall shelter cuts storm dose to 15% (7.0 mSv), and a robotic regolith berm cuts it to 6% (2.8 mSv)!',
-      az: '205 pfu fırtınası zamanı skafandrda çöldə qalmaq ~36.8 mSv əlavə edir və ekipaj dozasını 50 mSv təhlükəsizlik həddindən yuxarı qaldırır. Su divarı dozanı 15%-ə (7.0 mSv), reqolit səddi isə 6%-ə (2.8 mSv) endirir!',
+      en: 'In the exercise, outside work increases the modeled dose. The model assumes 15% transmission for a water wall and 6% for a regolith berm. The 50 mSv alert is a training rule.',
+      az: 'Təlimdə açıq sahədə işləmək model dozasını artırır. Model su divarı üçün 15%, reqolit səddi üçün 6% keçiricilik qəbul edir. 50 mSv xəbərdarlığı təlim qaydasıdır.',
     },
     accentColor: 'border-rose-400/50 bg-rose-500/10 text-rose-200',
   },

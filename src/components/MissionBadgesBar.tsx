@@ -56,16 +56,16 @@ const JUDGE_PILLARS: JudgePillar[] = [
       az: 'İstinadlı NASA LRO LOLA/Diviner və DONKI Fizikası',
     },
     evidence: {
-      en: 'Deterministic equations driven by Mazarico et al. (2011) 72-hr shadow, Paige et al. (2010) 90 K cold trap, and May 2024 AR 13664 205 pfu SEP data.',
-      az: 'Mazarico və b. (2011) 72 saatlıq kölgə, Paige və b. (2010) 90 K soyuq tələ və May 2024 AR 13664 205 pfu proton fırtınası ilə hesablanır.',
+      en: 'The simulation uses a scripted shadow, surface temperature and particle storm. The storm peak comes from a GOES observation near Earth.',
+      az: 'Simulyasiya kölgə, səth temperaturu və zərrəcik fırtınası üçün ssenari dəyərlərindən istifadə edir. Fırtınanın piki Yer yaxınlığındakı GOES müşahidəsinə əsaslanır.',
     },
   },
   {
     id: 'relevance',
     pillar: { en: '4. Relevance', az: '4. Uyğunluq (Relevance)' },
     headline: {
-      en: 'Shackleton Crater Rim (89.67°S, 129.78°E) Artemis Ops',
-      az: 'Şeklton Krateri Kənarı (89.67°C, 129.78°Ş) Artemis Bazası',
+      en: 'Fictional training outpost near Shackleton’s rim',
+      az: 'Şeklton kənarı yaxınlığında uydurma təlim bazası',
     },
     evidence: {
       en: 'Trains junior astronauts on real polar challenges: 1.5° grazing sun, 10 m VSAT masts, H₂/O₂ fuel cells, ISRU ice mining, and water-wall storm shelters.',
@@ -115,8 +115,8 @@ const BADGES: BadgeDef[] = [
     icon: ShieldCheck,
     title: { en: 'Storm Shield Architect', az: 'Fırtına Qalxanı Memarı' },
     description: {
-      en: 'Deflected the May 2024 DONKI 205 pfu solar proton storm on Decision 5 using a storm shelter or regolith berm (< 50 mSv).',
-      az: '5-ci qərarda 2024 May DONKI 205 pfu Günəş proton fırtınasından sığınacaq və ya reqolit səddi ilə qorundu (< 50 mSv).',
+      en: 'Used a shelter during the D5 training storm and stayed below the 50 mSv game warning.',
+      az: 'D5 təlim fırtınasında sığınacaqdan istifadə etdi və 50 mSv oyun xəbərdarlıq həddindən aşağı qaldı.',
     },
     colorClass: 'border-emerald-400/50 bg-emerald-500/15 text-emerald-200',
     check: (run) => {

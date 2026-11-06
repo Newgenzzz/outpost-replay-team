@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen, Languages, MoonStar, PlayCircle, RotateCcw, Volume2, VolumeX, X } from 'lucide-react';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_TITLE } from '../data/missionDecisions';
-import { LRO_SITE } from '../data/nasaTelemetry';
+import { TRAINING_SITE } from '../data/nasaTelemetry';
 import { soundFX } from '../utils/soundEffects';
 import type { Lang } from '../types';
 
@@ -38,7 +38,7 @@ export default function Header({ onReset, onLoadDemo, showBriefing, setShowBrief
               {t('appName')} <span className="font-normal text-slate-400">· {t('tagline')}</span>
             </h1>
             <p className="text-xs text-slate-400">
-              {tr(MISSION_TITLE)} · {tr(LRO_SITE.name)} ({LRO_SITE.coordinateLabel})
+              {tr(MISSION_TITLE)} · {tr(TRAINING_SITE.name)}
             </p>
           </div>
         </div>

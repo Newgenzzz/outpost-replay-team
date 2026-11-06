@@ -8,7 +8,7 @@ import {
   GAME_CONSTANTS as K,
   LRO_PROFILE,
   LRO_SHADOW,
-  LRO_SITE,
+  TRAINING_SITE,
   MAY_2024_PROTON_EVENT,
   RADIATION_LIMITS,
   SEP_PEAK_DOSE_RATE_MSV_PER_HR,
@@ -75,8 +75,8 @@ const SIMPLIFIED_ROWS: Array<{ param: Bilingual; value: string; why: Bilingual }
   },
   {
     param: { en: 'Mission dose warning', az: 'Missiya doza xəbərdarlığı' },
-    value: `${RADIATION_LIMITS.missionWarningMsv} mSv (career limit ${RADIATION_LIMITS.careerLimitMsv} mSv)`,
-    why: { en: 'The mission uses an educational alert. The career limit covers lifetime spaceflight exposure.', az: 'Missiya təlim xəbərdarlığından istifadə edir. Karyera limiti bütün kosmik uçuşlardakı məruzqalmanı əhatə edir.' },
+    value: `${RADIATION_LIMITS.missionWarningMsv} mSv`,
+    why: { en: 'Training threshold for this scenario.', az: 'Bu ssenari üçün təlim həddi.' },
   },
   {
     param: { en: 'Science points', az: 'Elm xalları' },
@@ -86,8 +86,8 @@ const SIMPLIFIED_ROWS: Array<{ param: Bilingual; value: string; why: Bilingual }
 ];
 
 const EQUATIONS = {
-  en: `Energy balance = solar + backup − equipment loads\nCrew oxygen demand = crew × ${ECLSS_BASELINES.o2KgPerCrewDay} kg/day × days\nIce extraction yield = processed soil × ice mass fraction × recovery efficiency\nStorm dose = ∫ (scripted flux × dose scale × shield transmission) dt\nFull exposure in the training storm ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv before background`,
-  az: `Enerji balansı = günəş + ehtiyat enerji − avadanlıq sərfi\nEkipajın oksigen tələbi = ekipaj sayı × ${ECLSS_BASELINES.o2KgPerCrewDay} kq/gün × gün sayı\nBuzdan çıxarılan su = emal edilən qrunt × buzun kütlə payı × emal səmərəliliyi\nFırtına dozası = ∫ (ssenari axını × doza əmsalı × qalxanın keçiriciliyi) dt\nTəlim fırtınasında tam məruzqalma ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv (fon radiasiyası xaric)`,
+  en: `Energy balance = solar + backup − equipment loads\nCrew oxygen demand = crew × ${ECLSS_BASELINES.o2KgPerCrewDay} kg/day × days\nIce extraction yield = processed soil × ice mass fraction × recovery efficiency\nTraining dose estimate = ∫ (scripted flux × assumed dose scale × assumed transmission) dt\nFull exposure in the training storm ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv before background`,
+  az: `Enerji balansı = günəş + ehtiyat enerji − avadanlıq sərfi\nEkipajın oksigen tələbi = ekipaj sayı × ${ECLSS_BASELINES.o2KgPerCrewDay} kq/gün × gün sayı\nBuzdan çıxarılan su = emal edilən qrunt × buzun kütlə payı × emal səmərəliliyi\nTəlim dozasının hesablanması = ∫ (ssenari axını × fərz edilən doza əmsalı × fərz edilən keçiricilik) dt\nTəlim fırtınasında tam məruzqalma ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv (fon radiasiyası xaric)`,
 };
 
 function Tag({ kind }: { kind: 'reference' | 'model' }) {
@@ -130,7 +130,7 @@ export default function EvidencePanel() {
           <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
             <p className="text-sm font-medium text-slate-100">{az ? 'Təlimdə relyef kölgəsi' : 'Terrain shadow in training'}</p>
             <p className="text-[11px] text-slate-400">
-              {tr(LRO_SITE.name)} · {az ? 'Ayın cənub qütbü' : 'Lunar south pole'}
+              {tr(TRAINING_SITE.name)} · {az ? 'Ayın cənub qütbü' : 'Lunar south pole'}
             </p>
             <p className="mt-1 text-xs text-slate-300">{az
               ? 'Bu ssenaridə işıq 48–120-ci saatlarda azalır və səth 90 K-ə qədər soyuyur.'

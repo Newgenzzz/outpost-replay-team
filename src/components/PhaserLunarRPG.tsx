@@ -246,8 +246,8 @@ export const FIELD_SAMPLES: FieldSampleNode[] = [
     Instrument: 'LRO CRaTER / DONKI',
     title: { en: 'Tissue-Equivalent Radiation Dosimeter', az: 'Toxuma-Ekvivalentli Radiasiya Dozimetri' },
     fact: {
-      en: 'Tracks GCR background (~1.0 mSv/day) and DONKI Solar Particle Events up to 205 pfu.',
-      az: 'Kosmik şüa fonunu (~1.0 mSv/gün) və 205 pfu-ya çatan Günəş fırtınalarını ölçür.',
+      en: 'Displays the assumed background dose and the scripted storm profile.',
+      az: 'Fərz edilən fon dozasını və ssenaridəki fırtına profilini göstərir.',
     },
   },
 ];
@@ -2392,8 +2392,8 @@ export default function PhaserLunarRPG({
                 ? 'D2 HERMETİK GÜNBƏZİN İÇİ · Hidroponika və 98% ECLSS Qorunması Aktivdir'
                 : 'INSIDE D2 HABITAT CUTAWAY · Hydroponics & 98% ECLSS Loop Active'
               : lang === 'az'
-                ? 'D5 SU DİVARLI SIĞINACAĞIN İÇİ · 205 pfu Günəş Fırtınasından Tam Qorunur!'
-                : 'INSIDE D5 WATER-WALL BUNKER CUTAWAY · Shielded from 205 pfu Solar Protons!'}
+                ? 'D5 SU DİVARLI SIĞINACAQ · Modeldə daha aşağı doza'
+                : 'D5 WATER-WALL BUNKER · Lower modeled dose'}
           </span>
         </div>
       )}
@@ -2657,7 +2657,7 @@ export default function PhaserLunarRPG({
             <Radio className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
             {lang === 'az' ? 'Şeklton Radar' : 'Shackleton Radar'}
           </span>
-          <span className="font-mono text-[10px] text-slate-400">89.67°S</span>
+          <span className="font-mono text-[10px] text-slate-400">{lang === 'az' ? 'Cənub qütbü' : 'South pole'}</span>
         </div>
 
         <div

@@ -124,7 +124,7 @@ export const STRINGS = {
   eclssO2: { en: 'O₂ consumed', az: 'İstehlak olunan O₂' },
   eclssCo2: { en: 'CO₂ produced', az: 'Yaranan CO₂' },
   eclssWater: { en: 'ISS water recovery', az: 'BKS-də suyun bərpası' },
-  careerLimit: { en: 'Career dose limit', az: 'Karyera doza limiti' },
+  careerLimit: { en: 'NASA career effective-dose limit', az: 'NASA-nın karyera üzrə effektiv doza həddi' },
   perCrewDay: { en: 'kg / crew-day', az: 'kq / ekipaj-gün' },
   sunVisible: { en: 'Sun visible %', az: 'Görünən Günəş %' },
   surfaceTemp: { en: 'Surface temp (K)', az: 'Səth temperaturu (K)' },
@@ -145,8 +145,8 @@ export const STRINGS = {
 
   // 2D Lunar Outpost Viewport
   viewportTitle: {
-    en: 'Shackleton Rim 2D Mission Twin (89.67°S, 129.78°E)',
-    az: 'Şeklton Kənarı 2D Missiya Əkizi (89.67°C, 129.78°Ş)',
+    en: 'Shackleton Rim 2D Mission Twin · Fictional training site',
+    az: 'Şeklton Kənarı 2D Missiya Əkizi · Uydurma təlim məkanı',
   },
   viewportSubtitle: {
     en: 'Click any glowing engineering hotspot on the lunar surface to inspect how NASA science keeps the crew alive.',
@@ -198,7 +198,7 @@ export const STRINGS = {
   tourJumpLabel: { en: 'Jump to NASA Crisis / Demo:', az: 'NASA Böhranına / Demoya Keçid:' },
   tourD3Shadow: { en: 'Inspect D3 LRO 72h Shadow (90 K)', az: 'Q3 LRO 72s Kölgəsinə Bax (90 K)' },
   tourD4Rover: { en: 'Inspect D4 Cold-Trap Ice Rover', az: 'Q4 Soyuq Tələ Roverinə Bax' },
-  tourD5Storm: { en: 'Inspect D5 DONKI Solar Storm (205 pfu)', az: 'Q5 DONKI Günəş Fırtınasına Bax (205 pfu)' },
+  tourD5Storm: { en: 'Inspect D5 training particle storm', az: 'D5 təlim zərrəcik fırtınasına bax' },
   tourSplitDemo: { en: 'Compare Blackout vs. Fuel Cell Save', az: 'Enerji Kəsilməsi və Yanacaq Elementi Müqayisəsi' },
   earnedInRunA: { en: 'Earned in Run A', az: 'A Gedişində Qazanıldı' },
   earnedInRunB: { en: 'Earned in Run B', az: 'B Gedişində Qazanıldı' },
