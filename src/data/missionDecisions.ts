@@ -17,9 +17,9 @@ import {
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
 
-/** Storm-dose bookkeeping for Decision 5 (all derived from the DONKI profile). */
+/** D5 classroom dose estimates use the scripted profile anchored to the GOES peak. */
 export const STORM_DOSES = {
-  /** 75 % of the storm in an EVA suit, 25 % inside the habitat. */
+  /** First 24 hours in an EVA suit, remaining 24 hours inside the habitat. */
   finishEva: r1(integrateSepDoseMsv(0, 24) * SHIELDING.evaSuit + integrateSepDoseMsv(24, 48) * SHIELDING.habitat),
   habitat: r1(D * SHIELDING.habitat),
   waterWall: r1(D * SHIELDING.waterWall),
@@ -59,7 +59,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `The mast takes 4 kWh to assemble. The scenario models its higher placement as retaining ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}% of available sunlight during the shadow, versus ${100 - LRO_SHADOW.arrayOutputDropPct}% at deck height. Panel incidence is 10°.`,
           az: `Dirəyin quraşdırılması 4 kVt·saat tələb edir. Ssenaridə kölgə zamanı hündür dirək mövcud işığın ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}%-ni, alçaq panel isə ${100 - LRO_SHADOW.arrayOutputDropPct}%-ni tutur. Şüaların panelə düşmə bucağı 10°-dir.`,
         },
-        nasaSourceCitation: 'Mazarico et al. 2011, Icarus 211 — LRO/LOLA polar illumination increases with height above the surface',
+        nasaSourceCitation: {
+          en: 'Mazarico et al. 2011, Icarus 211 — LRO/LOLA polar illumination increases with height above the surface',
+          az: 'Mazarico və b. 2011, Icarus 211 — LRO/LOLA modeli qütblərdə səthdən yüksəldikcə işıqlanmanın artdığını göstərir',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Shadow Resilience)', az: 'CapCom Tövsiyəsi (Kölgəyə Dözümlülük)' },
@@ -80,7 +83,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Point the deck panels straight at the Sun (0° incidence) for the best output while the horizon is clear. Quick setup leaves time for a first sample, but the low panels receive little light in the shadow.',
           az: 'Üfüq açıq ikən maksimum güc üçün panelləri birbaşa Günəşə yönəldin (düşmə bucağı 0°). Sürətli quraşdırma ilk nümunəyə vaxt ayırır, lakin kölgədə alçaq panellərə az işıq düşür.',
         },
-        nasaSourceCitation: 'Mazarico et al. 2011 (LRO/LOLA); NASA PDS Geosciences Node — LOLA archive',
+        nasaSourceCitation: {
+          en: 'Mazarico et al. 2011 (LRO/LOLA); NASA PDS Geosciences Node — LOLA archive',
+          az: 'Mazarico və b. 2011 (LRO/LOLA) · NASA PDS Geosciences Node — LOLA arxivi',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'Pointing directly at the Sun helps in daylight. Panel height determines what the ridge blocks.',
@@ -99,7 +105,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Heading straight to the science site gives an early science lead (+12) but drains 8 kWh from the battery and adds EVA dose (+1.5 mSv). The outpost enters the coming shadow with a smaller energy buffer.',
           az: 'Birbaşa elmi sahəyə getmək erkən elmi üstünlük (+12) verir, lakin batareyadan 8 kVt·saat sərf edir və EVA dozasını artırır (+1.5 mSv). Baza qarşıdakı kölgəyə daha kiçik enerji ehtiyatı ilə daxil olur.',
         },
-        nasaSourceCitation: 'NASA BVAD (NASA/TP-2015-218570/REV1) — EVA and power assumptions',
+        nasaSourceCitation: {
+          en: 'NASA BVAD (NASA/TP-2015-218570/REV1) — EVA and power assumptions',
+          az: 'NASA BVAD (NASA/TP-2015-218570/REV1) — açıq sahə fəaliyyəti və enerji fərziyyələri',
+        },
         riskLevel: 'critical',
         copilotTip: {
           en: 'Critical Hazard: Heavy battery drain (-8 kWh) risks triggering emergency brownouts.',
@@ -131,7 +140,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `Building with the excavator takes 8 kWh. If you later use the dedicated shelter, the model transmits ${pct(SHIELDING.regolithBerm)}% of the storm dose through the berm. Real transmission depends on the material, thickness and particle energies.`,
           az: `Ekskavatorla sədd qurmaq 8 kVt·saat tələb edir. Sonra xüsusi sığınacağa keçsəniz, model səddən fırtına dozasının ${pct(SHIELDING.regolithBerm)}%-nin keçdiyini qəbul edir. Həqiqi keçiricilik materialdan, qalınlıqdan və zərrəcik enerjisindən asılıdır.`,
         },
-        nasaSourceCitation: 'Schwadron et al. 2012 (LRO/CRaTER) — lunar radiation environment; regolith transmission factor 0.06 is a game simplification',
+        nasaSourceCitation: {
+          en: 'Schwadron et al. 2012 (LRO/CRaTER) — lunar radiation environment; regolith transmission factor 0.06 is a game simplification',
+          az: 'Schwadron və b. 2012 (LRO/CRaTER) — Ayın radiasiya mühiti. Reqolit üçün 0,06 keçiricilik əmsalı təlim fərziyyəsidir.',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Storm Armor)', az: 'CapCom Tövsiyəsi (Fırtına Zirehi)' },
@@ -153,7 +165,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'The demonstrator uses 10 kWh to release 3 kg of oxygen from regolith in this scenario. Two crew members consume about 1.64 kg of oxygen per day. This option supports breathing reserves at the cost of battery energy and shelter preparation.',
           az: 'Ssenaridə qurğu 10 kVt·saat sərf edərək reqolitdən 3 kq oksigen ayırır. İki nəfərlik ekipaj gündə təxminən 1,64 kq oksigen sərf edir. Bu seçim nəfəs ehtiyatını artırır, lakin enerji və sığınacaq hazırlığı hesabına.',
         },
-        nasaSourceCitation: 'NASA BVAD (NASA/TP-2015-218570/REV1) — O₂ ≈ 0.82 kg per crew-day',
+        nasaSourceCitation: {
+          en: 'NASA BVAD (NASA/TP-2015-218570/REV1) — O₂ ≈ 0.82 kg per crew-day',
+          az: 'NASA BVAD (NASA/TP-2015-218570/REV1) — ekipaj üzvü başına gündə təxminən 0,82 kq O₂',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'ISRU means using local resources. The 3 kg output is a scenario assumption, while crew demand uses a NASA planning reference.',
@@ -172,7 +187,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Install a tray of greens that grew for 25 days before touchdown. The greenhouse needs five more powered growing days and draws water and electricity. Low battery pauses growth. A successful harvest adds a small food supplement and crop science.',
           az: 'Enişdən əvvəl 25 gün yetişdirilmiş göyərti qabını quraşdırın. İstixanada daha beş gün işıqlandırma lazımdır və sistem su ilə elektrik sərf edir. Batareya zəiflədikdə böyümə dayanır. Məhsul yığımı az miqdarda əlavə qida və elmi xal verir.',
         },
-        nasaSourceCitation: 'NASA Veggie plant growth system on the ISS. Tray age, resource costs and yields are scenario assumptions.',
+        nasaSourceCitation: {
+          en: 'NASA Veggie plant growth system on the ISS. Tray age, resource costs and yields are scenario assumptions.',
+          az: 'BKS-də NASA Veggie bitki yetişdirmə sistemi. Bitkilərin yaşı, resurs sərfi və məhsuldarlıq ssenari fərziyyələridir.',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'Greens supplement packed rations. Check whether the outpost can afford the extra water and power through the shadow.',
@@ -215,7 +233,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Switching off science instruments and lowering cabin heating saves 14 kWh, but the CO₂ scrubbers and heaters run at minimum (−6 % life support). Science pauses for three days.',
           az: 'Elmi cihazları söndürmək və kabin istiliyini azaltmaq 14 kVt·saat qənaət edir, lakin CO₂ təmizləyiciləri və qızdırıcılar minimum rejimdə işləyir (−6 % həyat təminatı). Elmi iş üç gün dayanır.',
         },
-        nasaSourceCitation: 'NASA BVAD — CO₂ ≈ 1.04 kg per crew-day scrubbing load; Paige et al. 2010 (LRO/Diviner) — polar temperatures',
+        nasaSourceCitation: {
+          en: 'NASA BVAD — CO₂ ≈ 1.04 kg per crew-day scrubbing load; Paige et al. 2010 (LRO/Diviner) — polar temperatures',
+          az: 'NASA BVAD — ekipaj üzvü başına gündə təxminən 1,04 kq CO₂ təmizlənir. Paige və b. 2010 (LRO/Diviner) — qütb temperaturları.',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'Conserves 14 kWh, but cold cabin throttles CO2 scrubbers and stresses crew (-6% ECLSS).',
@@ -235,7 +256,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Fuel cells turn stored hydrogen and oxygen into 18 kWh of electricity, keeping instruments alive (+4 science). But the reactants are now used up — there is no emergency reserve for the final day.',
           az: 'Yanacaq elementləri saxlanılan hidrogen və oksigeni 18 kVt·saat elektrikə çevirir və cihazları işlək saxlayır (+4 elm). Lakin reagentlər artıq istifadə olunub — son gün üçün qəza ehtiyatı qalmır.',
         },
-        nasaSourceCitation: 'NASA BVAD — power and consumables assumptions; Mazarico et al. 2011 (LRO/LOLA) — shadow duration',
+        nasaSourceCitation: {
+          en: 'NASA BVAD — power and consumables assumptions; Mazarico et al. 2011 (LRO/LOLA) — shadow duration',
+          az: 'NASA BVAD — enerji və sərf materialları üzrə fərziyyələr. Mazarico və b. 2011 (LRO/LOLA) — kölgə müddəti.',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Zero Brownout)', az: 'CapCom Tövsiyəsi (Sıfır Qəza)' },
@@ -255,7 +279,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Diviner measured some of the coldest places in the Solar System in nearby permanently shadowed craters — ideal for finding water ice (+20 science). But drilling in the dark costs 6 kWh on top of the shadow drain. If the battery falls below 20 kWh, a brownout will throttle life support.',
           az: 'Diviner yaxınlıqdakı daimi kölgəli kraterlərdə Günəş sisteminin ən soyuq yerlərindən bəzilərini ölçüb — su buzunu tapmaq üçün ideal yer (+20 elm). Lakin qaranlıqda qazma kölgə itkisinə əlavə olaraq 6 kVt·saat sərf edir. Batareya 20 kVt·saatdan aşağı düşərsə, enerji çatışmazlığı həyat təminatını zəiflədəcək.',
         },
-        nasaSourceCitation: 'Paige et al. 2010, Science 330 — LRO/Diviner south-polar cold traps',
+        nasaSourceCitation: {
+          en: 'Paige et al. 2010, Science 330 — LRO/Diviner south-polar cold traps',
+          az: 'Paige və b. 2010, Science 330 — LRO/Diviner məlumatları üzrə cənub qütbünün soyuq tələləri',
+        },
         riskLevel: 'critical',
         copilotTip: {
           en: 'Critical Hazard: Drilling in deep shadow drains battery below 20 kWh, triggering brownout.',
@@ -288,7 +315,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'A crewed traverse draws 14 kWh, 0.8 kg of suit oxygen and 0.5 kg of water. Process a fictional 20 kg sample using a published Cabeus ice estimate as the exercise input. Only the powered share of the task yields treated water.',
           az: 'Ekipajlı səfər 14 kVt·saat, 0,8 kq oksigen və 0,5 kq su sərf edir. Təlim üçün Kabeus kraterində dərc edilmiş buz payı əsasında uydurma 20 kq nümunəni emal edin. Yalnız enerji ilə təmin edilən iş təmizlənmiş su verir.',
         },
-        nasaSourceCitation: 'NASA LCROSS, Colaprete et al. 2010 — Cabeus water ice mass fraction; scenario feedstock and treatment efficiency are assumed.',
+        nasaSourceCitation: {
+          en: 'NASA LCROSS, Colaprete et al. 2010 — Cabeus water ice mass fraction; scenario feedstock and treatment efficiency are assumed.',
+          az: 'NASA LCROSS, Colaprete və b. 2010 — Kabeusda su buzunun kütlə payı. Nümunə kütləsi və emal səmərəliliyi ssenari fərziyyələridir.',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Max Ice Science)', az: 'CapCom Tövsiyəsi (Maksimum Buz Elmi)' },
@@ -320,7 +350,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Park the rover and idle non-essential equipment, saving up to 6 kWh of load. Service filters and the water processor to restore equipment health. Little field science gets done.',
           az: 'Roveri saxlayın və vacib olmayan cihazları söndürərək 6 kVt·saata qədər yükə qənaət edin. Avadanlığın vəziyyətini yaxşılaşdırmaq üçün filtrlərə və su emalı sisteminə xidmət göstərin. Sahə elmi üçün az vaxt qalır.',
         },
-        nasaSourceCitation: 'NASA ISS ECLSS — ~98 % water recovery (2023); NASA BVAD',
+        nasaSourceCitation: {
+          en: 'NASA ISS ECLSS — ~98 % water recovery (2023); NASA BVAD',
+          az: 'NASA-nın BKS-dəki həyat təminatı sistemi — suyun təxminən 98%-nin bərpası (2023) · NASA BVAD',
+        },
         riskLevel: 'safe',
         copilotTip: {
           en: 'Reducing load preserves the battery. Maintenance keeps the water loop working, which slows losses from the tank.',
@@ -338,7 +371,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'The robot drives into the cold, dark crater while the crew stays shielded (no extra mSv). It costs 7 kWh and returns less science than a crewed traverse (+13).',
           az: 'Robot soyuq, qaranlıq kraterə daxil olur, ekipaj isə qorunan yerdə qalır (əlavə mSv yoxdur). Bu 7 kVt·saat sərf edir və ekipajlı səfərdən az elmi nəticə verir (+13).',
         },
-        nasaSourceCitation: 'Williams et al. 2017 (LRO/Diviner); NASA PDS Geosciences Node — LRO archives',
+        nasaSourceCitation: {
+          en: 'Williams et al. 2017 (LRO/Diviner); NASA PDS Geosciences Node — LRO archives',
+          az: 'Williams və b. 2017 (LRO/Diviner) · NASA PDS Geosciences Node — LRO arxivləri',
+        },
         riskLevel: 'safe',
         copilotTip: {
           en: 'Teleoperated robotics: zero crew fatigue or EVA radiation, solid science (+13).',
@@ -381,7 +417,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `The model groups outside operations into the first storm day, then shelters the crew in the habitat. This can return +18 science with about ${STORM_DOSES.finishEva} mSv of modeled storm dose. Check your cumulative dose against the mission warning.`,
           az: `Model çöldəki işləri fırtınanın ilk gününə toplayır, sonra ekipaj yaşayış moduluna keçir. Bu, təxminən ${STORM_DOSES.finishEva} mSv model fırtına dozası ilə +18 elm xalı verə bilər. Toplam dozanı missiyanın xəbərdarlıq həddi ilə müqayisə edin.`,
         },
-        nasaSourceCitation: 'NASA CCMC DONKI and NOAA SWPC PRF 2541 — May 10, 2024 GOES event near Earth',
+        nasaSourceCitation: {
+          en: 'NASA CCMC DONKI and NOAA SWPC PRF 2541 — May 10, 2024 GOES event near Earth',
+          az: 'NASA CCMC DONKI və NOAA SWPC PRF 2541 — 10 may 2024-cü ildə Yer yaxınlığında GOES müşahidəsi',
+        },
         riskLevel: 'critical',
         copilotTip: {
           en: 'Waiting to shelter raises cumulative exposure. The warning depends on earlier decisions as well as the storm.',
@@ -397,7 +436,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `The habitat walls pass about ${pct(SHIELDING.habitat)} % of the storm dose (≈ ${STORM_DOSES.habitat} mSv). Two days indoors slightly strain the air and water systems (−2 %), and only lab work continues (+4 science).`,
           az: `Yaşayış modulunun divarları fırtına dozasının təxminən ${pct(SHIELDING.habitat)} %-ni keçirir (≈ ${STORM_DOSES.habitat} mSv). İki gün içəridə qalmaq hava və su sistemlərinə bir qədər yük salır (−2 %), yalnız laboratoriya işi davam edir (+4 elm).`,
         },
-        nasaSourceCitation: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; habitat transmission factor 0.25 is a game simplification',
+        nasaSourceCitation: {
+          en: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; habitat transmission factor 0.25 is a game simplification',
+          az: 'NOAA SWPC PRF 2541 — 10 may 2024-cü il GOES pik ölçməsi. Yaşayış modulu üçün 0,25 keçiricilik əmsalı təlim fərziyyəsidir.',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: `The habitat offers moderate modeled protection (~${STORM_DOSES.habitat} mSv storm dose).`,
@@ -423,7 +465,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `Without a berm, the crew stacks water containers into an improvised wall (${pct(SHIELDING.waterWall)} % transmission ≈ ${STORM_DOSES.waterWall} mSv), which costs pump power (−5 kWh) and disturbs the water system (−5 %). If you built the regolith berm at Decision 2, the shelter lets through only ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) at no extra cost.`,
           az: `Sədd olmadıqda ekipaj su qablarından müvəqqəti divar düzəldir (${pct(SHIELDING.waterWall)} % keçiricilik ≈ ${STORM_DOSES.waterWall} mSv), bu da nasos enerjisi (−5 kVt·saat) tələb edir və su sistemini pozur (−5 %). 2-ci qərarda reqolit səddini tikmisinizsə, sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) keçirir və əlavə xərc tələb etmir.`,
         },
-        nasaSourceCitation: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; shielding factors are game simplifications',
+        nasaSourceCitation: {
+          en: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; shielding factors are game simplifications',
+          az: 'NOAA SWPC PRF 2541 — 10 may 2024-cü il GOES pik ölçməsi. Qorunma əmsalları təlim fərziyyələridir.',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Safe Bunker)', az: 'CapCom Tövsiyəsi (Təhlükəsiz Sığınacaq)' },
@@ -466,7 +511,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'One more long EVA brings home the best samples (+16 science) but uses suit consumables (−8 %), power (−10 kWh) and dose (+3.0 mSv). If the fuel cells were spent during the shadow, there is no contingency reserve: −10 % more life support.',
           az: 'Daha bir uzun EVA ən yaxşı nümunələri gətirir (+16 elm), lakin skafandr ehtiyatlarını (−8 %), enerjini (−10 kVt·saat) işlədir və doza əlavə edir (+3.0 mSv). Yanacaq elementləri kölgə zamanı işlədilibsə, ehtiyat qalmır: həyat təminatı daha −10 %.',
         },
-        nasaSourceCitation: 'NASA BVAD — EVA consumables; NASA-STD-3001 Vol. 1 — crew dose management',
+        nasaSourceCitation: {
+          en: 'NASA BVAD — EVA consumables; NASA-STD-3001 Vol. 1 — crew dose management',
+          az: 'NASA BVAD — açıq sahə fəaliyyəti üçün sərf materialları. NASA-STD-3001, cild 1 — ekipajın radiasiya dozasının idarə edilməsi.',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'Adds +16 science, but uses remaining power (-10 kWh) and suit consumables (-8%).',
@@ -481,7 +529,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Pack the samples, safe the habitat for the robots and review the data. Low risk, modest science (+5).',
           az: 'Nümunələri qablaşdırın, yaşayış modulunu robotlar üçün təhlükəsiz vəziyyətə gətirin və məlumatları nəzərdən keçirin. Az risk, orta elmi nəticə (+5).',
         },
-        nasaSourceCitation: 'NASA BVAD — nominal crew-day consumables',
+        nasaSourceCitation: {
+          en: 'NASA BVAD — nominal crew-day consumables',
+          az: 'NASA BVAD — ekipaj üzvünün gündəlik nominal sərfi',
+        },
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Nominal Return)', az: 'CapCom Tövsiyəsi (Standart Qayıdış)' },
@@ -512,7 +563,10 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Transmitting the full data set (+12 science) runs the high-gain transmitter all day (−16 kWh). A tall solar mast keeps charging during the transmission (+8 kWh back).',
           az: 'Tam məlumat dəstinin ötürülməsi (+12 elm) yüksək güclü ötürücünü bütün gün işlədir (−16 kVt·saat). Hündür günəş dirəyi ötürmə zamanı doldurmağa davam edir (+8 kVt·saat geri qayıdır).',
         },
-        nasaSourceCitation: 'Mazarico et al. 2011 (LRO/LOLA) — elevated arrays; NASA BVAD power assumptions',
+        nasaSourceCitation: {
+          en: 'Mazarico et al. 2011 (LRO/LOLA) — elevated arrays; NASA BVAD power assumptions',
+          az: 'Mazarico və b. 2011 (LRO/LOLA) — hündürdə yerləşdirilən panellər. NASA BVAD — enerji fərziyyələri.',
+        },
         riskLevel: 'moderate',
         copilotTip: {
           en: 'High-rate laser downlink (+12 science), but uses high transmitter power (-16 kWh).',

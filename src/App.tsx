@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Activity,
@@ -236,19 +236,19 @@ export default function App() {
     sampleModalOpen;
 
   // Keep keyboard navigation inside the active dialog and return to its opener.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!anyOverlayOpen) return;
     if (document.activeElement instanceof HTMLElement) overlayOpener.current = document.activeElement;
     return () => overlayOpener.current?.focus();
   }, [anyOverlayOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!anyOverlayOpen) return;
-    const frame = requestAnimationFrame(() => {
-      const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
-      dialogs[dialogs.length - 1]?.querySelector<HTMLElement>('button:not(:disabled), input')?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
+    const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
+    const dialog = dialogs[dialogs.length - 1];
+    if (dialog && !dialog.contains(document.activeElement)) {
+      dialog.querySelector<HTMLElement>('button:not(:disabled), input')?.focus();
+    }
   }, [anyOverlayOpen, decisionModalOpen, telemetryDrawerOpen, mapModalOpen, showBriefing,
     sensorDeckOpen, certificateOpen, achievementsModalOpen, sampleModalOpen]);
 
@@ -547,7 +547,7 @@ export default function App() {
     world.current?.teleportTo({ x: STATIONS[0].x, y: STATIONS[0].y + 38 });
   }
 
-  function handleAdvanceTour(stage: DemoStage) {
+  function handleAdvanceTour(stage: DemoStage, useBackup = false) {
     soundFX.play('tourChime');
     if (stage !== 'rewind') setRewoundChoices(null);
     setBaselineTasks(DEFAULT_TASK_SETTINGS);
@@ -558,12 +558,14 @@ export default function App() {
       setDemoStage('shadow');
       world.current?.teleportTo({ x: STATIONS[2].x, y: STATIONS[2].y + 40 });
     } else if (stage === 'shadow') {
-      const baseline = runSimulation(MISSION_DEMO.baseline);
-      setBaselineChoices(MISSION_DEMO.baseline.slice(0, baseline.steps.length));
+      const choices = useBackup ? MISSION_DEMO.branch : MISSION_DEMO.baseline;
+      setBaselineChoices(choices.slice(0, runSimulation(choices).steps.length));
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage('rewind');
     } else {
-      setRewoundChoices(MISSION_DEMO.branch);
+      const shadowIndex = MISSION_DEMO.rewindStep - 1;
+      const usedBackup = baselineChoices[shadowIndex] === MISSION_DEMO.branch[shadowIndex];
+      setRewoundChoices(usedBackup ? MISSION_DEMO.baseline : MISSION_DEMO.branch);
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage(null);
       setTelemetryDrawerOpen(true);
@@ -782,7 +784,7 @@ export default function App() {
           </span>
         </div>
 
-        <nav className="topbar-actions" aria-label="Mission controls">
+        <nav className="topbar-actions" aria-label={lang === 'az' ? 'Missiyanın idarəetmə düymələri' : 'Mission controls'}>
           {/* Guided judge demo */}
           <button
             type="button"
@@ -969,7 +971,7 @@ export default function App() {
       {/* =====================================================================
        * DETERMINISTIC TELEMETRY BAR (Power, Life Support, Radiation, Science)
        * =================================================================== */}
-      <section className="resource-hud" aria-label="Outpost Telemetry">
+      <section className="resource-hud" aria-label={lang === 'az' ? 'Bazanın telemetriyası' : 'Outpost telemetry'}>
         <div className="mission-clock">
           <span>{tr(currentDecision.phase.label)}</span>
           <strong>
@@ -1228,7 +1230,7 @@ export default function App() {
           ref={world}
           snapshot={worldSnapshot}
           paused={anyOverlayOpen}
-          label="Shackleton Outpost 2.5D Interactive World"
+          label={lang === 'az' ? 'Şeklton bazasının 2.5D interaktiv mühiti' : 'Shackleton Outpost 2.5D Interactive World'}
           onReady={() => setReady(true)}
           onError={setError}
           onNearby={setNearbyStation}
@@ -1654,13 +1656,13 @@ export default function App() {
             </button>
           </div>
 
-          <div className="touch-controls" role="group" aria-label="Movement D-pad">
+          <div className="touch-controls" role="group" aria-label={lang === 'az' ? 'Hərəkət düymələri' : 'Movement controls'}>
             {(
               [
-                { key: 'up', x: 0, y: -1, Icon: ArrowUp, label: 'Move North' },
-                { key: 'left', x: -1, y: 0, Icon: ArrowLeft, label: 'Move West' },
-                { key: 'down', x: 0, y: 1, Icon: ArrowDown, label: 'Move South' },
-                { key: 'right', x: 1, y: 0, Icon: ArrowRight, label: 'Move East' },
+                { key: 'up', x: 0, y: -1, Icon: ArrowUp, label: { en: 'Move north', az: 'Şimala get' } },
+                { key: 'left', x: -1, y: 0, Icon: ArrowLeft, label: { en: 'Move west', az: 'Qərbə get' } },
+                { key: 'down', x: 0, y: 1, Icon: ArrowDown, label: { en: 'Move south', az: 'Cənuba get' } },
+                { key: 'right', x: 1, y: 0, Icon: ArrowRight, label: { en: 'Move east', az: 'Şərqə get' } },
               ] as const
             ).map(({ key, x, y, Icon, label }) => (
               <button
@@ -1668,7 +1670,7 @@ export default function App() {
                 type="button"
                 className={`direction direction--${key}`}
                 disabled={anyOverlayOpen || !ready}
-                aria-label={label}
+                aria-label={tr(label)}
                 onPointerDown={(e) => {
                   pointerStarted.current = performance.now();
                   e.currentTarget.setPointerCapture(e.pointerId);
@@ -2005,7 +2007,7 @@ export default function App() {
         <JudgeTourBanner
           stage={demoStage}
           baseline={runA}
-          onAdvance={() => handleAdvanceTour(demoStage)}
+          onAdvance={(useBackup) => handleAdvanceTour(demoStage, useBackup)}
           onOpenScience={() => setSensorDeckOpen(true)}
           onClose={() => setDemoStage(null)}
         />

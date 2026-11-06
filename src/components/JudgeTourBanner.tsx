@@ -1,4 +1,5 @@
 import { ArrowRight, BookOpen, GitBranch, Orbit, X } from 'lucide-react';
+import { MISSION_DEMO } from '../data/missionDecisions';
 import type { SimulationResult } from '../engine/simulation';
 import { useI18n } from '../i18n/LanguageContext';
 import { fmt } from './metricMeta';
@@ -17,19 +18,19 @@ const DEMO_STAGES = {
   },
   shadow: {
     number: 2,
-    title: { en: 'Test the battery-only plan', az: 'Yalnız batareyadan istifadəni sınayın' },
+    title: { en: 'Choose a plan for the shadow', az: 'Kölgə mərhələsi üçün plan seçin' },
     instruction: {
-      en: 'For 72 scenario hours, sunlight drops and heaters draw more power. Run the mission with the crew’s planned workload and no backup power during the shadow.',
-      az: 'Ssenaridə 72 saat ərzində işıq azalır, qızdırıcıların enerji tələbi isə artır. Missiyanı planlaşdırılmış iş yükü ilə və kölgədə ehtiyat enerji işlətmədən başladın.',
+      en: 'For 72 scenario hours, sunlight drops and heaters draw more power. Keep drilling for science, or use backup fuel cells and pause drilling to protect the battery reserve.',
+      az: 'Ssenaridə 72 saat ərzində işıq azalır, qızdırıcıların enerji tələbi isə artır. Elm üçün qazmanı davam etdirin və ya batareya ehtiyatını qorumaq üçün ehtiyat yanacaq elementlərini işə salıb qazmanı dayandırın.',
     },
-    action: { en: 'Simulate Run A', az: 'A gedişini simulyasiya et' },
+    action: { en: 'Keep drilling', az: 'Qazmanı davam etdir' },
   },
   rewind: {
     number: 3,
     title: { en: 'Change one decision', az: 'Bir qərarı dəyişdirin' },
     instruction: {
-      en: 'Rewind to the shadow and start the fuel cells. Both runs share the same initial reserves, sunlight, temperature, storm and other planned decisions.',
-      az: 'Kölgə mərhələsinə qayıdın və yanacaq elementlərini işə salın. İlkin ehtiyatlar, işıq, temperatur, fırtına və digər planlaşdırılmış qərarlar hər iki gedişdə eynidir.',
+      en: 'Rewind to the shadow and try the other strategy. Both runs share the same initial reserves, sunlight, temperature, storm and other planned decisions.',
+      az: 'Kölgə mərhələsinə qayıdın və digər strategiyanı sınayın. İlkin ehtiyatlar, işıq, temperatur, fırtına və digər planlaşdırılmış qərarlar hər iki gedişdə eynidir.',
     },
     action: { en: 'Rewind D3 and compare', az: 'D3-ə qayıt və müqayisə et' },
   },
@@ -44,13 +45,18 @@ export function JudgeTourBanner({
 }: {
   stage: DemoStage;
   baseline: SimulationResult;
-  onAdvance: () => void;
+  onAdvance: (useBackup?: boolean) => void;
   onOpenScience: () => void;
   onClose: () => void;
 }) {
   const { t, tr, lang } = useI18n();
   const scene = DEMO_STAGES[stage];
-  const shadow = baseline.steps[2];
+  const shadowIndex = MISSION_DEMO.rewindStep - 1;
+  const shadow = baseline.steps[shadowIndex];
+  const backupLabel = lang === 'az' ? 'Ehtiyat yanacaq elementlərini işə sal' : 'Use backup fuel cells';
+  const alternateLabel = shadow?.choiceIndex === MISSION_DEMO.branch[shadowIndex]
+    ? tr(DEMO_STAGES.shadow.action)
+    : backupLabel;
 
   return (
     <aside className="judge-demo" aria-label={t('judgeTourButton')}>
@@ -66,6 +72,9 @@ export function JudgeTourBanner({
       <div className="my-3" aria-live="polite">
         <h2 className="font-semibold text-white">{tr(scene.title)}</h2>
         <p className="mt-1 text-sm leading-relaxed text-slate-300">{tr(scene.instruction)}</p>
+        {stage === 'rewind' && (
+          <p className="mt-2 text-sm text-slate-200">{t('runB')} · {alternateLabel}</p>
+        )}
         {stage === 'rewind' && shadow && (
           <p className="mt-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 font-mono text-xs text-amber-100">
             {t(`outcome.${baseline.outcome}`)} · D3 {fmt(shadow.before.powerKwh)} → {fmt(shadow.after.powerKwh)} {t('unitKwh')}
@@ -74,10 +83,15 @@ export function JudgeTourBanner({
         )}
       </div>
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={onAdvance} className="inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">
+        <button type="button" onClick={() => onAdvance()} className="inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">
           {stage === 'rewind' ? <GitBranch size={16} /> : <ArrowRight size={16} />}
           {tr(scene.action)}
         </button>
+        {stage === 'shadow' && (
+          <button type="button" onClick={() => onAdvance(true)} className="inline-flex items-center gap-2 rounded-lg border border-amber-300/45 px-3 py-2 text-sm font-semibold text-amber-100 hover:bg-amber-400/15">
+            {backupLabel}
+          </button>
+        )}
         {stage === 'setup' && (
           <button
             type="button"

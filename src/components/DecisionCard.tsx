@@ -414,7 +414,7 @@ export default function DecisionCard(props: DecisionCardProps) {
         <p className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-400">
           <BookMarked className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            {lang === 'az' ? 'Elmi istinad' : 'Scientific reference'} · {decision.choices[inspectedIdx].nasaSourceCitation}
+            {lang === 'az' ? 'Elmi istinad' : 'Scientific reference'} · {tr(decision.choices[inspectedIdx].nasaSourceCitation)}
           </span>
         </p>
       </div>

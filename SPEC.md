@@ -37,7 +37,7 @@ Run A locks its choices in order. Run B copies the plan and replaces the selecte
 
 Charts plot phase endpoints against elapsed mission hours and stop at the last simulated hour. The UI displays endpoint metric and score deltas only when both runs end at the same hour. Result cards include the actual elapsed time, resources, brownout and outage hours, greenhouse result and cause of an abort.
 
-The separate Lunar Site Intelligence exercise calculates long-term planning estimates from two published LOLA-derived rows. The mission’s hourly profile stays scripted. The demo fixture uses **B, A, C, A, C, C** for Run A and **B, A, B, A, C, C** for Run B. Both end at hour 216. Run A completes with warnings after drilling through the shadow. Run B succeeds with backup fuel cells, while trading away science.
+The separate Lunar Site Intelligence exercise calculates long-term planning estimates from two published LOLA-derived rows. The mission’s hourly profile stays scripted. The demo compares **B, A, C, A, C, C** and **B, A, B, A, C, C**. The judge can choose which plan runs first. Both end at hour 216. Drilling through the shadow completes with warnings. Using backup fuel cells succeeds with fewer science points.
 
 ## Validation
 
