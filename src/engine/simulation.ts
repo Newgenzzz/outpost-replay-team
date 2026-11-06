@@ -15,7 +15,7 @@ import {
   RADIATION_LIMITS,
   SHIELDING,
 } from '../data/nasaTelemetry';
-import { advancePower, newEnvironmentDetail, phasePowerPlan, summarizeEnvironment, type EnvironmentDetail } from './power';
+import { advancePower, CALIBRATED_INCIDENCE_LIMIT_DEG, newEnvironmentDetail, phasePowerPlan, summarizeEnvironment, type EnvironmentDetail } from './power';
 import { advanceResources, crewReservePct, CROP_TRIAL, depletionCause, emptyResourceFlows, INITIAL_RESOURCES, type ResourceFlows } from './resources';
 
 export type { EnvironmentDetail } from './power';
@@ -57,6 +57,7 @@ export type Outcome = 'in-progress' | 'success' | 'warning' | 'abort';
 
 export interface SimulationResult {
   choices: number[];
+  solarCalibrated: boolean;
   /** history[0] = initial state, history[k] = state after decision k. */
   history: MetricState[];
   steps: StepRecord[];
@@ -132,7 +133,10 @@ function roundedResources(resources: ResourceState): ResourceState {
   return snapshot;
 }
 
-export function runSimulation(choiceIndices: readonly number[]): SimulationResult {
+export function runSimulation(
+  choiceIndices: readonly number[],
+  { solarCalibrated = false }: { solarCalibrated?: boolean } = {},
+): SimulationResult {
   const choices = choiceIndices.slice(0, MISSION_DECISIONS.length);
   for (const [i, choiceIndex] of choices.entries()) {
     if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex > 2) {
@@ -171,7 +175,10 @@ export function runSimulation(choiceIndices: readonly number[]): SimulationResul
     for (const conditional of activeConditionals) addInto(combinedEffects, conditional.effects);
 
     if (choice.solarIncidenceDeg !== undefined) {
-      orientationFactor = Math.max(0, Math.cos(choice.solarIncidenceDeg * Math.PI / 180));
+      const incidenceDeg = solarCalibrated
+        ? Math.min(choice.solarIncidenceDeg, CALIBRATED_INCIDENCE_LIMIT_DEG)
+        : choice.solarIncidenceDeg;
+      orientationFactor = Math.max(0, Math.cos(incidenceDeg * Math.PI / 180));
     }
 
     const power = newEnvironmentDetail(orientationFactor);
@@ -351,6 +358,7 @@ export function runSimulation(choiceIndices: readonly number[]): SimulationResul
 
   return {
     choices,
+    solarCalibrated: choices.length > 0 && solarCalibrated,
     history,
     steps,
     final,
@@ -387,6 +395,7 @@ export function missionScore(s: MetricState, outcome: Exclude<Outcome, 'in-progr
 /* ------------------------------------------------------------------ */
 
 export type ComparisonReason =
+  | { kind: 'solarCalibrationChanged'; from: boolean; to: boolean }
   | { kind: 'choiceChanged'; step: number; fromIndex: number; toIndex: number }
   | { kind: 'ruleAvoided'; step: number; rule: RuleId }
   | { kind: 'ruleTriggered'; step: number; rule: RuleId }
@@ -407,12 +416,16 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
   const n = Math.min(a.steps.length, b.steps.length);
   const reasons: ComparisonReason[] = [];
   const changedSteps: number[] = [];
+  const calibrationChanged = n > 0 && a.solarCalibrated !== b.solarCalibrated;
+  if (calibrationChanged) {
+    reasons.push({ kind: 'solarCalibrationChanged', from: a.solarCalibrated, to: b.solarCalibrated });
+  }
 
   for (let i = 0; i < n; i++) {
     const sa = a.steps[i];
     const sb = b.steps[i];
+    if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged)) changedSteps.push(i + 1);
     if (sa.choiceIndex !== sb.choiceIndex) {
-      changedSteps.push(i + 1);
       reasons.push({ kind: 'choiceChanged', step: i + 1, fromIndex: sa.choiceIndex, toIndex: sb.choiceIndex });
     }
   }

@@ -166,10 +166,12 @@ test('aborts inside a phase and stops adding time and reserves', () => {
   assert.equal(terminal.steps.at(-1).env.simulatedHours, terminal.elapsedHours - 192);
 });
 
-test('conserves energy and crew stores across every one of the 729 routes', () => {
+test('conserves energy and crew stores across all 729 routes with and without calibration', () => {
   const outcomes = new Set();
-  for (let path = 0; path < 3 ** 6; path++) {
-    const result = runSimulation([...path.toString(3).padStart(6, '0')].map(Number));
+  const routeCount = 3 ** 6;
+  for (let input = 0; input < 2 * routeCount; input++) {
+    const choices = [...(input % routeCount).toString(3).padStart(6, '0')].map(Number);
+    const result = runSimulation(choices, { solarCalibrated: input >= routeCount });
     outcomes.add(result.outcome);
     assert.equal(result.history.length, result.steps.length + 1);
     assert.equal(result.resourceHistory.length, result.history.length);
@@ -204,4 +206,26 @@ test('uses modeled site illumination and shadow duration to compare solar plans'
   assert.ok(shackleton.reserveMarginKwh > 0);
   assert.ok(ridge.reserveMarginKwh < 0);
   near(estimateSitePower(LUNAR_PLANNING_SITES[0], 27.5).reserveMarginKwh, 0);
+});
+
+test('solar calibration changes only the modeled pointing and is recorded as a D1 replay input', () => {
+  const choices = [2, 1, 1, 1, 1, 1];
+  const a = runSimulation(choices);
+  const b = runSimulation(choices, { solarCalibrated: true });
+  assert.equal(a.solarCalibrated, false);
+  assert.equal(b.solarCalibrated, true);
+  assert.deepEqual(runSimulation(choices, { solarCalibrated: true }), b);
+  assert.deepEqual(a.history[0], b.history[0]);
+  assert.deepEqual(a.resourceHistory[0], b.resourceHistory[0]);
+  near(a.steps[0].env.orientationFactor, Math.cos(25 * Math.PI / 180), 0.0005);
+  near(b.steps[0].env.orientationFactor, Math.cos(4 * Math.PI / 180), 0.0005);
+  assert.equal(a.steps[2].env.meanSurfaceTempK, b.steps[2].env.meanSurfaceTempK);
+  near(a.steps[2].env.arrayOutputFactor / a.steps[2].env.orientationFactor,
+    b.steps[2].env.arrayOutputFactor / b.steps[2].env.orientationFactor, 0.002);
+  assert.ok(b.steps[0].env.generationKwh > a.steps[0].env.generationKwh);
+  const comparison = compareRuns(a, b);
+  assert.deepEqual(comparison.changedSteps, [1]);
+  assert.deepEqual(comparison.reasons[0], { kind: 'solarCalibrationChanged', from: false, to: true });
+  assert.deepEqual(runSimulation([1], { solarCalibrated: true }).history, runSimulation([1]).history);
+  assert.equal(runSimulation([], { solarCalibrated: true }).solarCalibrated, false);
 });

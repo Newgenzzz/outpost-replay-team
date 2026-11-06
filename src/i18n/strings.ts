@@ -224,8 +224,8 @@ export const STRINGS = {
 
   // Quick Guided Onboarding
   guideWalk: { en: '1. Walk [WASD/Click] or Drive [V]', az: '1. Hərəkət et [WASD/Klik] və ya Sür [V]' },
-  guideTerminal: { en: '2. Open glowing Sector Terminal [E]', az: '2. İşıqlı Sektor Terminalını Aç [E]' },
-  guideSimulate: { en: '3. Complete six decisions, then compare [R]', az: '3. Altı qərarı tamamla və müqayisə et [R]' },
+  guideTerminal: { en: '2. Open a station [E] and preview your choices', az: '2. Stansiyanı aç [E] və seçimlərin nəticəsinə bax' },
+  guideSimulate: { en: '3. Apply a choice, then compare after the run [R]', az: '3. Seçimi tətbiq et, gedişdən sonra müqayisə et [R]' },
   jumpToActive: { en: 'Auto-Pilot to Sector', az: 'Sektora Avtopilotla Get' },
   openConsole: { en: 'Open Console [E]', az: 'Konsolu Aç [E]' },
   debriefTitle: { en: 'Phase Telemetry Debrief', az: 'Mərhələ Telemetriya Yekunu' },

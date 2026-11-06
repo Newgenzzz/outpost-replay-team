@@ -16,10 +16,25 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
     return <p className="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-xs text-slate-400">{t('noDifference')}</p>;
   }
 
+  const inputChanges = cmp.reasons.filter((reason) => reason.kind === 'choiceChanged' || reason.kind === 'solarCalibrationChanged');
+  const downstreamEffects = cmp.reasons.filter((reason) => reason.kind !== 'choiceChanged' && reason.kind !== 'solarCalibrationChanged');
+  const lowReserveHours = (run: SimulationResult) =>
+    run.steps.reduce((hours, step) => hours + step.env.lowPowerHours, 0);
+  const lowReserveA = lowReserveHours(a);
+  const lowReserveB = lowReserveHours(b);
+
   const stepLabel = (s: number | null) => (s === null ? t('never') : t('atStep', { step: s }));
 
   const render = (r: ComparisonReason) => {
     switch (r.kind) {
+      case 'solarCalibrationChanged':
+        return {
+          Icon: ArrowRightLeft,
+          cls: 'text-amber-200',
+          text: r.to
+            ? lang === 'az' ? 'D1 · B gedişi panel kalibrləməsini istifadə etdi.' : 'D1 · Run B used solar calibration.'
+            : lang === 'az' ? 'D1 · B gedişi panel kalibrləməsini istifadə etmədi.' : 'D1 · Run B omitted solar calibration.',
+        };
       case 'choiceChanged': {
         const d = MISSION_DECISIONS[r.step - 1];
         return {
@@ -70,12 +85,24 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           ? 'İlkin ehtiyatlar və xarici hadisələrin cədvəli hər iki gedişdə eynidir.'
           : 'Both runs share their starting reserves and the same schedule of external events.'}
       </p>
+      <ul className="space-y-1 rounded-lg border border-white/10 bg-slate-950/45 p-2">
+        {inputChanges.map((change) => {
+          const { Icon, cls, text } = render(change);
+          return (
+            <li key={change.kind === 'choiceChanged' ? change.step : 'calibration'} className="flex gap-1.5 text-xs text-slate-200">
+              <Icon className={`h-4 w-4 shrink-0 ${cls}`} />
+              {text}
+            </li>
+          );
+        })}
+      </ul>
       {sameEndpoint ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] text-slate-400">{t('deltaFinal')}:</span>
           {METRICS.map((m) => (
             <span key={m.key} className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] tabular-nums ${deltaTone(cmp.finalDelta[m.key], m.higherIsBetter)}`}>
-              <m.icon className="h-3 w-3" /> {signed(cmp.finalDelta[m.key])} {t(m.unitKey)}
+              <m.icon className="h-3 w-3" aria-hidden="true" /> {t(m.labelKey)} {signed(cmp.finalDelta[m.key])}{' '}
+              {m.key === 'lifeSupportPct' ? (lang === 'az' ? 'faiz b.' : 'pp') : t(m.unitKey)}
             </span>
           ))}
         </div>
@@ -94,12 +121,19 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
             : `After the first changed decision (D${firstChange}), Run A had ${fmt(phaseA.after.powerKwh)} kWh left and Run B had ${fmt(phaseB.after.powerKwh)} kWh.`}
         </p>
       )}
-      <details className="text-xs text-fuchsia-100">
+      {sameEndpoint && lowReserveA !== lowReserveB && (
+        <p className="text-xs leading-relaxed text-amber-200">
+          {lang === 'az'
+            ? `A gedişində ${lowReserveA}, B gedişində isə ${lowReserveB} saat batareya ehtiyatı aşağı qaldı. Aşağı ehtiyat suyun təkrar emalını zəiflədir.`
+            : `Run A spent ${lowReserveA} h on low battery reserve and Run B spent ${lowReserveB} h. Low reserve reduces water recovery.`}
+        </p>
+      )}
+      {downstreamEffects.length > 0 && <details className="text-xs text-fuchsia-100">
         <summary className="cursor-pointer py-1 font-semibold">
           {lang === 'az' ? 'Qərarlar və baş verən nəticələr' : 'Decisions and downstream effects'}
         </summary>
         <ul className="scrollbar-thin mt-1 max-h-48 space-y-1 overflow-y-auto pr-1">
-          {cmp.reasons.map((r, i) => {
+          {downstreamEffects.map((r, i) => {
             const { Icon, cls, text } = render(r);
             return (
               <li key={i} className="flex items-start gap-1.5 text-xs leading-snug text-slate-300">
@@ -109,7 +143,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
             );
           })}
         </ul>
-      </details>
+      </details>}
     </section>
   );
 }

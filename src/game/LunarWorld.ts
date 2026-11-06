@@ -1412,7 +1412,7 @@ export class LunarWorld extends Phaser.Scene {
       this.lastSnapshot = snap;
 
       const powerFrac = Math.max(0, Math.min(1, snap.energyPercent / 100));
-      this.habitatLight.setAlpha(0.06 + powerFrac * 0.34);
+      this.habitatLight.setAlpha(snap.powerLow ? 0.025 : 0.11 + powerFrac * 0.34);
       const cropsPowered = snap.choices[1] === 2 && !snap.powerLow;
       this.greenhouseLight.setFillStyle(cropsPowered ? 0xb9f5a7 : 0x9aafb2)
         .setAlpha(cropsPowered ? 0.24 + powerFrac * 0.32 : 0.07);

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,6 +16,7 @@ import {
   Volume2,
   Zap,
 } from 'lucide-react';
+import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { CITATIONS, RADIATION_LIMITS } from '../data/nasaTelemetry';
@@ -110,7 +111,10 @@ interface DecisionCardProps {
   flagsBefore: FlagId[];
   priorChoices?: number[];
   canChoose: boolean;
-  onChoose: (index: number) => void;
+  solarCalibrated: boolean;
+  solarCalibrationAvailable: boolean;
+  solarExercise?: ReactNode;
+  onChoose: (index: number, solarCalibrated: boolean) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -125,6 +129,9 @@ export default function DecisionCard(props: DecisionCardProps) {
     flagsBefore,
     priorChoices = [],
     canChoose,
+    solarCalibrated,
+    solarCalibrationAvailable,
+    solarExercise,
     onChoose,
     onPrev,
     onNext,
@@ -133,6 +140,8 @@ export default function DecisionCard(props: DecisionCardProps) {
   const [inspectedChoice, setInspectedChoice] = useState<number | null>(null);
   const [hypothesis, setHypothesis] = useState<'safe' | 'drain' | null>(null);
   const [copilotEnabled, setCopilotEnabled] = useState(false);
+  const [calibrationOverride, setCalibrationOverride] = useState<boolean | null>(null);
+  const useCalibration = calibrationOverride ?? solarCalibrated;
 
   const decision = MISSION_DECISIONS[step - 1];
   const activeChoice = mode === 'branch' ? choiceB : choiceA;
@@ -143,8 +152,8 @@ export default function DecisionCard(props: DecisionCardProps) {
   const forecasts = useMemo(() => {
     const prefix = priorChoices.slice(0, step - 1);
     if (prefix.length !== step - 1) return [];
-    return decision.choices.map((_, index) => runSimulation([...prefix, index]).steps[step - 1]);
-  }, [decision, priorChoices, step]);
+    return decision.choices.map((_, index) => runSimulation([...prefix, index], { solarCalibrated: useCalibration }).steps[step - 1]);
+  }, [decision, priorChoices, step, useCalibration]);
   const forecastStep = forecasts[inspectedIdx];
 
   const willBeSafe = (forecastStep?.env.lowPowerHours ?? 0) === 0;
@@ -264,6 +273,34 @@ export default function DecisionCard(props: DecisionCardProps) {
         </div>
       )}
 
+      {solarExercise && (
+        <div className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
+          <details>
+            <summary className="cursor-pointer font-semibold text-amber-200">
+              {lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'}
+            </summary>
+            <div className="mt-2">{solarExercise}</div>
+          </details>
+          {(solarCalibrationAvailable || solarCalibrated) && (
+            <label className="mt-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={useCalibration}
+                disabled={!canChoose}
+                onChange={(event) => setCalibrationOverride(event.target.checked)}
+                className="accent-amber-300"
+              />
+              {lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'}
+            </label>
+          )}
+          <p className="mt-1 text-slate-300">
+            {lang === 'az'
+              ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
+              : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`}
+          </p>
+        </div>
+      )}
+
       <p className="text-xs text-slate-300">
         {lang === 'az'
           ? 'Model üzrə mərhələnin əvvəlindən sonuna dəyişiklik. Mühit və əvvəlki qərarlar nəzərə alınır. Həyat təminatındakı dəyişiklik faiz bəndi ilə göstərilir.'
@@ -377,7 +414,7 @@ export default function DecisionCard(props: DecisionCardProps) {
             : 'Select an option for its explanation and detailed forecast. Apply it to advance the mission.'}
         </p>
         {canChoose && (
-          <button type="button" onClick={() => onChoose(inspectedIdx)} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200">
+          <button type="button" onClick={() => onChoose(inspectedIdx, useCalibration)} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200">
             {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
           </button>
         )}
