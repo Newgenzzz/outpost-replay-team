@@ -117,6 +117,37 @@ test('applies LCROSS ice fraction only to processed training feedstock', () => {
   assert.ok(interrupted.resourceFlows.waterExtractedKg < expected);
 });
 
+test('applies prepared extraction to the same D4-A feedstock and powered fraction', () => {
+  const choices = [1, 0, 1, 0];
+  const standard = runSimulation(choices);
+  const prepared = runSimulation(choices, { icePrepared: true });
+  const fullYieldKg = 20 * LCROSS_CABEUS.waterIceMassFraction * 0.75;
+  assert.equal(standard.icePrepared, false);
+  assert.equal(prepared.icePrepared, true);
+  assert.deepEqual(runSimulation(choices, { icePrepared: true }), prepared);
+  assert.deepEqual(prepared.steps.slice(0, 3), standard.steps.slice(0, 3));
+  assert.deepEqual(prepared.steps[3].env, standard.steps[3].env);
+  near(prepared.steps[3].resourceFlows.waterExtractedKg, fullYieldKg);
+  near(prepared.resources.waterKg - standard.resources.waterKg, 0.168, 0.001);
+
+  const constrainedChoices = [2, 1, 2, 0];
+  const constrained = runSimulation(constrainedChoices).steps[3];
+  const constrainedPrepared = runSimulation(constrainedChoices, { icePrepared: true }).steps[3];
+  assert.ok(constrainedPrepared.env.unservedTaskKwh > 0);
+  assert.ok(constrainedPrepared.resourceFlows.waterExtractedKg < fullYieldKg);
+  near(constrainedPrepared.resourceFlows.waterExtractedKg, constrained.resourceFlows.waterExtractedKg * 1.25);
+
+  const maintenance = [1, 0, 1, 1];
+  assert.deepEqual(runSimulation(maintenance, { icePrepared: true }), runSimulation(maintenance));
+  const prefix = runSimulation(choices.slice(0, 3), { icePrepared: true });
+  assert.equal(prefix.icePrepared, false);
+  assert.deepEqual(compareRuns(prefix, prepared).changedSteps, []);
+  const comparison = compareRuns(standard, prepared);
+  assert.equal(comparison.firstDivergence, 4);
+  assert.deepEqual(comparison.changedSteps, [4]);
+  assert.deepEqual(comparison.reasons[0], { kind: 'icePreparationChanged', from: false, to: true });
+});
+
 test('integrates the same storm across shelter choices and weights EVA by timing', () => {
   const first = integrateSepDoseMsv(0, 24);
   const second = integrateSepDoseMsv(24, 48);
@@ -166,12 +197,18 @@ test('aborts inside a phase and stops adding time and reserves', () => {
   assert.equal(terminal.steps.at(-1).env.simulatedHours, terminal.elapsedHours - 192);
 });
 
-test('conserves energy and crew stores across all 729 routes with and without calibration', () => {
+test('conserves energy and crew stores across all 729 routes for every station setting', () => {
   const outcomes = new Set();
   const routeCount = 3 ** 6;
-  for (let input = 0; input < 2 * routeCount; input++) {
+  const equipmentSettings = [
+    {},
+    { solarCalibrated: true },
+    { icePrepared: true },
+    { solarCalibrated: true, icePrepared: true },
+  ];
+  for (let input = 0; input < equipmentSettings.length * routeCount; input++) {
     const choices = [...(input % routeCount).toString(3).padStart(6, '0')].map(Number);
-    const result = runSimulation(choices, { solarCalibrated: input >= routeCount });
+    const result = runSimulation(choices, equipmentSettings[Math.floor(input / routeCount)]);
     outcomes.add(result.outcome);
     assert.equal(result.history.length, result.steps.length + 1);
     assert.equal(result.resourceHistory.length, result.history.length);

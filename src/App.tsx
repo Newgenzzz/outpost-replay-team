@@ -42,6 +42,7 @@ import {
   STATIONS,
   WORLD,
   type ElevationTier,
+  type CropStatus,
   type LiveCrewState,
   type Point,
   type StationNode,
@@ -68,10 +69,13 @@ import { SampleDiscoveryModal } from './components/SampleDiscoveryModal';
 import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
 import { RULE_LABELS, runSimulation, type RuleId } from './engine/simulation';
-import type { MetricState } from './types';
+import { canPowerCrop, CROP_TRIAL } from './engine/resources';
+import type { MetricState, MissionTaskSettings } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
+
+const DEFAULT_TASK_SETTINGS: MissionTaskSettings = { solarCalibrated: false, icePrepared: false };
 
 const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string }> = {
   high_ridge: {
@@ -98,8 +102,8 @@ export default function App() {
   const [baselineChoices, setBaselineChoices] = useState<number[]>([]);
   /** Run B — copy of Run A with one or more rewound decisions (null = no branch yet). */
   const [rewoundChoices, setRewoundChoices] = useState<number[] | null>(null);
-  const [baselineSolarCalibrated, setBaselineSolarCalibrated] = useState(false);
-  const [branchSolarCalibrated, setBranchSolarCalibrated] = useState(false);
+  const [baselineTasks, setBaselineTasks] = useState(DEFAULT_TASK_SETTINGS);
+  const [branchTasks, setBranchTasks] = useState(DEFAULT_TASK_SETTINGS);
   const [viewStep, setViewStep] = useState(1);
 
   // Overlays & Modals
@@ -371,16 +375,17 @@ export default function App() {
   }, []);
 
   // Deterministic Simulation Runs
-  const runA = useMemo(() => runSimulation(baselineChoices, { solarCalibrated: baselineSolarCalibrated }),
-    [baselineChoices, baselineSolarCalibrated]);
+  const runA = useMemo(() => runSimulation(baselineChoices, baselineTasks),
+    [baselineChoices, baselineTasks]);
   const runB = useMemo(
-    () => (rewoundChoices ? runSimulation(rewoundChoices, { solarCalibrated: branchSolarCalibrated }) : null),
-    [rewoundChoices, branchSolarCalibrated],
+    () => (rewoundChoices ? runSimulation(rewoundChoices, branchTasks) : null),
+    [rewoundChoices, branchTasks],
   );
 
   const hasBranch = runB !== null;
   const activeRun = runB ?? runA;
   const activeChoices = rewoundChoices ?? baselineChoices;
+  const activeTasks = hasBranch ? branchTasks : baselineTasks;
   const completedPhases = activeRun.steps.length;
   const lastAvailableStep = Math.min(DECISION_COUNT, completedPhases + (activeRun.complete ? 0 : 1));
   const phase = MISSION_DECISIONS[viewStep - 1].phase;
@@ -391,12 +396,12 @@ export default function App() {
 
   const divergedStep = useMemo(() => {
     if (!rewoundChoices) return null;
-    if (baselineSolarCalibrated !== branchSolarCalibrated) return 1;
+    if (baselineTasks.solarCalibrated !== branchTasks.solarCalibrated) return 1;
     for (let i = 0; i < baselineChoices.length; i++) {
-      if (baselineChoices[i] !== rewoundChoices[i]) return i + 1;
+      if (baselineChoices[i] !== rewoundChoices[i] || (i === 3 && runA.icePrepared !== runB?.icePrepared)) return i + 1;
     }
     return rewoundChoices.length > baselineChoices.length ? baselineChoices.length + 1 : null;
-  }, [baselineChoices, rewoundChoices, baselineSolarCalibrated, branchSolarCalibrated]);
+  }, [baselineChoices, rewoundChoices, baselineTasks.solarCalibrated, branchTasks.solarCalibrated, runA.icePrepared, runB?.icePrepared]);
 
   const runAChoiceLabel = useMemo(() => {
     if (divergedStep === null) return 'CHOICE A';
@@ -441,23 +446,23 @@ export default function App() {
     }
   }
 
-  function handleChoose(choiceIndex: number, solarCalibrated: boolean) {
+  function handleChoose(choiceIndex: number, tasks: MissionTaskSettings) {
     if (!canChoose) return;
 
     // Run B keeps the original plan for executed phases and can extend a rescued run.
     const nextChoices = activeChoices.slice();
     nextChoices[viewStep - 1] = choiceIndex;
-    const preview = runSimulation(nextChoices, { solarCalibrated });
+    const preview = runSimulation(nextChoices, tasks);
     const debriefStep = preview.steps[viewStep - 1];
     if (!debriefStep) return;
 
     soundFX.play(hasBranch ? 'rewind' : 'choice');
     if (hasBranch) {
       setRewoundChoices(nextChoices);
-      setBranchSolarCalibrated(solarCalibrated);
+      setBranchTasks(tasks);
     } else {
       setBaselineChoices(nextChoices);
-      setBaselineSolarCalibrated(solarCalibrated);
+      setBaselineTasks(tasks);
     }
     setLastDebrief({
       step: debriefStep.step,
@@ -485,7 +490,7 @@ export default function App() {
     if (runA.complete && !rewoundChoices) {
       soundFX.play('rewind');
       setRewoundChoices([...baselineChoices]);
-      setBranchSolarCalibrated(baselineSolarCalibrated);
+      setBranchTasks(baselineTasks);
     }
   }
 
@@ -510,8 +515,8 @@ export default function App() {
     soundFX.play('StepNav');
     resetFieldwork();
     setBaselineChoices([]);
-    setBaselineSolarCalibrated(false);
-    setBranchSolarCalibrated(false);
+    setBaselineTasks(DEFAULT_TASK_SETTINGS);
+    setBranchTasks(DEFAULT_TASK_SETTINGS);
     setRewoundChoices(null);
     setDemoStage(null);
     setViewStep(1);
@@ -545,8 +550,8 @@ export default function App() {
   function handleAdvanceTour(stage: DemoStage) {
     soundFX.play('tourChime');
     if (stage !== 'rewind') setRewoundChoices(null);
-    setBaselineSolarCalibrated(false);
-    setBranchSolarCalibrated(false);
+    setBaselineTasks(DEFAULT_TASK_SETTINGS);
+    setBranchTasks(DEFAULT_TASK_SETTINGS);
     if (stage === 'setup') {
       setBaselineChoices(MISSION_DEMO.baseline.slice(0, 2));
       setViewStep(MISSION_DEMO.rewindStep);
@@ -575,7 +580,7 @@ export default function App() {
     if (!runB || !rewoundChoices) return;
     soundFX.play('choice');
     setBaselineChoices(rewoundChoices);
-    setBaselineSolarCalibrated(branchSolarCalibrated);
+    setBaselineTasks(branchTasks);
     setRewoundChoices(null);
     setViewStep(Math.min(viewStep, runB.steps.length + (runB.complete ? 0 : 1)));
   }
@@ -586,12 +591,12 @@ export default function App() {
       soundFX.play('hotspot');
       if (runA.complete && !hasBranch) {
         setRewoundChoices([...baselineChoices]);
-        setBranchSolarCalibrated(baselineSolarCalibrated);
+        setBranchTasks(baselineTasks);
       }
       setViewStep(station.decisionId);
       setDecisionModalOpen(true);
     },
-    [lastAvailableStep, runA.complete, hasBranch, baselineChoices, baselineSolarCalibrated],
+    [lastAvailableStep, runA.complete, hasBranch, baselineChoices, baselineTasks],
   );
 
   const handleNavigateFromMap = useCallback((station: StationNode, instant: boolean) => {
@@ -671,11 +676,23 @@ export default function App() {
     return distBunker <= 140 || distHabitat <= 155;
   }, [position.x, position.y]);
 
+  const { cropGrowthDays, harvestedFoodKg } = displayedResources;
+  const cropProgress = Math.max(0, Math.min(1,
+    (cropGrowthDays - CROP_TRIAL.ageAtInstallDays) / (CROP_TRIAL.harvestAgeDays - CROP_TRIAL.ageAtInstallDays),
+  ));
+  const cropStatus: CropStatus = harvestedFoodKg > 0 ? 'harvested'
+    : cropGrowthDays === 0 ? 'idle'
+    : (activeRun.outcome === 'abort' && activeRecord?.endHour === activeRun.elapsedHours) ||
+      !canPowerCrop(displayedResources, currentMetrics.powerKwh) ? 'paused'
+    : cropProgress > 0 ? 'growing' : 'ready';
+
   const worldSnapshot = useMemo(
     () => ({
       energyPercent: currentMetrics.powerKwh,
       powerLow: currentMetrics.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh,
-      lifeSupportLow: currentMetrics.lifeSupportPct < 40,
+      lifeSupportLow: currentMetrics.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct,
+      cropStatus,
+      cropProgress,
       activeStep: viewStep,
       completedCount: completedPhases,
       choices: activeChoices,
@@ -691,6 +708,8 @@ export default function App() {
     [
       currentMetrics.powerKwh,
       currentMetrics.lifeSupportPct,
+      cropStatus,
+      cropProgress,
       viewStep,
       activeChoices,
       completedPhases,
@@ -1124,26 +1143,19 @@ export default function App() {
         </button>
       </section>
 
-      {/* 3-Step Guided Onboarding Strip (Dismissible) */}
       {!guideDismissed && (
-        <aside className="guide-banner" role="region" aria-label="Quick Onboarding">
-          <div className="flex items-center gap-1.5 font-bold text-[#c0e6aa]">
-            <Sparkles size={13} />
-            <span className="hidden sm:inline">
-              {lang === 'az' ? '3 Sadə Addımla Necə Oynamalı:' : 'How to Play in 3 Steps:'}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-200">
-            <span>{t('guideWalk')}</span>
-            <span className="text-slate-500">•</span>
-            <span>{t('guideTerminal')}</span>
-            <span className="text-slate-500">•</span>
-            <span>{t('guideSimulate')}</span>
-          </div>
+        <aside className="guide-banner" aria-label={t('guideTitle')}>
+          <strong className="flex items-center gap-1.5 text-[#c0e6aa]">
+            <Sparkles size={13} aria-hidden="true" />
+            {t('guideTitle')} · {runA.complete ? 3 : completedPhases > 0 ? 2 : 1}/3
+          </strong>
+          <span className="flex-1 text-slate-100" role="status">
+            {t(runA.complete ? 'guideReplay' : completedPhases > 0 ? 'guideAfterChoice' : 'guideStart')}
+          </span>
           <button
             type="button"
             onClick={() => setGuideDismissed(true)}
-            className="ml-auto rounded border border-white/15 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-white/10"
+            className="rounded border border-white/15 px-2 py-0.5 text-[11px] text-slate-200 hover:bg-white/10"
           >
             {t('dismissGuide')}
           </button>
@@ -1257,12 +1269,18 @@ export default function App() {
           <h1>
             {runA.complete && !hasBranch
               ? t(`outcome.${runA.outcome}`)
-              : tr(activeStation.objectiveTitle)}
+              : viewStep === 1 && completedPhases === 0
+                ? lang === 'az' ? 'Günəş enerjisini qur' : 'Set up solar power'
+                : tr(activeStation.objectiveTitle)}
           </h1>
           <p>
             {runA.complete && !hasBranch
               ? t('timelineHintComplete')
-              : tr(activeStation.objectiveBody)}
+              : viewStep === 1 && completedPhases === 0
+                ? lang === 'az'
+                  ? 'Günəş panelləri qızdırıcıları və həyat təminatını işlədən batareyanı doldurur. Kölgəyə hazırlaşmaq üçün panel quruluşunu seç.'
+                  : 'Solar panels charge the battery that runs heaters and life support. Choose a setup before the shadow arrives.'
+                : tr(activeStation.objectiveBody)}
           </p>
 
           <div
@@ -1284,8 +1302,35 @@ export default function App() {
             )}
           </div>
 
+          {worldSnapshot.lifeSupportLow && (
+            <div role="status" className="mt-1.5 text-xs font-semibold text-rose-200">
+              {lang === 'az' ? 'Həyat təminatı ehtiyatı azdır' : 'Life support reserve low'}
+            </div>
+          )}
+          {cropStatus !== 'idle' && (
+            <div role="status" className="mt-1.5 text-xs text-emerald-200">
+              {lang === 'az' ? 'İstixana' : 'Greenhouse'} · {
+                tr({
+                  ready: { en: 'ready to grow', az: 'böyüməyə hazırdır' },
+                  growing: { en: 'growing', az: 'böyüyür' },
+                  paused: { en: 'growth paused', az: 'böyümə dayanıb' },
+                  harvested: { en: 'harvested', az: 'məhsul yığılıb' },
+                }[cropStatus])
+              } · {Math.round(cropProgress * 100)}%
+            </div>
+          )}
+
           {/* Quick Action Navigation & Direct Console Trigger Buttons */}
-          {!runA.complete && (
+          {runA.complete ? (
+            <button
+              type="button"
+              onClick={() => setTelemetryDrawerOpen(true)}
+              className="mt-2.5 inline-flex items-center gap-2 rounded-md border border-sky-300/35 bg-sky-950/65 px-2.5 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-900/65"
+            >
+              <GitBranch size={13} aria-hidden="true" />
+              {t('compareTitle')}
+            </button>
+          ) : (
             <div className="mt-2.5 flex items-center gap-2">
               <button
                 type="button"
@@ -1714,9 +1759,9 @@ export default function App() {
               record={activeRecord}
               flagsBefore={flagsBefore}
               priorChoices={activeChoices}
-              solarCalibrated={activeRun.solarCalibrated}
-              solarCalibrationAvailable={calibratedTasks[0]}
-              solarExercise={viewStep === 1 ? stationExercise : undefined}
+              taskSettings={activeTasks}
+              taskAvailable={calibratedTasks[viewStep - 1]}
+              taskExercise={viewStep === 1 || viewStep === 4 ? stationExercise : undefined}
               canChoose={canChoose}
               onChoose={handleChoose}
               onPrev={() => setViewStep((s) => Math.max(1, s - 1))}
@@ -1730,7 +1775,7 @@ export default function App() {
               }}
             />
 
-            {viewStep !== 1 && <div className="mt-3.5">{stationExercise}</div>}
+            {viewStep !== 1 && viewStep !== 4 && <div className="mt-3.5">{stationExercise}</div>}
           </div>
         </div>
       )}
@@ -1827,8 +1872,10 @@ export default function App() {
                   const stepNum = d.id;
                   const cA = baselineChoices[idx];
                   const cB = rewoundChoices?.[idx];
-                  const calibrationChanged = stepNum === 1 && runB?.solarCalibrated !== runA.solarCalibrated;
-                  const changed = hasBranch && cB !== undefined && (cA !== cB || calibrationChanged);
+                  const taskChanged =
+                    (stepNum === 1 && runB?.solarCalibrated !== runA.solarCalibrated) ||
+                    (stepNum === 4 && runB?.icePrepared !== runA.icePrepared);
+                  const changed = hasBranch && cB !== undefined && (cA !== cB || taskChanged);
                   const active = viewStep === stepNum;
                   const unlocked = stepNum <= lastAvailableStep;
 
@@ -1855,8 +1902,10 @@ export default function App() {
                       <span className="mt-1.5 font-mono text-[10px] text-[#c0e6aa]">
                         {cA !== undefined ? `A: ${CHOICE_LETTERS[cA]}` : '—'}
                         {cB !== undefined ? ` → B: ${CHOICE_LETTERS[cB]}` : ''}
-                        {changed && calibrationChanged && (
-                          <span className="block">{lang === 'az' ? 'Kalibrləmə dəyişdi' : 'Calibration changed'}</span>
+                        {changed && taskChanged && (
+                          <span className="block">{stepNum === 1
+                            ? lang === 'az' ? 'Kalibrləmə dəyişdi' : 'Calibration changed'
+                            : lang === 'az' ? 'Emal hazırlığı dəyişdi' : 'Extractor preparation changed'}</span>
                         )}
                       </span>
                     </button>

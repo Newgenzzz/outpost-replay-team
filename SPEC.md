@@ -33,7 +33,7 @@ Shackleton Rim Survival is a fictional nine-day exercise with a two-person crew.
 
 ## Replay contract
 
-Run A locks its choices in order. Run B copies the plan and replaces the selected decision. Both use identical starting stores and the same schedule of external events. Any plan supplied for later phases stays fixed. After an early Run A abort, the player supplies decisions for newly reachable phases. Each run records whether the player applied the optional D1 solar calibration. A branch inherits that input and can change it at D1. Other field exercises and sample collection do not change the mission ledger.
+Run A locks its choices in order. Run B copies the plan and replaces the selected decision. Both use identical starting stores and the same schedule of external events. Any plan supplied for later phases stays fixed. After an early Run A abort, the player supplies decisions for newly reachable phases. Each run records the optional D1 solar calibration and D4 extractor preparation. A branch inherits these inputs and can change them at their respective decisions. A field core or three console pulses unlock extractor preparation, which affects the water yield only when applied with D4 option A.
 
 Charts plot phase endpoints against elapsed mission hours and stop at the last simulated hour. The UI displays endpoint metric and score deltas only when both runs end at the same hour. Result cards include the actual elapsed time, resources, brownout and outage hours, greenhouse result and cause of an abort.
 

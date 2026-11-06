@@ -223,13 +223,23 @@ export const STRINGS = {
   crewMassBalanceLabel: { en: 'Crew Consumables', az: 'Ekipaj Sərfi' },
 
   // Quick Guided Onboarding
-  guideWalk: { en: '1. Walk [WASD/Click] or Drive [V]', az: '1. Hərəkət et [WASD/Klik] və ya Sür [V]' },
-  guideTerminal: { en: '2. Open a station [E] and preview your choices', az: '2. Stansiyanı aç [E] və seçimlərin nəticəsinə bax' },
-  guideSimulate: { en: '3. Apply a choice, then compare after the run [R]', az: '3. Seçimi tətbiq et, gedişdən sonra müqayisə et [R]' },
-  jumpToActive: { en: 'Auto-Pilot to Sector', az: 'Sektora Avtopilotla Get' },
+  guideTitle: { en: 'Mission guide', az: 'Missiya bələdçisi' },
+  guideStart: {
+    en: 'Keep two astronauts safe for nine days near Shackleton crater. Walk with WASD or click, then open the solar station with E or Open Console.',
+    az: 'Şeklton krateri yaxınlığında iki astronavtı doqquz gün təhlükəsiz saxla. WASD ilə və ya klikləyərək hərəkət et, sonra E ilə və ya Konsolu Aç düyməsi ilə günəş stansiyasını aç.',
+  },
+  guideAfterChoice: {
+    en: 'Check what changed in your reserves. At the next station, compare the forecasts before you apply a choice.',
+    az: 'Ehtiyatlarında nəyin dəyişdiyinə bax. Növbəti stansiyada qərarı tətbiq etməzdən əvvəl proqnozları müqayisə et.',
+  },
+  guideReplay: {
+    en: 'Open Rewind & Compare [R], pick one past decision, and see what changes when you try a different option.',
+    az: 'Geri Sar və Müqayisə Et [R] bölməsini aç, əvvəlki qərarlardan birini seç və başqa variantın nəticəsini yoxla.',
+  },
+  dismissGuide: { en: 'Hide guide', az: 'Bələdçini gizlət' },
+  jumpToActive: { en: 'Walk to station', az: 'Stansiyaya get' },
   openConsole: { en: 'Open Console [E]', az: 'Konsolu Aç [E]' },
   debriefTitle: { en: 'Phase Telemetry Debrief', az: 'Mərhələ Telemetriya Yekunu' },
-  dismissGuide: { en: 'Got it', az: 'Aydındır' },
 
   // Championship Tools & Modals
   judgeTourButton: { en: 'Guided Demo', az: 'Bələdçili Demo' },

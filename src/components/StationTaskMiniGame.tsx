@@ -330,8 +330,8 @@ export default function StationTaskMiniGame({
             >
               {completed
                 ? lang === 'az'
-                  ? 'H₂O HAZIRDIR'
-                  : 'H₂O EXTRACTED'
+                  ? 'QURĞU HAZIRDIR'
+                  : 'EXTRACTOR PREPARED'
                 : lang === 'az'
                   ? 'LAZER İMPULSU'
                   : 'PULSE LASER'}

@@ -7,8 +7,10 @@ const waterDemandKgPerDay = crewSize * 3;
 const oxygenDemandKgPerDay = crewSize * ECLSS_BASELINES.o2KgPerCrewDay;
 const rationDemandKgPerDay = crewSize * 0.62;
 const nominalWaterRecovery = 0.85;
-const iceTreatmentEfficiency = 0.6;
 const epsilon = 1e-9;
+
+/** Assumed recovery fractions for the D4-A ice treatment exercise. */
+export const ICE_TREATMENT_RECOVERY = { standard: 0.6, prepared: 0.75 } as const;
 
 /** Classroom assumptions for an established tray of leafy greens. */
 export const CROP_TRIAL = {
@@ -82,6 +84,7 @@ export function advanceResources(
   outage: boolean,
   cropPowered: boolean,
   taskPowerFraction: number,
+  usePreparedExtractor = false,
 ): void {
   const taskOxygenKg = (choice.resourceEffects?.oxygenKg ?? 0) / phaseHours;
   const netOxygenSupply = taskOxygenKg > 0 ? taskOxygenKg * taskPowerFraction : taskOxygenKg;
@@ -95,8 +98,11 @@ export function advanceResources(
   const recovery = Math.min(0.98, waterRecovery + serviceBonus);
   const grossWaterUse = waterDemandKgPerDay / hoursPerDay;
   const taskWaterKg = (choice.resourceEffects?.waterKg ?? 0) / phaseHours;
+  const iceTreatmentRecovery = usePreparedExtractor
+    ? ICE_TREATMENT_RECOVERY.prepared
+    : ICE_TREATMENT_RECOVERY.standard;
   const waterExtractedKg = (choice.iceProcessingKg ?? 0) / phaseHours *
-    LCROSS_CABEUS.waterIceMassFraction * iceTreatmentEfficiency * taskPowerFraction;
+    LCROSS_CABEUS.waterIceMassFraction * iceTreatmentRecovery * taskPowerFraction;
   const waterAddedKg = Math.max(0, taskWaterKg) + waterExtractedKg;
   const availableWater = resources.waterKg + waterAddedKg;
   const crewNetUse = Math.min(availableWater, grossWaterUse * (1 - recovery));

@@ -576,10 +576,14 @@ export function facingDirection(vector: Point, previous: Facing): Facing {
       : 'up';
 }
 
+export type CropStatus = 'idle' | 'ready' | 'growing' | 'paused' | 'harvested';
+
 export interface WorldSnapshot {
   energyPercent: number;
   powerLow: boolean;
   lifeSupportLow: boolean;
+  cropStatus: CropStatus;
+  cropProgress: number;
   activeStep: number;
   completedCount: number;
   choices: number[];

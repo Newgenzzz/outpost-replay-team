@@ -28,7 +28,6 @@ Versions below come from the installed packages and correspond to the lockfile. 
 | `@types/three` | 0.187.0 | MIT | [Project](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/three) |
 | `@vitejs/plugin-react` | 4.7.0 | MIT | [Project](https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#readme) |
 | `canvas-confetti` | 1.9.4 | ISC | [Project](https://github.com/catdad/canvas-confetti#readme) |
-| `gsap` | 3.15.1 | [GSAP Standard No Charge License](https://gsap.com/community/standard-license/) | [Project](https://gsap.com) |
 | `lucide-react` | 0.468.0 | ISC | [Project](https://lucide.dev) |
 | `phaser` | 4.2.1 | MIT | [Project](https://phaser.io) |
 | `react` | 18.3.1 | MIT | [Project](https://reactjs.org/) |
@@ -39,4 +38,8 @@ Versions below come from the installed packages and correspond to the lockfile. 
 | `typescript` | 5.6.3 | Apache-2.0 | [Project](https://www.typescriptlang.org/) |
 | `vite` | 6.4.5 | MIT | [Project](https://vite.dev) |
 
-**Submission follow-up.** GSAP is declared in the package manifest and imported by the inactive `PhaserLunarRPG.tsx` component. Its Standard No Charge License contains use restrictions. Free availability alone does not establish that it meets the event terms. Remove the unused dependency and its legacy import from the submission copy, or resolve its eligibility with the organizers before submitting. Confirm asset rights and the project license, then carry the applicable license notices and citations into the submission.
+**GSAP review.** The legacy prototype's two GSAP animations were replaced with browser and Phaser animations, and GSAP was removed from the package and lockfile. The active outpost already used Phaser. The earlier package used the [GSAP Standard No Charge License](https://gsap.com/community/standard-license/), which limits the grant to permitted uses.
+
+The lockfile review also found the build-time `caniuse-lite` dataset (CC BY 4.0) and `webgl-constants` (MIT in its bundled LICENSE; absent from its package metadata). If distributing either package, carry its upstream notice.
+
+**Submission follow-up.** Confirm the team license and inherited artwork provenance before submission. Preserve applicable upstream notices, including those for transitive libraries in the final bundle, and include the source citations with the submission.
