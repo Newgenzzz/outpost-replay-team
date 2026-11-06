@@ -226,20 +226,24 @@ export const STRINGS = {
   // Quick Guided Onboarding
   guideTitle: { en: 'Mission guide', az: 'Missiya bələdçisi' },
   guideStart: {
-    en: 'Keep two astronauts safe for nine days near Shackleton crater. Walk with WASD or click, then open the solar station with E or Open Console.',
-    az: 'Şeklton krateri yaxınlığında iki astronavtı doqquz gün təhlükəsiz saxla. WASD ilə və ya klikləyərək hərəkət et, sonra E ilə və ya Konsolu Aç düyməsi ilə günəş stansiyasını aç.',
+    en: 'Keep two astronauts safe for nine days near Shackleton crater. Start at D1, the solar rim.',
+    az: 'Şeklton krateri yaxınlığında iki astronavtı doqquz gün təhlükəsiz saxlayın. D1 günəş stansiyasından başlayın.',
+  },
+  guideAtSolar: {
+    en: 'You reached the solar station. Press E to open the console and compare the three options.',
+    az: 'Günəş stansiyasına çatdınız. Konsolu açmaq və üç variantı müqayisə etmək üçün E düyməsini basın.',
   },
   guideAfterChoice: {
-    en: 'Check what changed in your reserves. At the next station, compare the forecasts before you apply a choice.',
-    az: 'Ehtiyatlarında nəyin dəyişdiyinə bax. Növbəti stansiyada qərarı tətbiq etməzdən əvvəl proqnozları müqayisə et.',
+    en: 'Read your last result, then compare options at the next station.',
+    az: 'Son nəticəyə baxın, sonra növbəti stansiyadakı variantları müqayisə edin.',
   },
   guideReplay: {
     en: 'Open Rewind & Compare [R], pick one past decision, and see what changes when you try a different option.',
     az: 'Geri Sar və Müqayisə Et [R] bölməsini aç, əvvəlki qərarlardan birini seç və başqa variantın nəticəsini yoxla.',
   },
   dismissGuide: { en: 'Hide guide', az: 'Bələdçini gizlət' },
-  jumpToActive: { en: 'Walk to station', az: 'Stansiyaya get' },
-  openConsole: { en: 'Open Console [E]', az: 'Konsolu Aç [E]' },
+  jumpToActive: { en: 'Go to station', az: 'Stansiyaya get' },
+  openConsole: { en: 'Open console', az: 'Konsolu aç' },
   debriefTitle: { en: 'Phase Telemetry Debrief', az: 'Mərhələ Telemetriya Yekunu' },
 
   // Championship Tools & Modals
