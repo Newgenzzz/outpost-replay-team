@@ -549,6 +549,11 @@ button:disabled {
   height: 100% !important;
 }
 
+.phaser-world:focus-visible {
+  outline: 2px solid #c0e6aaad;
+  outline-offset: -2px;
+}
+
 .world-vignette {
   position: absolute;
   inset: 0;
@@ -560,25 +565,6 @@ button:disabled {
     #0819231a 74%,
     #08141d60 100%
   );
-}
-
-.world-storm-klaxon {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  box-shadow: inset 0 0 90px rgba(244, 63, 94, 0.34);
-  animation: klaxon-pulse 1.3s ease-in-out infinite;
-}
-
-@keyframes klaxon-pulse {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.95;
-  }
 }
 
 /* Left Floating Objective & Crew Task Card */
@@ -633,6 +619,34 @@ button:disabled {
   color: #b4c4c5;
   font-size: 11.5px;
   line-height: 1.55;
+}
+
+@media (min-width: 1101px) {
+  .game-surface {
+    --mission-rail: 304px;
+    --action-rail: 368px;
+    background: linear-gradient(135deg, #142730, #0c1921 68%);
+  }
+
+  .game-surface .phaser-world {
+    left: var(--mission-rail);
+    width: calc(100% - var(--mission-rail));
+    box-shadow: -1px 0 #36515a;
+  }
+
+  .game-surface .world-vignette {
+    left: var(--mission-rail);
+  }
+
+  .game-surface .objective-card {
+    left: 16px;
+    width: calc(var(--mission-rail) - 32px);
+  }
+
+  .game-surface .interaction-area {
+    left: calc((100% + var(--mission-rail) - var(--action-rail)) / 2);
+    max-width: calc(100% - var(--mission-rail) - var(--action-rail) - 24px);
+  }
 }
 
 .objective-path {

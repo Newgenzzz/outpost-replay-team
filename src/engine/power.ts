@@ -52,7 +52,7 @@ export function newEnvironmentDetail(orientationFactor: number): EnvironmentDeta
   };
 }
 
-function environmentAtHour(hour: number, flags: ReadonlySet<FlagId>, orientationFactor: number) {
+export function environmentAtHour(hour: number, flags: ReadonlySet<FlagId>, orientationFactor: number) {
   let sample = LRO_PROFILE[0];
   for (const candidate of LRO_PROFILE) {
     if (candidate.hour > hour) break;

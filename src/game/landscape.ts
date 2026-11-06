@@ -21,10 +21,12 @@ function depression(x: number, y: number, r: number): string {
     <polygon points="${ring(r * 1.16)}" fill="#bcae98" opacity=".12"/>
     <polygon points="${ring(r * 1.06)}" fill="url(#crater-rim)"/>
     <polygon points="${ring(r)}" fill="url(#crater)"/>
-    <path d="M${-r} 0C${-r * 0.9} ${-r * 0.68} ${r * 0.8} ${-r * 0.68} ${r} 0" stroke="#e9dcc3" stroke-width="2" opacity=".45"/>
-    <path d="M${-r * 0.8} ${-r * 0.13}C${-r * 0.46} ${-r * 0.43} ${r * 0.52} ${-r * 0.4} ${r * 0.82} 0" stroke="#152534" stroke-width="${Math.max(3, r * 0.1)}" opacity=".68"/>
-    <path d="M${-r * 0.94} ${r * 0.1}C${-r * 0.7} ${r * 0.58} ${r * 0.72} ${r * 0.59} ${r * 0.99} 0" stroke="#d4c6a9" stroke-width="2" opacity=".52"/>
-    <path d="M${-r * 0.65} ${r * 0.17}q${r * 0.7} ${r * 0.3} ${r * 1.36} ${-r * 0.05}" stroke="#7d8590" stroke-width="1.2" opacity=".56"/>
+    <g transform="scale(${r / 100})">
+      <path d="M-99-4-83-28-52-43-23-51 13-53 50-46 81-30 101-2 70-17 40-23 5-25-38-20-71-10Z" fill="#182733" opacity=".86"/>
+      <path d="M-92 13-74 27-43 40-8 46 22 42 61 35 92 13 79 34 45 47 11 53-26 49-61 42-84 29Z" fill="#c1b49b" opacity=".57"/>
+      <path d="m-93-18 24-18 33-12 39-5 21 3m18 1 31 14 18 18m-155 49 36 13 37 5 34-4m13-3 22-11 17-15" stroke="#e3d4b8" stroke-width="2" opacity=".57"/>
+      <path d="m-76-10 26-10 27 2 17-6m-49 56 21 5 20-4m27 5 27-8 19-10 18-3" stroke="#71818a" stroke-width="1.7" opacity=".72"/>
+    </g>
   </g>`;
 }
 
@@ -61,9 +63,9 @@ export function terrain(): SvgAsset {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1120" viewBox="0 0 1840 1120" fill="none">
       <defs>
         <radialGradient id="ground" cx=".34" cy=".26" r=".88">
-          <stop stop-color="#a49b88"/>
-          <stop offset=".48" stop-color="#6d7074"/>
-          <stop offset="1" stop-color="#354857"/>
+          <stop stop-color="#a79d8b"/>
+          <stop offset=".50" stop-color="#777879"/>
+          <stop offset="1" stop-color="#435360"/>
         </radialGradient>
         <linearGradient id="crater" x1=".1" y1=".1" x2=".7" y2="1">
           <stop stop-color="#142330"/>
@@ -86,21 +88,16 @@ export function terrain(): SvgAsset {
           <stop offset="1" stop-color="#172634"/>
         </linearGradient>
         <radialGradient id="cold-trap" cx=".55" cy=".55" r=".62">
-          <stop stop-color="#0d2233"/>
-          <stop offset=".58" stop-color="#183448"/>
-          <stop offset="1" stop-color="#2c4657"/>
+          <stop stop-color="#3b4b57"/>
+          <stop offset=".58" stop-color="#303f4d"/>
+          <stop offset="1" stop-color="#222f3c"/>
         </radialGradient>
-        <filter id="mineral" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency=".018 .025" numOctaves="3" seed="18"/>
-          <feColorMatrix type="saturate" values="0"/>
-          <feComponentTransfer><feFuncA type="linear" slope=".17"/></feComponentTransfer>
-          <feBlend in="SourceGraphic" mode="soft-light"/>
-        </filter>
       </defs>
 
       <!-- Base Shackleton Regolith -->
       <path fill="url(#ground)" d="M0 0h1840v1120H0z"/>
-      <g filter="url(#mineral)"><path d="M0 0h1840v1120H0Z" fill="url(#ground)"/></g>
+      <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".09"/>
+      <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 139l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#465661" opacity=".19"/>
 
       <!-- Far Northern Space-Horizon Rim Silhouette -->
       <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78V0H0Z" fill="#08131e"/>
@@ -113,29 +110,27 @@ export function terrain(): SvgAsset {
       </g>
 
       <!-- ZONE 1: NW ELEVATED SUNLIT SHACKLETON RIM CREST (+2 ELEVATION, D1 SOLAR) -->
-      <path d="M40 468 195 496 420 502 615 476 705 398 715 165 510 132 195 140 40 205Z" fill="url(#sunlit-ridge)"/>
+      <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398 694 330 715 165 618 154 510 132 401 147 310 136 195 140 132 167 40 205Z" fill="url(#sunlit-ridge)"/>
       <!-- 2.5D Extruded Rock Cliff Wall along South/East Edge of Sunlit Ridge -->
-      <path d="M40 468 195 496 420 502 615 476 705 398 705 434 615 514 420 538 195 530 40 500Z" fill="url(#ridge-cliff)"/>
-      <path d="M40 468 195 496 420 502 615 476 705 398" stroke="#dfd3b9" stroke-width="3" opacity=".55"/>
+      <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398 705 434 669 457 615 514 561 520 487 529 420 538 280 523 195 530 117 513 40 500Z" fill="url(#ridge-cliff)"/>
+      <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398" stroke="#dfd3b9" stroke-width="3" opacity=".65"/>
       <g stroke="#1b2b39" stroke-width="2" opacity=".55">
         <path d="M120 482l-6 30m95-14-5 32m115-12-4 34m125-18-4 34m115-32-4 34m95-56-4 32"/>
       </g>
-      <path d="m46 472 149 29 225 6 195-26 86-75-41 56-44 36-196 27-138-12-80 8L46 494Z" fill="#75808a" opacity=".5"/>
+      <path d="m46 472 149 29 86-6 139 12 195-26 86-75-41 56-44 36-196 27-138-12-80 8L46 494Z" fill="#75808a" opacity=".5"/>
       <path d="m53 495 64 7 49-2 88 19 79-5 82 13 99-14 72-1 36-18 73-64" stroke="#131f2b" stroke-width="3" opacity=".67"/>
       <path d="m45 293 58-16 69 14 24-18 82 7m290-70 49-12 64 18 16 35m-420 186 63 8 72-11 46 5" stroke="#d8cbb1" stroke-width="1.5" opacity=".22"/>
+      <path d="m43 213 113-48 91-17 60 13-56 30-82 2-58 46-69 13Zm522 25 46-36 57 12 31 31-14 45-41-18-48 4Z" fill="#bdac8d" opacity=".22"/>
 
       <!-- ZONE 3: SE SUNKEN 90 K PERMANENTLY SHADOWED COLD-TRAP BASIN (-2 ELEVATION, D4 ICE) -->
-      <path d="M1035 675 1185 622 1465 618 1695 668 1765 815 1735 995 1515 1058 1175 1048 1005 945 985 785Z" fill="#213546"/>
-      <path d="M1055 702 1195 654 1458 650 1672 696 1738 825 1710 978 1505 1034 1188 1024 1032 932 1012 795Z" fill="url(#cold-trap)"/>
+      <path d="M1035 675 1108 652 1185 622 1300 615 1388 628 1465 618 1558 632 1612 655 1695 668 1745 748 1765 815 1754 883 1756 925 1735 995 1601 1041 1515 1058 1374 1043 1276 1058 1175 1048 1082 1005 1005 945 999 854 985 785Z" fill="#253543"/>
+      <path d="M1055 702 1195 654 1302 643 1391 658 1458 650 1534 659 1588 680 1672 696 1716 762 1738 825 1726 888 1730 928 1710 978 1590 1021 1505 1034 1376 1019 1278 1035 1188 1024 1106 992 1032 932 1027 857 1012 795Z" fill="url(#cold-trap)"/>
       <!-- Stepped Crater Rim Wall at Top of Cold-Trap Basin -->
-      <path d="M1035 675 1185 622 1465 618 1695 668 1672 696 1458 650 1195 654 1055 702Z" fill="#132434" opacity=".82"/>
-      <path d="M1035 675 1185 622 1465 618 1695 668" stroke="#7aa2b8" stroke-width="2.5" opacity=".4"/>
-      <path d="M1055 702 1195 654 1458 650 1672 696l27 61-38-48-207-47-245 4-89 33Z" fill="#080f1e" opacity=".66"/>
-      <path d="M1020 915 1084 956 1198 1014 1506 1024 1707 971l-8 17-194 47-319-7-156-92Z" fill="#7b94a0" opacity=".18"/>
-      <!-- Subsurface Permafrost Crystalline Fractures -->
-      <g stroke="#38bdf8" stroke-width="1.6" opacity=".24">
-        <path d="m1155 790 65-24 48 18m125-32 72 22 40-15m-285 135 84-19 52 25m105-12 68-28"/>
-      </g>
+      <path d="M1035 675 1108 652 1185 622 1300 615 1388 628 1465 618 1558 632 1612 655 1695 668 1672 696 1588 680 1534 659 1458 650 1391 658 1302 643 1195 654 1055 702Z" fill="#182633" opacity=".9"/>
+      <path d="M1035 675 1108 652 1185 622 1300 615 1388 628 1465 618 1558 632 1612 655 1695 668" stroke="#a1a8a6" stroke-width="2.5" opacity=".42"/>
+      <path d="m1181 628 15 21m85-31 21 25m121-18 11 26m112-17-12 25m75-5-21 26m76-10 8 26m67 59-24 7m45 51-22 12m9 63-21 1" stroke="#536778" stroke-width="3" opacity=".65"/>
+      <path d="m1027 864 31 38 60 28 66 63 103 19 88-14 126 20 71-13 136-45-12 19-103 41-89 14-128-15-98 16-90-11-82-39-73-55Z" fill="#819095" opacity=".25"/>
+      <path d="m1138 759 57-17 56 12 50-16m78 31 42-14 54 15 39-9m-305 147 48-26 75 11 55 27m65-20 58-18 62-6" stroke="#89969c" stroke-width="1.3" opacity=".27"/>
 
       <!-- Ambient Impact Craters (placed outside main walkways) -->
       ${IMPACT_CRATERS.map(({ x, y, radius }) => depression(x, y, radius)).join('')}

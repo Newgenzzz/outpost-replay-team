@@ -70,6 +70,7 @@ import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
 import { RULE_LABELS, runSimulation, type RuleId } from './engine/simulation';
 import { canPowerCrop, CROP_TRIAL } from './engine/resources';
+import { environmentAtHour } from './engine/power';
 import type { MetricState, MissionTaskSettings } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
@@ -672,11 +673,14 @@ export default function App() {
 
   const isShadowCrisis = viewStep === 3 && completedPhases < 3 && !activeRun.complete;
   const isStormCrisis = viewStep === 5 && completedPhases < 5 && !activeRun.complete;
-  const nearShelterAccess = useMemo(() => {
-    const distBunker = Math.hypot(position.x - 795, position.y - 885);
-    const distHabitat = Math.hypot(position.x - 895, position.y - 395);
-    return distBunker <= 140 || distHabitat <= 155;
-  }, [position.x, position.y]);
+  const nearShelterAccess = nearbyStation?.decisionId === 5;
+  const solarSetup = activeRun.steps[0];
+  const solarOutputPct = activeRecord ? Math.round(activeRecord.env.arrayOutputFactor * 100)
+    : solarSetup ? Math.round(100 * environmentAtHour(
+      phase.startHour, new Set(flagsBefore), solarSetup.env.orientationFactor,
+    ).arrayOutputFactor) : null;
+  const iceRecord = viewStep >= 4 ? activeRun.steps[3] : undefined;
+  const iceWaterKg = iceRecord?.choiceId === 'D4-A' ? iceRecord.resourceFlows.waterExtractedKg : null;
 
   const { cropGrowthDays, harvestedFoodKg } = displayedResources;
   const cropProgress = Math.max(0, Math.min(1,
@@ -690,12 +694,20 @@ export default function App() {
 
   const worldSnapshot = useMemo(
     () => ({
-      energyPercent: currentMetrics.powerKwh,
+      batteryKwh: currentMetrics.powerKwh,
       powerLow: currentMetrics.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh,
       lifeSupportLow: currentMetrics.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct,
+      lifeSupportPct: currentMetrics.lifeSupportPct,
+      sunlightFraction: availableSunlight,
+      solarOutputPct,
       cropStatus,
       cropProgress,
+      harvestedFoodKg,
+      iceWaterKg,
+      iceBypassed: iceRecord !== undefined && iceWaterKg === null,
+      stormPending: isStormCrisis,
       activeStep: viewStep,
+      lastAvailableStep,
       completedCount: completedPhases,
       choices: activeChoices,
       hasBranch,
@@ -710,9 +722,16 @@ export default function App() {
     [
       currentMetrics.powerKwh,
       currentMetrics.lifeSupportPct,
+      availableSunlight,
+      solarOutputPct,
       cropStatus,
       cropProgress,
+      harvestedFoodKg,
+      iceWaterKg,
+      iceRecord,
+      isStormCrisis,
       viewStep,
+      lastAvailableStep,
       activeChoices,
       completedPhases,
       hasBranch,
@@ -1242,7 +1261,6 @@ export default function App() {
         />
 
         <div className="world-vignette" />
-        {isStormCrisis && !nearShelterAccess && <div className="world-storm-klaxon" />}
 
         {/* TOP-LEFT: Among-Us Style Task Tracker & Crew Radio Card */}
         <aside className="objective-card">
@@ -1318,7 +1336,17 @@ export default function App() {
                   paused: { en: 'growth paused', az: 'böyümə dayanıb' },
                   harvested: { en: 'harvested', az: 'məhsul yığılıb' },
                 }[cropStatus])
-              } · {Math.round(cropProgress * 100)}%
+              } · {harvestedFoodKg > 0 ? `${fmt(harvestedFoodKg)} ${lang === 'az' ? 'kq' : 'kg'}` : `${Math.round(cropProgress * 100)}%`}
+            </div>
+          )}
+          {viewStep <= 3 && solarOutputPct !== null && (
+            <div className="mt-1.5 text-xs text-amber-100">
+              {lang === 'az' ? `Panellər · nominal gücün ${solarOutputPct}%-i` : `Solar array · ${solarOutputPct}% of nominal output`}
+            </div>
+          )}
+          {iceWaterKg !== null && (
+            <div className="mt-1.5 text-xs text-sky-100">
+              {lang === 'az' ? `Emaldan alınan su · ${fmt(iceWaterKg, 2)} kq` : `Water recovered · ${fmt(iceWaterKg, 2)} kg`}
             </div>
           )}
 
@@ -1360,11 +1388,11 @@ export default function App() {
           {isShadowCrisis && (
             <div className="mt-2.5 rounded-lg border border-amber-400/40 bg-amber-950/45 px-2.5 py-1.5 text-[11px] text-amber-200">
               <strong>
-                {lang === 'az' ? '⚡ QARANLIQ BÖHRANI:' : '⚡ LIGHTS OUT (72h SHADOW):'}
+                {lang === 'az' ? '72 SAATLIQ SSENARİ KÖLGƏSİ' : '72-HOUR TRAINING SHADOW'}
               </strong>{' '}
               {lang === 'az'
-                ? 'Azalan işıq batareyaya yükü artırır. D3-ə gedin.'
-                : 'Reduced sunlight raises the strain on batteries. Head to D3.'}
+                ? 'Günəş panellərinin hasilatı azalır. D3-də enerji planını seçin.'
+                : 'Solar output falls. Choose how to manage power at D3.'}
             </div>
           )}
 
@@ -1390,8 +1418,8 @@ export default function App() {
                   ? 'D5 konsolunda qorunma variantını seçin.'
                   : 'Choose a shielding strategy at the D5 console.'
                 : lang === 'az'
-                  ? 'Leyla və Rəşad ilə D5 Sığınacağına qaçın!'
-                  : 'Sprint or drive [V] to D5 Storm Bunker!'}
+                  ? 'D5 sığınacağına gedib məruzqalmanı müəyyən edən variantı seçin.'
+                  : 'Visit the D5 shelter. Your console choice sets the modeled exposure.'}
             </div>
           )}
 

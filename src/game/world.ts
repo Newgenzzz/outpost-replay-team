@@ -34,7 +34,7 @@ export const BUILDINGS: readonly BuildingPlacement[] = [
   { id: 'habitat', artKey: 'habitat', x: 895, y: 365, stationStep: 2 },
   { id: 'lifeSupport', artKey: 'lifeSupport', x: 1085, y: 405, stationStep: 2 },
   { id: 'water', artKey: 'water', x: 425, y: 745, stationStep: 3 },
-  { id: 'terminal_d4', artKey: 'terminal', x: 1145, y: 775, stationStep: 4 },
+  { id: 'iceProcessor', artKey: 'ice-processor', x: 1145, y: 775, stationStep: 4 },
   { id: 'shelter', artKey: 'shelter', x: 795, y: 865, stationStep: 5 },
   { id: 'greenhouse', artKey: 'greenhouse', x: 1290, y: 435, stationStep: 6 },
   { id: 'ascent', artKey: 'ascent', x: 1545, y: 445, stationStep: 6 },
@@ -300,8 +300,8 @@ export const STATIONS: StationNode[] = [
       az: '72 saatlıq kölgədə yaşayış modulunun enerjisini qoruyun',
     },
     objectiveBody: {
-      en: 'In this scenario the ridge shadow cuts nominal solar output by 85%. Follow the waypoints to Sector 03 and press E to plan your response.',
-      az: 'Bu ssenaridə silsilənin kölgəsi nominal günəş hasilatını 85% azaldır. 03-cü sektora gedin və cavab planını seçmək üçün E düyməsini basın.',
+      en: 'The ridge blocks sunlight and the panels make less power. At D3, decide which systems to keep running.',
+      az: 'Silsilə günəş işığının qarşısını kəsir və panellər daha az enerji verir. D3-də hansı sistemləri işlək saxlayacağınızı seçin.',
     },
   },
   {
@@ -325,8 +325,8 @@ export const STATIONS: StationNode[] = [
       az: 'Ay Maşınını sürün və 90 K buz kəşf edin',
     },
     objectiveBody: {
-      en: 'Press V to drive into Sector 04. Follow the marked ramp and avoid loose crater slopes. Hold Space near an ice deposit to drill.',
-      az: '04-cü sektora sürmək üçün V düyməsini basın. Nişanlanmış pandusla gedin və boş krater yamaclarından yan keçin. Buz yatağının yanında qazmaq üçün Space düyməsini basılı saxlayın.',
+      en: 'Press V to drive down the marked ramp. Hold Space at a blue survey marker to collect a core for the extractor.',
+      az: 'Nişanlanmış pandusla enmək üçün V düyməsini basın. Emal qurğusu üçün nümunə götürmək istəyəndə mavi nişanın yanında Space düyməsini basılı saxlayın.',
     },
   },
   {
@@ -512,13 +512,13 @@ export function getElevationTier(x: number, y: number): ElevationTier {
   return 'base_plateau';
 }
 
-export function findNearbyStation(position: Point, activeStep: number): StationNode | null {
+export function findNearbyStation(position: Point, activeStep: number, lastAvailableStep: number): StationNode | null {
   const active = STATIONS[activeStep - 1];
-  if (active && Math.hypot(position.x - active.x, position.y - active.y) <= active.radius) {
+  if (active && activeStep <= lastAvailableStep && Math.hypot(position.x - active.x, position.y - active.y) <= active.radius) {
     return active;
   }
   for (const st of STATIONS) {
-    if (Math.hypot(position.x - st.x, position.y - st.y) <= st.radius) {
+    if (st.decisionId <= lastAvailableStep && Math.hypot(position.x - st.x, position.y - st.y) <= st.radius) {
       return st;
     }
   }
@@ -567,7 +567,12 @@ export function movementVector(
 
 export function facingDirection(vector: Point, previous: Facing): Facing {
   if (!vector.x && !vector.y) return previous;
-  return Math.abs(vector.x) > Math.abs(vector.y)
+  const x = Math.abs(vector.x);
+  const y = Math.abs(vector.y);
+  const horizontal = Math.abs(x - y) < Math.max(x, y) * 0.16
+    ? previous === 'left' || previous === 'right'
+    : x > y;
+  return horizontal
     ? vector.x > 0
       ? 'right'
       : 'left'
@@ -579,12 +584,20 @@ export function facingDirection(vector: Point, previous: Facing): Facing {
 export type CropStatus = 'idle' | 'ready' | 'growing' | 'paused' | 'harvested';
 
 export interface WorldSnapshot {
-  energyPercent: number;
+  batteryKwh: number;
   powerLow: boolean;
   lifeSupportLow: boolean;
+  lifeSupportPct: number;
+  sunlightFraction: number;
+  solarOutputPct: number | null;
   cropStatus: CropStatus;
   cropProgress: number;
+  harvestedFoodKg: number;
+  iceWaterKg: number | null;
+  iceBypassed: boolean;
+  stormPending: boolean;
   activeStep: number;
+  lastAvailableStep: number;
   completedCount: number;
   choices: number[];
   hasBranch: boolean;
