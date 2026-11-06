@@ -15,6 +15,8 @@ const bundle = await build({
       export * from '/src/engine/simulation.ts';
       export * from '/src/engine/resources.ts';
       export * from '/src/engine/power.ts';
+      export * from '/src/engine/sitePowerPlanning.ts';
+      export * from '/src/data/lunarSiteIntelligence.ts';
       export * from '/src/data/missionDecisions.ts';
       export * from '/src/data/nasaTelemetry.ts';
     ` : null,
@@ -28,7 +30,7 @@ const bundle = await build({
 const [{ code }] = bundle.output;
 const {
   advancePower, compareRuns, CROP_TRIAL, ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS,
-  MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan, runSimulation, SHIELDING,
+  estimateSitePower, LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan, runSimulation, SHIELDING,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const phases = [24, 48, 120, 144, 192, 216];
@@ -191,4 +193,15 @@ test('conserves energy and crew stores across every one of the 729 routes', () =
     }
   }
   assert.deepEqual(outcomes, new Set(['success', 'warning', 'abort']));
+});
+
+test('uses modeled site illumination and shadow duration to compare solar plans', () => {
+  const [shackleton, ridge] = LUNAR_PLANNING_SITES.map((site) => estimateSitePower(site, 35));
+  near(shackleton.meanGenerationKwhPerDay, 10.26);
+  near(ridge.meanGenerationKwhPerDay, 10.56);
+  near(shackleton.shadowEnergyKwh, 27.5);
+  near(ridge.shadowEnergyKwh, 140 / 3);
+  assert.ok(shackleton.reserveMarginKwh > 0);
+  assert.ok(ridge.reserveMarginKwh < 0);
+  near(estimateSitePower(LUNAR_PLANNING_SITES[0], 27.5).reserveMarginKwh, 0);
 });

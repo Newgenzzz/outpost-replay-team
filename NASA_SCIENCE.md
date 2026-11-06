@@ -17,6 +17,21 @@ Outpost Replay runs a fictional nine-day exercise near the rim of Shackleton cra
 
 The [IAU/USGS Gazetteer](https://planetarynames.wr.usgs.gov/Feature/5450) lists 89.67° S, 129.78° E as Shackleton crater's **center**. The exercise places the fictional outpost near the rim without assigning it published coordinates. The LRO and LCROSS archives are linked for source verification. The bundled data consists of the selected published values above and the exercise's own scenario inputs.
 
+## Lunar Site Intelligence
+
+D1 and the Sunlight tab contain a battery sizing exercise for two lunar candidate locations. The game bundles two rows transcribed from Table 2 of Gläser et al. (2018), available through NASA NTRS with public use permitted. The study used 20 m/pixel lunar terrain derived from LRO LOLA measurements. It modeled illumination hourly from 1 January 2017 to 1 January 2037 at 2 m above local ground. [Accepted manuscript and distribution record](https://ntrs.nasa.gov/citations/20170007365)
+
+| Study point | Latitude (°) | Longitude (° as published) | Mean visible solar disk | Longest modeled shadow |
+| --- | ---: | ---: | ---: | ---: |
+| Shackleton rim (S, first Shackleton row) | −89.6866 | 197.19 | 85.5% | 66 h |
+| Connecting Ridge (C1) | −89.4398 | 222.83 | 88.0% | 112 h |
+
+The reproducible extract is `src/data/lunarSiteIntelligence.ts`. Read the site, coordinates, maximum average illumination, and maximum time in shadow columns for those two rows in Table 2. Each row represents a particular study point. The mean illumination averages the visible fraction of the solar disk at each hourly sample and differs from the fraction of hours with any sunlight. The extract uses the published numbers as given, with no raster conversion or geospatial transformation. The fictional outpost has no assigned study coordinates.
+
+The planning calculator reuses the exercise’s 12 kWh/day full-light generation and 10 kWh/day base load. It estimates long-term mean generation by multiplying 12 kWh/day by the mean visible fraction, and estimates the energy needed through the longest shadow by multiplying the constant load by the shadow duration in Earth days. It assumes a Sun-tracking array with output proportional to visible disk fraction, zero solar output in shadow, and no heater draw or storage losses. For a 35 kWh usable reserve, Shackleton's 27.5 kWh shadow demand leaves 7.5 kWh while C1's 46.7 kWh demand leaves an 11.7 kWh shortfall. C1 still has the higher mean generation estimate, 10.56 versus 10.26 kWh/day. These are separate planning measures. The mission’s hourly simulation uses its own scripted conditions.
+
+NASA PGDA Product 69 provides separate surface illumination rasters averaged over a lunar nutation cycle. A NASA SVS animation illustrates how shadows move and the LROC WAC product provides a separate imaging-based perspective at 100 m/pixel. They provide context and were not used to derive the two table rows. [NASA PGDA Product 69](https://pgda.gsfc.nasa.gov/products/69) · [NASA SVS south-polar illumination](https://svs.gsfc.nasa.gov/4930) · [LROC WAC south-polar illumination product](https://data.lroc.im-ldi.com/lroc/view_rdr/WAC_POLE_ILL_PCT_SOUTH)
+
 ## Training assumptions
 
 - **Sunlight and temperature.** The mission uses a fixed 216-hour schedule sampled every 12 hours, with 72 hours of reduced sunlight at hours 48–120. Low panels use 15% of nominal array output in shadow, an elevated mast uses 40%, and panel alignment applies a cosine factor. The 90 K minimum is a training surface temperature. The heater term represents the increased electrical demand of a cold environment without solving a thermal model.
