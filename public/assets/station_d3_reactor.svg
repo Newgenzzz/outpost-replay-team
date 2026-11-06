@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 260" width="270" height="260">
+  <defs>
+    <linearGradient id="cryoTank" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="35%" stop-color="#f8fafc"/>
+      <stop offset="80%" stop-color="#64748b"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="plasmaCore" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="50%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 2.5D Ground Shadow -->
+  <ellipse cx="138" cy="226" rx="122" ry="26" fill="#020617" opacity="0.68"/>
+
+  <!-- 2.5D Heavy Industrial Foundation Pad (Top + Front Extruded Wall) -->
+  <polygon points="22,196 248,196 260,216 260,234 248,244 22,244 10,234 10,216" fill="#090d16" stroke="#334155" stroke-width="2"/>
+  <polygon points="26,162 244,162 260,216 10,216" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Left 2.5D Vertical Liquid Hydrogen (LH2) Cryo-Silo Tower -->
+  <ellipse cx="64" cy="192" rx="34" ry="12" fill="#0f172a"/>
+  <rect x="30" y="76" width="68" height="116" fill="url(#cryoTank)" stroke="#334155" stroke-width="2"/>
+  <ellipse cx="64" cy="76" rx="34" ry="14" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>
+  <!-- LH2 Stripe & Vertical Sight Gauge -->
+  <path d="M30,118 C30,128 98,128 98,118 L98,132 C98,142 30,142 30,132 Z" fill="#0284c7"/>
+  <rect x="58" y="90" width="12" height="90" rx="4" fill="#090d16" stroke="#38bdf8" stroke-width="1.5"/>
+  <rect x="61" y="106" width="6" height="70" rx="2" fill="#38bdf8"/>
+
+  <!-- Right 2.5D Vertical Liquid Oxygen (LOX) Cryo-Silo Tower -->
+  <ellipse cx="206" cy="192" rx="34" ry="12" fill="#0f172a"/>
+  <rect x="172" y="76" width="68" height="116" fill="url(#cryoTank)" stroke="#334155" stroke-width="2"/>
+  <ellipse cx="206" cy="76" rx="34" ry="14" fill="#e2e8f0" stroke="#64748b" stroke-width="2"/>
+  <!-- LOX Emerald Band & Sight Gauge -->
+  <path d="M172,118 C172,128 240,128 240,118 L240,132 C240,142 172,142 172,132 Z" fill="#10b981"/>
+  <rect x="200" y="90" width="12" height="90" rx="4" fill="#090d16" stroke="#22c55e" stroke-width="1.5"/>
+  <rect x="203" y="102" width="6" height="74" rx="2" fill="#4ade80"/>
+
+  <!-- Overhead Cryo-Pipelines & Catwalk Bridge Connecting the Towers -->
+  <rect x="64" y="88" width="142" height="10" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="64" y1="93" x2="206" y2="93" stroke="#4ade80" stroke-width="3"/>
+
+  <!-- Center 2.5D H2/O2 Fuel-Cell Plasma Reactor Core Chamber -->
+  <ellipse cx="135" cy="204" rx="38" ry="14" fill="#090d16" stroke="#22c55e" stroke-width="2"/>
+  <rect x="97" y="102" width="76" height="102" fill="#0f172a" stroke="#475569" stroke-width="2.5"/>
+  <!-- Glowing Green Plasma Containment Window on Front Wall -->
+  <rect x="109" y="116" width="52" height="68" rx="8" fill="url(#plasmaCore)" stroke="#bbf7d0" stroke-width="2.5"/>
+  <!-- Plasma Energy Rings Inside Core -->
+  <ellipse cx="135" cy="134" rx="20" ry="6" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
+  <ellipse cx="135" cy="150" rx="20" ry="6" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
+  <ellipse cx="135" cy="166" rx="20" ry="6" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.9"/>
+
+  <!-- Reactor Crown & Steam Exhaust Stacks -->
+  <ellipse cx="135" cy="102" rx="38" ry="13" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="135" cy="98" r="16" fill="#22c55e" stroke="#dcfce7" stroke-width="2"/>
+
+  <!-- Front Control Console & Access Stairs -->
+  <polygon points="108,212 162,212 170,248 100,248" fill="#334155" stroke="#facc15" stroke-width="2"/>
+  <line x1="106" y1="224" x2="164" y2="224" stroke="#090d16" stroke-width="3"/>
+  <line x1="104" y1="236" x2="166" y2="236" stroke="#090d16" stroke-width="3"/>
+</svg>

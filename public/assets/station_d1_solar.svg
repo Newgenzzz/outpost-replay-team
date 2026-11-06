@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260">
+  <defs>
+    <linearGradient id="padTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="padFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <linearGradient id="pvWing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="goldFrame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="cabFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 2.5D Ground Contact Shadow -->
+  <ellipse cx="145" cy="222" rx="118" ry="26" fill="#020617" opacity="0.65"/>
+
+  <!-- 2.5D Extruded Octagonal Foundation Deck (Top Surface + Front 3D Wall) -->
+  <polygon points="36,196 244,196 258,214 258,232 244,244 36,244 22,232 22,214" fill="url(#padFront)" stroke="#0f172a" stroke-width="2"/>
+  <polygon points="36,164 244,164 258,214 22,214" fill="url(#padTop)" stroke="#64748b" stroke-width="2"/>
+  <!-- Yellow/Black Hazard Stripes on Front Vertical Extrusion -->
+  <rect x="42" y="218" width="196" height="8" rx="2" fill="#f59e0b" opacity="0.9"/>
+  <path d="M55,218 L48,226 M75,218 L68,226 M95,218 L88,226 M115,218 L108,226 M135,218 L128,226 M155,218 L148,226 M175,218 L168,226 M195,218 L188,226 M215,218 L208,226" stroke="#0f172a" stroke-width="4"/>
+
+  <!-- Front Access Stairs (3D Step Extrusion) -->
+  <polygon points="118,214 162,214 168,248 112,248" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+  <line x1="115" y1="223" x2="165" y2="223" stroke="#0f172a" stroke-width="2.5"/>
+  <line x1="114" y1="232" x2="166" y2="232" stroke="#0f172a" stroke-width="2.5"/>
+  <line x1="113" y1="241" x2="167" y2="241" stroke="#0f172a" stroke-width="2.5"/>
+
+  <!-- Left 3D HVDC Battery Cabinet (Top Roof + Front Wall with LED Meters) -->
+  <polygon points="40,136 102,136 108,148 34,148" fill="#94a3b8" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="34" y="148" width="74" height="52" rx="3" fill="url(#cabFront)" stroke="#64748b" stroke-width="2"/>
+  <!-- Battery Charge LED Bars on Front Wall -->
+  <rect x="42" y="156" width="24" height="34" rx="2" fill="#020617" stroke="#38bdf8" stroke-width="1"/>
+  <rect x="45" y="160" width="18" height="5" fill="#22c55e"/>
+  <rect x="45" y="168" width="18" height="5" fill="#22c55e"/>
+  <rect x="45" y="176" width="18" height="5" fill="#facc15"/>
+  <rect x="45" y="184" width="18" height="4" fill="#38bdf8"/>
+  <rect x="72" y="156" width="28" height="18" rx="2" fill="#020617" stroke="#f59e0b" stroke-width="1"/>
+  <path d="M75,169 L81,162 L87,166 L96,159" fill="none" stroke="#fde047" stroke-width="2"/>
+
+  <!-- Right 3D Transformer & Power Router Unit -->
+  <polygon points="178,140 238,140 244,152 172,152" fill="#64748b" stroke="#94a3b8" stroke-width="1.5"/>
+  <rect x="172" y="152" width="72" height="48" rx="3" fill="url(#cabFront)" stroke="#64748b" stroke-width="2"/>
+  <circle cx="192" cy="176" r="11" fill="#090d16" stroke="#38bdf8" stroke-width="2"/>
+  <circle cx="192" cy="176" r="5" fill="#38bdf8"/>
+  <circle cx="222" cy="176" r="11" fill="#090d16" stroke="#f59e0b" stroke-width="2"/>
+  <circle cx="222" cy="176" r="5" fill="#fde047"/>
+
+  <!-- Central Tall 2.5D Vertical Solar Truss Tower (Rising from y=204 up to y=26) -->
+  <!-- Tower Shadow on Deck -->
+  <polygon points="140,198 158,192 225,212 195,214" fill="#020617" opacity="0.55"/>
+  <!-- 3D Cylindrical Pedestal Base -->
+  <ellipse cx="140" cy="198" rx="24" ry="9" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+  <rect x="116" y="168" width="48" height="30" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+  <ellipse cx="140" cy="168" rx="24" ry="8" fill="#475569" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- Vertical Gold-Anodized Truss Mast -->
+  <rect x="131" y="34" width="18" height="136" fill="url(#goldFrame)" stroke="#78350f" stroke-width="2"/>
+  <path d="M131,46 L149,62 L131,78 L149,94 L131,110 L149,126 L131,142 L149,158" fill="none" stroke="#fef08a" stroke-width="2"/>
+  <path d="M149,46 L131,62 L149,78 L131,94 L149,110 L131,126 L149,142 L131,158" fill="none" stroke="#b45309" stroke-width="1.5"/>
+
+  <!-- Left Angled 2.5D Photovoltaic Solar Wing (Tilted in 3/4 perspective with bottom thickness) -->
+  <polygon points="14,52 128,40 128,116 14,128" fill="#090d16"/>
+  <polygon points="14,46 128,34 128,110 14,122" fill="url(#pvWing)" stroke="#fde047" stroke-width="2.5"/>
+  <!-- Solar Cell Grid Lines -->
+  <line x1="42" y1="43" x2="42" y2="119" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="70" y1="40" x2="70" y2="116" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="98" y1="37" x2="98" y2="113" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="14" y1="71" x2="128" y2="59" stroke="#fde047" stroke-width="1.2" opacity="0.8"/>
+  <line x1="14" y1="96" x2="128" y2="84" stroke="#fde047" stroke-width="1.2" opacity="0.8"/>
+
+  <!-- Right Angled 2.5D Photovoltaic Solar Wing -->
+  <polygon points="152,40 266,52 266,128 152,116" fill="#090d16"/>
+  <polygon points="152,34 266,46 266,122 152,110" fill="url(#pvWing)" stroke="#fde047" stroke-width="2.5"/>
+  <line x1="180" y1="37" x2="180" y2="113" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="208" y1="40" x2="208" y2="116" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="236" y1="43" x2="236" y2="119" stroke="#38bdf8" stroke-width="1.2" opacity="0.75"/>
+  <line x1="152" y1="59" x2="266" y2="71" stroke="#fde047" stroke-width="1.2" opacity="0.8"/>
+  <line x1="152" y1="84" x2="266" y2="96" stroke="#fde047" stroke-width="1.2" opacity="0.8"/>
+
+  <!-- Crown Sun-Tracking Laser Beacon at Peak of Mast -->
+  <circle cx="140" cy="24" r="11" fill="#f59e0b" stroke="#fef08a" stroke-width="2.5"/>
+  <circle cx="140" cy="24" r="5" fill="#ffffff"/>
+</svg>
