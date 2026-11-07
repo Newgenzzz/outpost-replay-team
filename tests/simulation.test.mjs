@@ -16,6 +16,7 @@ const bundle = await build({
       export * from '/src/engine/resources.ts';
       export * from '/src/engine/power.ts';
       export * from '/src/engine/sitePowerPlanning.ts';
+      export * from '/src/engine/shadowPrediction.ts';
       export * from '/src/data/lunarSiteIntelligence.ts';
       export * from '/src/data/missionDecisions.ts';
       export * from '/src/data/nasaTelemetry.ts';
@@ -30,10 +31,26 @@ const bundle = await build({
 const [{ code }] = bundle.output;
 const {
   advancePower, compareRuns, CROP_TRIAL, ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS,
-  estimateSitePower, LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan, runSimulation, SHIELDING,
+  estimateSitePower, evaluateShadowPrediction, LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan, runSimulation, SHIELDING,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const phases = [24, 48, 120, 144, 192, 216];
+
+test('evaluates a recorded D3 prediction only for tested strategies with the same setup and hour', () => {
+  const a = runSimulation([2, 2, 2, 2, 0, 0]);
+  const b = runSimulation([2, 2, 1, 2, 0, 0]);
+  assert.equal(a.elapsedHours, 203);
+  assert.equal(b.elapsedHours, 216);
+  const prediction = { expected: 'backup', priorChoices: [2, 2], solarCalibrated: false };
+  assert.equal(evaluateShadowPrediction(prediction, a, null).status, 'pending');
+  const result = evaluateShadowPrediction(prediction, a, b);
+  assert.equal(result.status, 'supported');
+  assert.equal(result.backupKwh, b.steps[2].after.powerKwh);
+  assert.equal(result.drillKwh, a.steps[2].after.powerKwh);
+  assert.equal(evaluateShadowPrediction({ ...prediction, expected: 'drill' }, a, b).status, 'contradicted');
+  assert.equal(evaluateShadowPrediction(prediction, a, runSimulation([1, 2, 1])).status, 'changed');
+  assert.equal(evaluateShadowPrediction(prediction, a, runSimulation(b.choices, { solarCalibrated: true })).status, 'changed');
+});
 
 function near(actual, expected, tolerance = 1e-9) {
   assert.ok(Math.abs(actual - expected) <= tolerance, `expected ${actual} to be within ${tolerance} of ${expected}`);
