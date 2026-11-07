@@ -162,7 +162,7 @@ function water(): SvgAsset {
   );
 }
 
-function greenhouse(key: string, plantScale: number): SvgAsset {
+function greenhouse(key: string, plantScale: number, harvested = false): SvgAsset {
   const plants = Array.from(
     { length: 5 },
     (_, i) => `<g transform="translate(${47 + i * 23} ${91 + i * 7})">
@@ -201,6 +201,7 @@ function greenhouse(key: string, plantScale: number): SvgAsset {
     <path d="m150 133 32-22v19l-32 22Z" fill="#1c4550" stroke="#c2d5c7" stroke-width="2"/>
     <path d="m156 132 19-13v10l-19 13Z" fill="#8ac7ba"/>
     <path d="m143 154 30 8 22-15-13-13" fill="#63808a" stroke="#92b0ac" stroke-width="1.3"/>
+    ${harvested ? '<path d="m73 125 14-8 27 9-14 9Z" fill="#bbd39c" stroke="#d8e4bc"/><path d="m73 125 27 10v12l-27-9Zm27 10 14-9v12l-14 9Z" fill="#48644e" stroke="#a6bf91"/><path d="m77 129 19 7m-19-3 19 7" stroke="#b6d394" stroke-width="2"/>' : ''}
   `,
     { x: 23, y: 91, width: 174, height: 55 },
     `<linearGradient id="greenhouse-dome" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#75b8a5" stop-opacity=".7"/><stop offset="1" stop-color="#143c46" stop-opacity=".9"/></linearGradient>`,
@@ -475,7 +476,9 @@ export const GAME_ART: SvgAsset[] = [
     water(),
     greenhouse('greenhouse', 0),
     greenhouse('greenhouse-tray', 0.6),
+    greenhouse('greenhouse-mid', 0.8),
     greenhouse('greenhouse-growing', 1),
+    greenhouse('greenhouse-harvested', 0, true),
     shelter(),
     terminal(),
     iceProcessor(),

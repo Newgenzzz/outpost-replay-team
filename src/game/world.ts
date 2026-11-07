@@ -594,6 +594,7 @@ export interface WorldSnapshot {
   cropProgress: number;
   harvestedFoodKg: number;
   iceWaterKg: number | null;
+  icePreparationAvailable: boolean;
   iceBypassed: boolean;
   stormPending: boolean;
   activeStep: number;
