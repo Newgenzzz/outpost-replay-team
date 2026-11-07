@@ -56,8 +56,8 @@ export const MISSION_DECISIONS: Decision[] = [
         solarIncidenceDeg: 10,
         setsFlags: ['tallMast'],
         causeAndEffectExplanation: {
-          en: `The mast takes 4 kWh to assemble. The scenario models its higher placement as retaining ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}% of available sunlight during the shadow, versus ${100 - LRO_SHADOW.arrayOutputDropPct}% at deck height. Panel incidence is 10°.`,
-          az: `Dirəyin quraşdırılması 4 kVt·saat tələb edir. Ssenaridə kölgə zamanı hündür dirək mövcud işığın ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}%-ni, alçaq panel isə ${100 - LRO_SHADOW.arrayOutputDropPct}%-ni tutur. Şüaların panelə düşmə bucağı 10°-dir.`,
+          en: `The mast takes 4 kWh to assemble. During the training shadow, it starts from ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}% of full-light output, compared with ${100 - LRO_SHADOW.arrayOutputDropPct}% for low panels. The model then accounts for its 10° pointing angle.`,
+          az: `Dirəyin quraşdırılması 4 kVt·saat tələb edir. Təlim kölgəsində hündür dirək tam işıqdakı hasilatın ${pct(TALL_MAST_SHADOW_OUTPUT_FACTOR)}%-ni, alçaq panellər isə ${100 - LRO_SHADOW.arrayOutputDropPct}%-ni verir. Model sonra 10° yönəlmə bucağını nəzərə alır.`,
         },
         nasaSourceCitation: {
           en: 'Mazarico et al. 2011, Icarus 211 — LRO/LOLA polar illumination increases with height above the surface',

@@ -4,7 +4,11 @@ import type { SimulationResult } from '../engine/simulation';
 import { GAME_CONSTANTS, RADIATION_LIMITS } from '../data/nasaTelemetry';
 import { METRICS, fmt } from './metricMeta';
 
-export default function CompareCharts({ a, b }: { a: SimulationResult; b: SimulationResult | null }) {
+export default function CompareCharts({ a, b, comparisonStep }: {
+  a: SimulationResult;
+  b: SimulationResult | null;
+  comparisonStep: number | null;
+}) {
   const { t, lang } = useI18n();
   const hours = new Map<number, Record<string, number>>([[0, { hour: 0 }]]);
   const runs = b ? [a, b] : [a];
@@ -18,14 +22,23 @@ export default function CompareCharts({ a, b }: { a: SimulationResult; b: Simula
     });
   });
   const data = [...hours.values()].sort((left, right) => left.hour - right.hour);
+  const index = (comparisonStep ?? 0) - 1;
+  const hourA = a.steps[index]?.endHour;
+  const comparedHour = hourA === b?.steps[index]?.endHour ? hourA : undefined;
 
   return (
     <section className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-label={lang === 'az' ? 'Missiya qrafikləri' : 'Mission trend charts'}>
       <div className="col-span-full flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300">
-        <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-slate-200" />{t('runA')}</span>
-        {b && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed border-slate-200" />{t('runB')}</span>}
+        <span className="inline-flex items-center gap-1.5"><span className="h-0.5 w-5 bg-[#aac9e2]" />{t('runA')}</span>
+        {b && <span className="inline-flex items-center gap-1.5"><span className="w-5 border-t-2 border-dashed border-[#b6efcf]" />{t('runB')}</span>}
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm bg-amber-500/50" />{t('shadowBand')} (D3)</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm bg-rose-500/50" />{t('stormBand')} (D5)</span>
+        {comparedHour !== undefined && (
+          <span className="inline-flex items-center gap-1.5 text-sky-100">
+            <span className="h-3 border-l-2 border-dotted border-sky-200" aria-hidden="true" />
+            {lang === 'az' ? `D${comparisonStep} nəticəsi · saat ${comparedHour}` : `D${comparisonStep} result · hour ${comparedHour}`}
+          </span>
+        )}
       </div>
       {METRICS.map((m) => {
         const maxValue = Math.max(...runs.flatMap((run) => run.history.map((point) => point[m.key])));
@@ -49,6 +62,9 @@ export default function CompareCharts({ a, b }: { a: SimulationResult; b: Simula
                   <ReferenceArea x1={144} x2={192} fill="#f43f5e" fillOpacity={0.14} />
                   <XAxis dataKey="hour" type="number" domain={[0, 216]} ticks={[0, 24, 48, 120, 144, 192, 216]} stroke="#94a3b8" tickLine={false} />
                   <YAxis domain={[0, yMax]} stroke="#94a3b8" tickLine={false} width={39} />
+                  {comparedHour !== undefined && (
+                    <ReferenceLine x={comparedHour} stroke="#a5d6e8" strokeDasharray="2 4" />
+                  )}
                   {m.key === 'powerKwh' && (
                     <ReferenceLine y={GAME_CONSTANTS.brownoutThresholdKwh} stroke="#fde68a" strokeDasharray="4 3" />
                   )}
@@ -61,9 +77,9 @@ export default function CompareCharts({ a, b }: { a: SimulationResult; b: Simula
                     labelFormatter={(hour: number) => `${hour} h`}
                     formatter={(value: number, key: string) => [`${fmt(value)} ${t(m.unitKey)}`, key.startsWith('A_') ? t('runA') : t('runB')]}
                   />
-                  <Line type="linear" dataKey={`A_${m.key}`} stroke={m.color} strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} connectNulls />
+                  <Line type="linear" dataKey={`A_${m.key}`} stroke="#aac9e2" strokeWidth={2.5} dot={{ r: 3 }} isAnimationActive={false} connectNulls />
                   {b && (
-                    <Line type="linear" dataKey={`B_${m.key}`} stroke="#e2e8f0" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: '#0f172a' }} isAnimationActive={false} connectNulls />
+                    <Line type="linear" dataKey={`B_${m.key}`} stroke="#b6efcf" strokeWidth={2} strokeDasharray="5 4" dot={{ r: 3, fill: '#0f172a' }} isAnimationActive={false} connectNulls />
                   )}
                 </LineChart>
               </ResponsiveContainer>

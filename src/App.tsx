@@ -9,10 +9,8 @@ import {
   Award,
   BarChart3,
   BookOpen,
-  Bot,
   Check,
   CheckCheck,
-  CheckCircle2,
   ChevronRight,
   Compass,
   FlaskConical,
@@ -52,6 +50,7 @@ import { BaseMap } from './components/BaseMap';
 import StationTaskMiniGame from './components/StationTaskMiniGame';
 import { OutcomeBadge } from './components/MetricGauges';
 import DecisionCard from './components/DecisionCard';
+import { DecisionDebrief } from './components/DecisionDebrief';
 import CompareCharts from './components/CompareCharts';
 import DeltaSummary from './components/DeltaSummary';
 import MissionResults from './components/MissionResults';
@@ -68,10 +67,10 @@ import {
 import { SampleDiscoveryModal } from './components/SampleDiscoveryModal';
 import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
-import { RULE_LABELS, runSimulation, type RuleId } from './engine/simulation';
+import { runSimulation, type StepRecord } from './engine/simulation';
 import { canPowerCrop, CROP_TRIAL } from './engine/resources';
 import { environmentAtHour } from './engine/power';
-import type { MetricState, MissionTaskSettings } from './types';
+import type { MissionTaskSettings } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
@@ -138,19 +137,7 @@ export default function App() {
     const timer = window.setTimeout(() => setAchievementToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [achievementToast]);
-  const [lastDebrief, setLastDebrief] = useState<{
-    step: number;
-    choiceId: string;
-    delta: MetricState;
-    after: MetricState;
-    rules: RuleId[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (!lastDebrief) return;
-    const timer = window.setTimeout(() => setLastDebrief(null), 6500);
-    return () => window.clearTimeout(timer);
-  }, [lastDebrief]);
+  const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
 
   // 2.5D Phaser World Live State
   const [ready, setReady] = useState(false);
@@ -466,13 +453,7 @@ export default function App() {
       setBaselineChoices(nextChoices);
       setBaselineTasks(tasks);
     }
-    setLastDebrief({
-      step: debriefStep.step,
-      choiceId: debriefStep.choiceId,
-      delta: debriefStep.delta,
-      after: debriefStep.after,
-      rules: debriefStep.rulesTriggered,
-    });
+    setLastDebrief(debriefStep);
 
     setDecisionModalOpen(false);
     if (preview.complete) {
@@ -577,6 +558,7 @@ export default function App() {
   function handleClearBranch() {
     soundFX.play('StepNav');
     setRewoundChoices(null);
+    setLastDebrief(null);
     setViewStep(Math.max(1, Math.min(viewStep, runA.steps.length)));
   }
 
@@ -1211,46 +1193,6 @@ export default function App() {
        * MAIN 2.5D LUNAR OUTPOST GAME VIEWPORT
        * =================================================================== */}
       <main id="game-surface" className="game-surface">
-        {/* Post-Decision Causal Telemetry Toast */}
-        {lastDebrief && (
-          <div className="telemetry-toast" role="status" aria-live="polite">
-            <div className="flex items-center justify-between gap-3 border-b border-white/15 pb-1">
-              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#c0e6aa] flex items-center gap-1.5">
-                <CheckCircle2 size={13} />
-                {t('debriefTitle')} · D{lastDebrief.step} ({lastDebrief.choiceId})
-              </span>
-              <button
-                type="button"
-                onClick={() => setLastDebrief(null)}
-                className="text-slate-400 hover:text-white"
-                aria-label={t('close')}
-              >
-                <X size={13} />
-              </button>
-            </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-3 font-mono text-[11px]">
-              <span className="text-amber-200">
-                {t('power')}: {signed(lastDebrief.delta.powerKwh)} {t('unitKwh')}
-                {' · '}{fmt(lastDebrief.after.powerKwh)} {t('unitKwh')} {lang === 'az' ? 'qalıb' : 'left'}
-              </span>
-              <span className="text-emerald-200">
-                {t('lifeSupport')}: {signed(lastDebrief.delta.lifeSupportPct)} {lang === 'az' ? 'faiz b.' : 'pp'}
-              </span>
-              <span className="text-rose-200">
-                {t('radiation')}: {signed(lastDebrief.delta.radiationMsv)} {t('unitMsv')}
-              </span>
-              <span className="text-purple-200">
-                {t('science')}: {signed(lastDebrief.delta.sciencePoints)} {t('unitPts')}
-              </span>
-            </div>
-            {lastDebrief.rules.length > 0 && (
-              <div className="mt-1 text-[10px] font-mono text-amber-300">
-                ⚠️ {lang === 'az' ? 'Uçuş Qaydası:' : 'Flight Rules:'} {lastDebrief.rules.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}
-              </div>
-            )}
-          </div>
-        )}
-
         <PhaserWorld
           ref={world}
           snapshot={worldSnapshot}
@@ -1443,18 +1385,15 @@ export default function App() {
             </div>
           )}
 
-          {/* Live AI Crewmate Proximity Radio Feed */}
+          {lastDebrief && <DecisionDebrief key={lastDebrief.choiceId} step={lastDebrief} onDismiss={() => setLastDebrief(null)} />}
+
           {nearbyCrewSpeech && (
-            <div className="mt-2.5 rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 text-[11px]">
-              <div className="flex items-center gap-1.5 font-mono text-[9.5px]">
-                <Bot size={12} style={{ color: nearbyCrewSpeech.color }} />
-                <strong style={{ color: nearbyCrewSpeech.color }}>
-                  {nearbyCrewSpeech.speaker}
-                </strong>
-                <span className="text-slate-400">· {nearbyCrewSpeech.role}</span>
-              </div>
-              <p className="mt-0.5 text-[11px] text-slate-200">“{nearbyCrewSpeech.text}”</p>
-            </div>
+            <details className="mt-2.5 rounded-lg border border-white/10 bg-black/25 px-2.5 py-2 text-xs">
+              <summary className="cursor-pointer font-semibold" style={{ color: nearbyCrewSpeech.color }}>
+                {nearbyCrewSpeech.speaker} · {lang === 'az' ? 'Ekipajın məsləhəti' : 'Crew advisory'}
+              </summary>
+              <p className="mt-1">{nearbyCrewSpeech.text}</p>
+            </details>
           )}
 
           {/* 6-Step Progress Nodes (Click to inspect / rewind!) */}
@@ -1915,8 +1854,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Interactive 6-Step Rewind Selector */}
-            <div className="mb-5 rounded-xl border border-white/10 bg-[#0e1a22] p-4">
+            {runB && <div className="mb-4"><DeltaSummary a={runA} b={runB} /></div>}
+
+            <div className="mb-4 rounded-xl border border-white/10 bg-[#0e1a22] p-4">
+              <h3 className="mb-1 text-sm font-semibold text-slate-100">
+                {lang === 'az' ? 'Qərarı yenidən nəzərdən keçirin' : 'Revisit a decision'}
+              </h3>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
                 <span>
                   {hasBranch
@@ -1982,9 +1925,15 @@ export default function App() {
             </div>
 
             <div className="space-y-5">
-              <MissionResults a={runA} b={runB} />
-              {runB && <DeltaSummary a={runA} b={runB} />}
-              <CompareCharts a={runA} b={runB} />
+              {runB ? (
+                <details className="rounded-xl border border-white/15 bg-[#0e1a22] p-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-slate-100">
+                    {lang === 'az' ? 'Missiyanın ehtiyatları və müddəti' : 'Mission reserves and timing'}
+                  </summary>
+                  <div className="mt-3"><MissionResults a={runA} b={runB} /></div>
+                </details>
+              ) : <MissionResults a={runA} b={null} />}
+              <CompareCharts a={runA} b={runB} comparisonStep={divergedStep} />
               <EvidencePanel />
             </div>
           </div>
