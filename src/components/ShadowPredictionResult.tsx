@@ -12,7 +12,7 @@ export function ShadowPredictionResult({ prediction, a, b }: {
   const evaluated = result.status === 'supported' || result.status === 'contradicted';
   const expected = { backup: az ? 'ehtiyat yanacaq elementləri' : 'backup fuel cells', drill: az ? 'qazma' : 'drilling', tie: az ? 'eyni ehtiyat' : 'the same reserve' }[prediction.expected];
   const messages = {
-    changed: az ? 'İlkin plan və ya kalibrləmə dəyişib. Bu proqnoz həmin yeni sınağa aid deyil.' : 'The starting plan or calibration changed. This prediction belongs to the earlier setup.',
+    changed: az ? 'İlkin plan, hazırlıq, sahə işi və ya fırtına ssenarisi dəyişib. Bu proqnoz əvvəlki sınağa aiddir.' : 'The starting plan, preparation, fieldwork or storm scenario changed. This prediction belongs to the earlier experiment.',
     pending: az ? 'D3-də həm B, həm də C variantını sınayıb nəticələri müqayisə edin.' : 'Test both B and C at D3, then compare the results.',
     incomplete: az ? 'Gedişlərdən biri 120-ci saata çatmadı. Bu proqnoz qiymətləndirilmir.' : 'One strategy did not reach hour 120. This prediction cannot be evaluated.',
     supported: az ? 'Proqnoz nəticə ilə uyğun gəldi.' : 'The result supported your prediction.',

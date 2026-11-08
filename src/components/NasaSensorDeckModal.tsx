@@ -102,17 +102,10 @@ export function NasaSensorDeckModal({
     setLiveDonki(latest);
     setSelectedPresetId('live');
     setFetchingLive(false);
-    if (latest && onSelectStormPeakPfu) {
-      onSelectStormPeakPfu(latest.estimatedPeakPfu, `Live DONKI (${latest.flareClass})`);
-    }
   };
 
   const handleChoosePreset = (presetId: StormPresetId) => {
     setSelectedPresetId(presetId);
-    const found = HISTORICAL_STORM_PRESETS.find((p) => p.id === presetId);
-    if (found && onSelectStormPeakPfu) {
-      onSelectStormPeakPfu(found.peakPfu, tr(found.name));
-    }
   };
 
   const references = {
@@ -313,6 +306,22 @@ export function NasaSensorDeckModal({
                   );
                 })}
               </div>
+
+              {onSelectStormPeakPfu && (
+                <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+                  <p className="text-xs text-slate-300">
+                    {az
+                      ? 'Seçim yalnız önbaxışı dəyişir. Yeni sınağa başlamaq cari A və B gedişlərini sıfırlayır.'
+                      : 'Selection changes the preview only. Starting a new experiment clears the current A and B runs.'}
+                  </p>
+                  <button type="button"
+                    disabled={fetchingLive || activeDisplayPfu === activeStormPeakPfu}
+                    onClick={() => onSelectStormPeakPfu(activeDisplayPfu, selectedPresetId === 'live' ? 'DONKI' : tr(selectedPreset.name))}
+                    className="rounded-lg border border-sky-300/50 bg-sky-500/20 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/30 disabled:opacity-50">
+                    {az ? 'Seçilmiş fırtına ilə yeni sınağa başla' : 'Start new experiment with selected storm'}
+                  </button>
+                </div>
+              )}
 
               {liveDonki && (
                 <div className="mt-2.5 rounded-lg border border-sky-300/30 bg-sky-950/40 px-3 py-2 text-xs text-sky-100">

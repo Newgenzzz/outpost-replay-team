@@ -57,7 +57,7 @@ import { OutcomeBadge } from './components/MetricGauges';
 import DecisionCard from './components/DecisionCard';
 import { DecisionDebrief } from './components/DecisionDebrief';
 import { ShadowPredictionResult } from './components/ShadowPredictionResult';
-import type { ShadowPrediction, ShadowStrategy } from './engine/shadowPrediction';
+import { recordShadowPrediction, type ShadowPrediction, type ShadowStrategy } from './engine/shadowPrediction';
 import CompareCharts from './components/CompareCharts';
 import DeltaSummary from './components/DeltaSummary';
 import MissionResults from './components/MissionResults';
@@ -76,7 +76,9 @@ import {
 import { SampleDiscoveryModal } from './components/SampleDiscoveryModal';
 import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
-import { runSimulation, type StepRecord } from './engine/simulation';
+import { compareRuns, runExperiment, type StepRecord } from './engine/simulation';
+import { applyRunChoice, cloneRunInput, createRunInput, getRunTasks, type RunInput } from './engine/runInput';
+import { encodeSharedReplayUrl, parseSharedReplayFromUrl } from './engine/sharedReplay';
 import { canPowerCrop, CROP_TRIAL } from './engine/resources';
 import { environmentAtHour } from './engine/power';
 import type { MissionTaskSettings, TrainingMode } from './types';
@@ -84,63 +86,8 @@ import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionD
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
 
-const DEFAULT_TASK_SETTINGS: MissionTaskSettings = { solarCalibrated: false, icePrepared: false };
 const STORAGE_MODE_KEY = 'outpost_training_mode';
 const STORAGE_CALLSIGN_KEY = 'outpost_commander_callsign';
-
-interface SharedReplayPayload {
-  a: number[];
-  b?: number[] | null;
-  m?: TrainingMode;
-  p?: number;
-}
-
-function isValidChoiceArray(arr: unknown): arr is number[] {
-  return (
-    Array.isArray(arr) &&
-    arr.length <= DECISION_COUNT &&
-    arr.every((v) => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 2)
-  );
-}
-
-function parseSharedReplayFromUrl(): SharedReplayPayload | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = new URLSearchParams(window.location.search).get('m');
-    if (!raw) return null;
-    const padded = raw.replace(/-/g, '+').replace(/_/g, '/');
-    const json = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
-    const parsed = JSON.parse(json) as Partial<SharedReplayPayload>;
-    if (!isValidChoiceArray(parsed.a) || parsed.a.length === 0) return null;
-    const branch = parsed.b && isValidChoiceArray(parsed.b) ? parsed.b : null;
-    const mode: TrainingMode = parsed.m === 'engineer' ? 'engineer' : 'cadet';
-    const peak = typeof parsed.p === 'number' && parsed.p > 0 && parsed.p <= 5000 ? parsed.p : undefined;
-    return { a: parsed.a, b: branch, m: mode, p: peak };
-  } catch {
-    return null;
-  }
-}
-
-function encodeSharedReplayUrl(payload: SharedReplayPayload): string {
-  if (typeof window === 'undefined') return '';
-  try {
-    const base = `${window.location.origin}${window.location.pathname}`;
-    if (payload.a.length === 0) return base;
-    const compact: SharedReplayPayload = {
-      a: payload.a,
-      ...(payload.b && payload.b.length > 0 ? { b: payload.b } : {}),
-      ...(payload.m ? { m: payload.m } : {}),
-      ...(payload.p && payload.p !== SEP_PEAK_FLUX_PFU ? { p: payload.p } : {}),
-    };
-    const encoded = btoa(JSON.stringify(compact))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    return `${base}?m=${encoded}`;
-  } catch {
-    return '';
-  }
-}
 
 const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string }> = {
   high_ridge: {
@@ -163,7 +110,8 @@ const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string 
 export default function App() {
   const { t, tr, lang, setLang } = useI18n();
 
-  const initialShared = useMemo(() => parseSharedReplayFromUrl(), []);
+  const initialShared = useMemo(() => parseSharedReplayFromUrl(window.location.href), []);
+  const [legacyReplay, setLegacyReplay] = useState(initialShared?.legacy ?? false);
 
   const [trainingMode, setTrainingMode] = useState<TrainingMode>(() => {
     if (initialShared?.m) return initialShared.m;
@@ -183,26 +131,16 @@ export default function App() {
     }
   });
 
-  const [stormPeakPfu, setStormPeakPfu] = useState<number>(
-    () => initialShared?.p ?? SEP_PEAK_FLUX_PFU,
-  );
-
   /** Run A — locked step by step through deterministic simulation. */
-  const [baselineChoices, setBaselineChoices] = useState<number[]>(
-    () => initialShared?.a ?? [],
-  );
+  const [baselineInput, setBaselineInput] = useState<RunInput>(() => initialShared?.a ?? createRunInput([]));
   /** Run B — copy of Run A with one or more rewound decisions (null = no branch yet). */
-  const [rewoundChoices, setRewoundChoices] = useState<number[] | null>(
-    () => initialShared?.b ?? null,
-  );
-  const [baselineTasks, setBaselineTasks] = useState<MissionTaskSettings>(() =>
-    initialShared?.p ? { ...DEFAULT_TASK_SETTINGS, stormPeakPfu: initialShared.p } : DEFAULT_TASK_SETTINGS,
-  );
-  const [branchTasks, setBranchTasks] = useState<MissionTaskSettings>(() =>
-    initialShared?.p ? { ...DEFAULT_TASK_SETTINGS, stormPeakPfu: initialShared.p } : DEFAULT_TASK_SETTINGS,
-  );
+  const [branchInput, setBranchInput] = useState<RunInput | null>(() => initialShared?.b ?? null);
+  const baselineChoices = useMemo(() => baselineInput.phases.map((p) => p.choiceIndex), [baselineInput]);
+  const rewoundChoices = useMemo(() => branchInput?.phases.map((p) => p.choiceIndex) ?? null, [branchInput]);
+  // Exploration unlocks draft preparations. Only Apply records them in a run.
+  const [pendingTasks, setPendingTasks] = useState<Record<number, Partial<MissionTaskSettings>>>({});
   const [viewStep, setViewStep] = useState(() =>
-    initialShared?.a.length ? Math.min(DECISION_COUNT, initialShared.a.length) : 1,
+    Math.max(1, Math.min(DECISION_COUNT, (initialShared?.b ?? initialShared?.a)?.phases.length ?? 1)),
   );
 
   // Overlays & Modals
@@ -271,7 +209,7 @@ export default function App() {
 
   const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
   const [trackedSample, setTrackedSample] = useState<number | null>(null);
-  const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(null);
+  const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(() => initialShared?.prediction ?? null);
 
   // 2.5D Phaser World Live State
   const [ready, setReady] = useState(false);
@@ -332,8 +270,8 @@ export default function App() {
 
   const world = useRef<WorldHandle>(null);
   const pointerStarted = useRef(0);
-  const hasBranchRef = useRef(false);
-  hasBranchRef.current = rewoundChoices !== null;
+  const nextApplyStep = useRef(1);
+  const recordedFieldwork = useRef({ cores: 0, samples: 0 });
 
   const drillStateRef = useRef({
     progress: 0,
@@ -464,12 +402,8 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const updateActiveTasks = useCallback((patch: Partial<MissionTaskSettings>) => {
-    if (hasBranchRef.current) {
-      setBranchTasks((prev) => ({ ...prev, ...patch }));
-    } else {
-      setBaselineTasks((prev) => ({ ...prev, ...patch }));
-    }
+  const updateActiveTasks = useCallback((step: number, patch: Partial<MissionTaskSettings>) => {
+    setPendingTasks((prev) => ({ ...prev, [step]: { ...prev[step], ...patch } }));
   }, []);
 
   const handleDrillTick = useCallback(
@@ -499,7 +433,7 @@ export default function App() {
         nextMined[crystalIdx] = true;
         ds.mined = nextMined;
         setMinedCrystals(nextMined);
-        updateActiveTasks({ extraIceCores: nextMined.filter(Boolean).length });
+        updateActiveTasks(4, { extraIceCores: Math.max(recordedFieldwork.current.cores, nextMined.filter(Boolean).length) });
         soundFX.play('hotspot');
       }
     },
@@ -522,7 +456,7 @@ export default function App() {
     (idx: number) => {
       setCollectedSamples((prev) => {
         const next = prev.map((collected, index) => collected || index === idx);
-        updateActiveTasks({ fieldSamplesCount: next.filter(Boolean).length });
+        updateActiveTasks(nextApplyStep.current, { fieldSamplesCount: Math.max(recordedFieldwork.current.samples, next.filter(Boolean).length) });
         return next;
       });
       soundFX.play('hotspot');
@@ -556,33 +490,39 @@ export default function App() {
                 : stepNum === 5
                   ? { stormClamped: true }
                   : { dishAligned: true };
-      updateActiveTasks(patch);
+      updateActiveTasks(stepNum, patch);
     },
     [updateActiveTasks],
   );
 
-  const handleSelectStormPeakPfu = useCallback((peakPfu: number) => {
-    setStormPeakPfu(peakPfu);
-    setBaselineTasks((prev) => ({ ...prev, stormPeakPfu: peakPfu }));
-    setBranchTasks((prev) => ({ ...prev, stormPeakPfu: peakPfu }));
-  }, []);
-
   // Deterministic Simulation Runs
   const runA = useMemo(
-    () => runSimulation(baselineChoices, baselineTasks),
-    [baselineChoices, baselineTasks],
+    () => runExperiment(baselineInput),
+    [baselineInput],
   );
   const runB = useMemo(
-    () => (rewoundChoices ? runSimulation(rewoundChoices, branchTasks) : null),
-    [rewoundChoices, branchTasks],
+    () => (branchInput ? runExperiment(branchInput) : null),
+    [branchInput],
   );
 
   const hasBranch = runB !== null;
   const activeRun = runB ?? runA;
   const activeChoices = rewoundChoices ?? baselineChoices;
-  const activeTasks = hasBranch ? branchTasks : baselineTasks;
+  const activeInput = branchInput ?? baselineInput;
+  const stormPeakPfu = activeInput.scenario.stormPeakPfu;
   const completedPhases = activeRun.steps.length;
   const lastAvailableStep = Math.min(DECISION_COUNT, completedPhases + (activeRun.complete ? 0 : 1));
+  const canChoose =
+    viewStep <= lastAvailableStep && (hasBranch || (!runA.complete && viewStep === completedPhases + 1));
+  const activeTasks = {
+    ...getRunTasks(activeInput, viewStep),
+    ...(canChoose ? pendingTasks[viewStep] : {}),
+  };
+  nextApplyStep.current = hasBranch ? viewStep : Math.min(DECISION_COUNT, completedPhases + 1);
+  recordedFieldwork.current = {
+    cores: Math.max(0, ...activeInput.phases.map((p) => p.tasks.extraIceCores)),
+    samples: Math.max(0, ...activeInput.phases.map((p) => p.tasks.fieldSamplesCount)),
+  };
   const phase = MISSION_DECISIONS[viewStep - 1].phase;
   const scenarioSamples = LRO_PROFILE.filter(({ hour }) => hour >= phase.startHour && hour < phase.endHour);
   const availableSunlight =
@@ -592,19 +532,8 @@ export default function App() {
   const displayedResources = activeRun.resourceHistory[viewStep] ?? activeRun.resources;
 
   const divergedStep = useMemo(() => {
-    if (!rewoundChoices) return null;
-    if (baselineTasks.solarCalibrated !== branchTasks.solarCalibrated) return 1;
-    if (Boolean(baselineTasks.eclssSealed) !== Boolean(branchTasks.eclssSealed)) return 2;
-    if (Boolean(baselineTasks.busPatched) !== Boolean(branchTasks.busPatched)) return 3;
-    for (let i = 0; i < baselineChoices.length; i++) {
-      if (baselineChoices[i] !== rewoundChoices[i] || (i === 3 && runA.icePrepared !== runB?.icePrepared)) {
-        return i + 1;
-      }
-    }
-    if (Boolean(baselineTasks.stormClamped) !== Boolean(branchTasks.stormClamped)) return 5;
-    if (Boolean(baselineTasks.dishAligned) !== Boolean(branchTasks.dishAligned)) return 6;
-    return rewoundChoices.length > baselineChoices.length ? baselineChoices.length + 1 : null;
-  }, [baselineChoices, rewoundChoices, baselineTasks, branchTasks, runA.icePrepared, runB?.icePrepared]);
+    return runB ? compareRuns(runA, runB).firstDivergence : null;
+  }, [runA, runB]);
 
   const runAChoiceLabel = useMemo(() => {
     if (divergedStep === null) return 'CHOICE A';
@@ -614,13 +543,13 @@ export default function App() {
 
   const shareUrl = useMemo(
     () =>
-      encodeSharedReplayUrl({
-        a: baselineChoices,
-        b: rewoundChoices,
+      encodeSharedReplayUrl(window.location.href, {
+        a: baselineInput,
+        b: branchInput,
         m: trainingMode,
-        p: stormPeakPfu,
+        prediction: shadowPrediction,
       }),
-    [baselineChoices, rewoundChoices, trainingMode, stormPeakPfu],
+    [baselineInput, branchInput, trainingMode, shadowPrediction],
   );
 
   // Trigger audio cues on LRO Shadow (Step 3) and DONKI Solar Storm (Step 5)
@@ -641,9 +570,6 @@ export default function App() {
     const prev = activeRun.steps[viewStep - 2];
     return prev ? prev.flagsAfter : activeRun.flags;
   }, [activeRun, viewStep]);
-
-  const canChoose =
-    viewStep <= lastAvailableStep && (hasBranch || (!runA.complete && viewStep === completedPhases + 1));
 
   function celebrateVictory() {
     soundFX.play('success');
@@ -677,27 +603,21 @@ export default function App() {
   function handleChoose(choiceIndex: number, tasks: MissionTaskSettings, prediction: ShadowStrategy | null) {
     if (!canChoose) return;
 
-    const nextChoices = activeChoices.slice();
-    nextChoices[viewStep - 1] = choiceIndex;
-    const preview = runSimulation(nextChoices, tasks);
+    const nextInput = applyRunChoice(activeInput, viewStep, choiceIndex, tasks);
+    const preview = runExperiment(nextInput);
     const debriefStep = preview.steps[viewStep - 1];
     if (!debriefStep) return;
 
     soundFX.play(hasBranch ? 'rewind' : 'choice');
     if (hasBranch) {
-      setRewoundChoices(nextChoices);
-      setBranchTasks(tasks);
+      setBranchInput(nextInput);
     } else {
-      setBaselineChoices(nextChoices);
-      setBaselineTasks(tasks);
+      setBaselineInput(nextInput);
     }
+    setPendingTasks((prev) => { const next = { ...prev }; delete next[viewStep]; return next; });
     setLastDebrief(debriefStep);
     if (!hasBranch && viewStep === 3) {
-      setShadowPrediction(
-        prediction
-          ? { expected: prediction, priorChoices: nextChoices.slice(0, 2), solarCalibrated: tasks.solarCalibrated }
-          : null,
-      );
+      setShadowPrediction(prediction ? recordShadowPrediction(prediction, nextInput) : null);
     }
 
     setDecisionModalOpen(false);
@@ -717,8 +637,7 @@ export default function App() {
     setViewStep(step);
     if (runA.complete && !rewoundChoices) {
       soundFX.play('rewind');
-      setRewoundChoices([...baselineChoices]);
-      setBranchTasks(baselineTasks);
+      setBranchInput(cloneRunInput(baselineInput));
     }
   }
 
@@ -737,29 +656,35 @@ export default function App() {
     setSampleModalOpen(false);
     setLastDebrief(null);
     setShadowPrediction(null);
+    setPendingTasks({});
+    setLegacyReplay(false);
     setAchievementToast(null);
     world.current?.reset();
   }
 
-  function handleReset() {
+  function resetExperiment(peakPfu = SEP_PEAK_FLUX_PFU) {
     soundFX.play('StepNav');
     resetFieldwork();
-    setStormPeakPfu(SEP_PEAK_FLUX_PFU);
-    setBaselineChoices([]);
-    setBaselineTasks(DEFAULT_TASK_SETTINGS);
-    setBranchTasks(DEFAULT_TASK_SETTINGS);
-    setRewoundChoices(null);
+    setBaselineInput(createRunInput([], { stormPeakPfu: peakPfu }));
+    setBranchInput(null);
     setDemoStage(null);
     setViewStep(1);
     closeAllModals();
     requestAnimationFrame(() => world.current?.focus());
   }
 
+  function handleReset() { resetExperiment(); }
+
+  function handleSelectStormPeakPfu(peakPfu: number) {
+    // Called only by the explicit Start new experiment action in the science deck.
+    resetExperiment(peakPfu);
+  }
+
   function handleLoadDemo() {
     handleReset();
     soundFX.play('rewind');
-    setBaselineChoices(MISSION_DEMO.baseline.slice(0, runSimulation(MISSION_DEMO.baseline).steps.length));
-    setRewoundChoices(MISSION_DEMO.branch);
+    setBaselineInput(createRunInput(MISSION_DEMO.baseline));
+    setBranchInput(createRunInput(MISSION_DEMO.branch));
     setViewStep(MISSION_DEMO.rewindStep);
     setTelemetryDrawerOpen(true);
     world.current?.teleportTo({ x: 425, y: 800 });
@@ -775,23 +700,22 @@ export default function App() {
 
   function handleAdvanceTour(stage: DemoStage, useBackup = false) {
     soundFX.play('tourChime');
-    if (stage !== 'rewind') setRewoundChoices(null);
-    setBaselineTasks(DEFAULT_TASK_SETTINGS);
-    setBranchTasks(DEFAULT_TASK_SETTINGS);
+    if (stage !== 'rewind') setBranchInput(null);
+    setPendingTasks({});
     if (stage === 'setup') {
-      setBaselineChoices(MISSION_DEMO.baseline.slice(0, 2));
+      setBaselineInput(createRunInput(MISSION_DEMO.baseline.slice(0, 2)));
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage('shadow');
       world.current?.teleportTo({ x: STATIONS[2].x, y: STATIONS[2].y + 40 });
     } else if (stage === 'shadow') {
       const choices = useBackup ? MISSION_DEMO.branch : MISSION_DEMO.baseline;
-      setBaselineChoices(choices.slice(0, runSimulation(choices).steps.length));
+      setBaselineInput(createRunInput(choices));
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage('rewind');
     } else {
       const shadowIndex = MISSION_DEMO.rewindStep - 1;
       const usedBackup = baselineChoices[shadowIndex] === MISSION_DEMO.branch[shadowIndex];
-      setRewoundChoices(usedBackup ? MISSION_DEMO.baseline : MISSION_DEMO.branch);
+      setBranchInput(createRunInput(usedBackup ? MISSION_DEMO.baseline : MISSION_DEMO.branch));
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage(null);
       setTelemetryDrawerOpen(true);
@@ -800,17 +724,18 @@ export default function App() {
 
   function handleClearBranch() {
     soundFX.play('StepNav');
-    setRewoundChoices(null);
+    setBranchInput(null);
+    setPendingTasks({});
     setLastDebrief(null);
     setViewStep(Math.max(1, Math.min(viewStep, runA.steps.length)));
   }
 
   function handleAdoptBranch() {
-    if (!runB || !rewoundChoices) return;
+    if (!runB || !branchInput) return;
     soundFX.play('choice');
-    setBaselineChoices(rewoundChoices);
-    setBaselineTasks(branchTasks);
-    setRewoundChoices(null);
+    setBaselineInput(cloneRunInput(branchInput));
+    setBranchInput(null);
+    setPendingTasks({});
     setViewStep(Math.min(viewStep, runB.steps.length + (runB.complete ? 0 : 1)));
   }
 
@@ -819,13 +744,12 @@ export default function App() {
       if (station.decisionId > lastAvailableStep) return;
       soundFX.play('hotspot');
       if (runA.complete && !hasBranch) {
-        setRewoundChoices([...baselineChoices]);
-        setBranchTasks(baselineTasks);
+        setBranchInput(cloneRunInput(baselineInput));
       }
       setViewStep(station.decisionId);
       setDecisionModalOpen(true);
     },
-    [lastAvailableStep, runA.complete, hasBranch, baselineChoices, baselineTasks],
+    [lastAvailableStep, runA.complete, hasBranch, baselineInput],
   );
 
   const handleNavigateFromMap = useCallback((station: StationNode, instant: boolean) => {
@@ -2096,11 +2020,11 @@ export default function App() {
               choiceB={rewoundChoices?.[viewStep - 1]}
               record={activeRecord}
               flagsBefore={flagsBefore}
-              priorChoices={activeChoices}
+              runInput={activeInput}
               taskSettings={activeTasks}
               taskAvailable={calibratedTasks[viewStep - 1]}
-              minedCount={minedCount}
-              collectedSamplesCount={collectedCount}
+              minedCount={activeTasks.extraIceCores ?? 0}
+              collectedSamplesCount={activeTasks.fieldSamplesCount ?? 0}
               taskExercise={stationExercise}
               canChoose={canChoose}
               shadowPrediction={shadowPrediction}
@@ -2187,6 +2111,13 @@ export default function App() {
               </div>
             </div>
 
+            {legacyReplay && (
+              <p role="status" className="mb-3 rounded-xl border border-amber-300/30 bg-amber-900/20 p-3 text-sm text-amber-100">
+                {lang === 'az'
+                  ? 'Köhnə təkrar keçidi: çatışmayan hazırlıq parametrləri standart qiymətlərlə əvəz olunub; nəticələr ilkin sınaqdan fərqlənə bilər.'
+                  : 'Older replay link: missing preparation settings use defaults; results may differ from the original experiment.'}
+              </p>
+            )}
             {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
             {runB && (
               <div className="mb-4">

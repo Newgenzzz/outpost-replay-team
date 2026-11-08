@@ -20,6 +20,7 @@ import type {
   ResourceState,
 } from '../types';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
+import { cloneRunInput, createRunInput, getPhaseContext, type RunInput } from './runInput';
 import {
   GAME_CONSTANTS as K,
   integrateSepDoseMsv,
@@ -84,6 +85,7 @@ export interface StepRecord {
 export type Outcome = 'in-progress' | 'success' | 'warning' | 'abort';
 
 export interface SimulationResult {
+  input: RunInput;
   choices: number[];
   solarCalibrated: boolean;
   icePrepared: boolean;
@@ -183,28 +185,14 @@ export function runSimulation(
   choiceIndices: readonly number[],
   options: Partial<MissionTaskSettings> = {},
 ): SimulationResult {
-  const {
-    solarCalibrated = false,
-    icePrepared = false,
-    eclssSealed = false,
-    busPatched = false,
-    extraIceCores = 0,
-    stormClamped = false,
-    dishAligned = false,
-    fieldSamplesCount = 0,
-    stormPeakPfu = MAY_2024_PROTON_EVENT.peakPfu,
-  } = options;
+  return runExperiment(createRunInput(choiceIndices, options));
+}
 
-  const choices = choiceIndices.slice(0, MISSION_DECISIONS.length);
-  for (const [i, choiceIndex] of choices.entries()) {
-    if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex > 2) {
-      throw new RangeError(`runSimulation: invalid choice index ${choiceIndex} at decision ${i + 1}`);
-    }
-  }
-
-  const normalizedExtraCores = Math.min(4, Math.max(0, Math.floor(extraIceCores)));
-  const normalizedSamples = Math.min(6, Math.max(0, Math.floor(fieldSamplesCount)));
-  const normalizedStormPeak = Math.max(0, stormPeakPfu);
+/** Execute immutable per-choice snapshots; field drafts never rewrite completed phase inputs. */
+export function runExperiment(source: RunInput): SimulationResult {
+  const input = cloneRunInput(source);
+  const choices = input.phases.map((phase) => phase.choiceIndex);
+  const normalizedStormPeak = input.scenario.stormPeakPfu;
   const stormScale = normalizedStormPeak / MAY_2024_PROTON_EVENT.peakPfu;
 
   const history = [{ ...K.initialState }];
@@ -219,6 +207,7 @@ export function runSimulation(
   let elapsedHours = 0;
   let doseWarningStep: number | null = null;
   let abortCause: AbortCause | null = null;
+  let appliedSolarCalibration = false;
   let appliedIcePreparation = false;
   let appliedEclssSeal = false;
   let appliedBusPatch = false;
@@ -246,6 +235,11 @@ export function runSimulation(
   ];
 
   for (const [i, choiceIndex] of choices.entries()) {
+    const { solarCalibrated, icePrepared, eclssSealed, busPatched, extraIceCores,
+      stormClamped, dishAligned, fieldSamplesCount } = input.phases[i].tasks;
+    // Preserve the existing four-extra-core simulation cap until the extraction milestone.
+    const normalizedExtraCores = Math.min(4, extraIceCores);
+    if (i === 0) appliedSolarCalibration = solarCalibrated;
     const decision = MISSION_DECISIONS[i];
     const baseChoice = decision.choices[choiceIndex];
     const usePreparedExtractor = icePrepared && baseChoice.id === 'D4-A';
@@ -266,8 +260,8 @@ export function runSimulation(
     const useDishAlign = dishAligned && i === 5;
     appliedDishAlign ||= useDishAlign;
 
-    const stepSamples = i === 0 ? normalizedSamples : 0;
-    if (stepSamples > 0) appliedSamples = stepSamples;
+    const stepSamples = getPhaseContext(input, i)!.fieldSamplesCount;
+    appliedSamples = Math.max(appliedSamples, fieldSamplesCount);
 
     const choice: Choice =
       useEclssSeal || stepExtraCores > 0
@@ -548,8 +542,9 @@ export function runSimulation(
   }
 
   return {
+    input,
     choices,
-    solarCalibrated: choices.length > 0 && solarCalibrated,
+    solarCalibrated: appliedSolarCalibration,
     icePrepared: appliedIcePreparation,
     eclssSealed: appliedEclssSeal,
     busPatched: appliedBusPatch,
@@ -627,14 +622,17 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
   for (let i = 0; i < n; i++) {
     const sa = a.steps[i];
     const sb = b.steps[i];
+    const contextA = getPhaseContext(a.input, i)!;
+    const contextB = getPhaseContext(b.input, i)!;
     const preparationChanged = i === 3 && icePreparationChanged;
     const otherTaskChanged =
-      (i === 0 && a.fieldSamplesCount !== b.fieldSamplesCount) ||
-      (i === 1 && a.eclssSealed !== b.eclssSealed) ||
-      (i === 2 && a.busPatched !== b.busPatched) ||
-      (i === 3 && a.extraIceCores !== b.extraIceCores) ||
-      (i === 4 && (a.stormClamped !== b.stormClamped || a.stormPeakPfu !== b.stormPeakPfu)) ||
-      (i === 5 && a.dishAligned !== b.dishAligned);
+      contextA.fieldSamplesCount !== contextB.fieldSamplesCount ||
+      contextA.eclssSealed !== contextB.eclssSealed ||
+      contextA.busPatched !== contextB.busPatched ||
+      contextA.extraIceCores !== contextB.extraIceCores ||
+      contextA.stormClamped !== contextB.stormClamped ||
+      contextA.stormPeakPfu !== contextB.stormPeakPfu ||
+      contextA.dishAligned !== contextB.dishAligned;
 
     if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged) || preparationChanged || otherTaskChanged) {
       changedSteps.push(i + 1);

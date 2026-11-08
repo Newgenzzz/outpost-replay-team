@@ -31,7 +31,7 @@ import {
   METRIC_KEYS,
   RULE_LABELS,
   previewChoiceEffects,
-  runSimulation,
+  runExperiment,
   type StepRecord,
 } from '../engine/simulation';
 import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings, TrainingMode } from '../types';
@@ -39,6 +39,7 @@ import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 import { ShadowPredictionInput } from './ShadowPrediction';
 import type { ShadowPrediction, ShadowStrategy } from '../engine/shadowPrediction';
+import { applyRunChoice, type RunInput } from '../engine/runInput';
 
 const CREW_ADVISORY: Record<number, { speaker: Bilingual; tip: Bilingual }> = {
   1: {
@@ -264,7 +265,7 @@ interface DecisionCardProps {
   choiceB: number | undefined;
   record: StepRecord | undefined;
   flagsBefore: FlagId[];
-  priorChoices?: number[];
+  runInput: RunInput;
   canChoose: boolean;
   taskSettings: MissionTaskSettings;
   taskAvailable: boolean;
@@ -287,7 +288,7 @@ export default function DecisionCard(props: DecisionCardProps) {
     choiceB,
     record,
     flagsBefore,
-    priorChoices = [],
+    runInput,
     canChoose,
     taskSettings,
     taskAvailable,
@@ -308,16 +309,16 @@ export default function DecisionCard(props: DecisionCardProps) {
 
   const currentStepDefault =
     step === 1
-      ? taskSettings.solarCalibrated || taskAvailable
+      ? taskSettings.solarCalibrated
       : step === 2
-        ? Boolean(taskSettings.eclssSealed || taskAvailable)
+        ? Boolean(taskSettings.eclssSealed)
         : step === 3
-          ? Boolean(taskSettings.busPatched || taskAvailable)
+          ? Boolean(taskSettings.busPatched)
           : step === 4
-            ? taskSettings.icePrepared || taskAvailable
+            ? taskSettings.icePrepared
             : step === 5
-              ? Boolean(taskSettings.stormClamped || taskAvailable)
-              : Boolean(taskSettings.dishAligned || taskAvailable);
+              ? Boolean(taskSettings.stormClamped)
+              : Boolean(taskSettings.dishAligned);
 
   const stepTaskEnabled = taskOverride ?? currentStepDefault;
 
@@ -344,18 +345,18 @@ export default function DecisionCard(props: DecisionCardProps) {
 
   const inspectedIdx = inspectedChoice ?? activeChoice ?? 0;
   const forecasts = useMemo(() => {
-    const prefix = priorChoices.slice(0, step - 1);
-    if (prefix.length !== step - 1) return [];
+    const prefix = { ...runInput, phases: runInput.phases.slice(0, step - 1) };
+    if (prefix.phases.length !== step - 1) return [];
     return decision.choices.map((_, index) =>
-      runSimulation(
-        [...prefix, index],
+      runExperiment(applyRunChoice(
+        prefix, step, index,
         {
           ...effectiveTasks,
           icePrepared: step === 4 ? index === 0 && stepTaskEnabled : effectiveTasks.icePrepared,
         },
-      ).steps[step - 1],
+      )).steps[step - 1],
     );
-  }, [decision, priorChoices, step, effectiveTasks, stepTaskEnabled]);
+  }, [decision, runInput, step, effectiveTasks, stepTaskEnabled]);
 
   const forecastStep = forecasts[inspectedIdx];
   const conditionals = previewChoiceEffects(step, inspectedIdx, flagsBefore).conditionals;

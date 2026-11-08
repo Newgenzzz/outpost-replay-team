@@ -13,7 +13,10 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
   const cmp = compareRuns(a, b);
   const firstChange = cmp.firstDivergence;
   if (firstChange === null) {
-    return <p className="rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-300">{t('noDifference')}</p>;
+    return <p className="rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-300">{a.elapsedHours === b.elapsedHours
+      ? t('noDifference')
+      : az ? `Ortaq mərhələlərdə girişlər eynidir. A gedişi ${a.elapsedHours}, B gedişi ${b.elapsedHours} saata çatıb. Qrafikdə eyni saatları müqayisə edin.`
+        : `Inputs match at the shared phases. Run A reached hour ${a.elapsedHours} and Run B reached hour ${b.elapsedHours}. Compare matching hours in the charts.`}</p>;
   }
 
   const decision = MISSION_DECISIONS[firstChange - 1];
@@ -118,10 +121,20 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
         )}
       </div>
       <p className="text-sm text-slate-200">
-        {az
+        {a.input.scenario.stormPeakPfu !== b.input.scenario.stormPeakPfu
+          ? az ? 'Fırtına parametrləri fərqlidir. Bu müqayisə yalnız bir qərarın təsirini təcrid etmir.'
+            : 'Storm settings differ. This comparison does not isolate the effect of a single decision.'
+          : az
           ? 'Hər iki gedişdə ilkin ehtiyatlar, işıq, temperatur və fırtına cədvəli eynidir.'
           : 'Both runs share the same starting reserves and schedule for sunlight, temperature, and the storm.'}
       </p>
+      {cmp.changedSteps.length > 1 && (
+        <p className="text-xs text-amber-100">
+          {az
+            ? `Girişlər ${cmp.changedSteps.map((step) => `D${step}`).join(', ')} mərhələlərində fərqlənir. Bir neçə mərhələ dəyişdirilib.`
+            : `Inputs differ at ${cmp.changedSteps.map((step) => `D${step}`).join(', ')}. More than one phase changed.`}
+        </p>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         {comparison.map(({ label, run, phase }, index) => {

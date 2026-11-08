@@ -13,6 +13,7 @@ const bundle = await build({
     resolveId: (id) => id === testEntry ? `\0${id}` : null,
     load: (id) => id === `\0${testEntry}` ? `
       export * from '/src/engine/simulation.ts';
+      export * from '/src/engine/runInput.ts';
       export * from '/src/engine/marsMission.ts';
       export * from '/src/engine/resources.ts';
       export * from '/src/engine/power.ts';
@@ -34,9 +35,10 @@ const bundle = await build({
 const [{ code }] = bundle.output;
 const {
   advancePower, buildStormProfileForPeak, compareRuns, computeRimIllumination, CRATER_DEPTH_KM, CROP_TRIAL,
-  ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS, estimateSitePower, evaluateShadowPrediction,
+  applyRunChoice, cloneRunInput, createRunInput, getPhaseContext, getRunTasks, normalizePhaseTasks,
+  ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS, estimateSitePower, evaluateShadowPrediction, recordShadowPrediction,
   LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan,
-  runMarsSimulation, runSimulation, sampleShackletonElevationKm, SHIELDING,
+  runExperiment, runMarsSimulation, runSimulation, sampleShackletonElevationKm, SHIELDING,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const phases = [24, 48, 120, 144, 192, 216];
@@ -46,7 +48,7 @@ test('evaluates a recorded D3 prediction only for tested strategies with the sam
   const b = runSimulation([2, 2, 1, 2, 0, 0]);
   assert.equal(a.elapsedHours, 203);
   assert.equal(b.elapsedHours, 216);
-  const prediction = { expected: 'backup', priorChoices: [2, 2], solarCalibrated: false };
+  const prediction = recordShadowPrediction('backup', a.input);
   assert.equal(evaluateShadowPrediction(prediction, a, null).status, 'pending');
   const result = evaluateShadowPrediction(prediction, a, b);
   assert.equal(result.status, 'supported');
@@ -160,7 +162,10 @@ test('applies prepared extraction to the same D4-A feedstock and powered fractio
   near(constrainedPrepared.resourceFlows.waterExtractedKg, constrained.resourceFlows.waterExtractedKg * 1.25);
 
   const maintenance = [1, 0, 1, 1];
-  assert.deepEqual(runSimulation(maintenance, { icePrepared: true }), runSimulation(maintenance));
+  const { input: preparedInput, ...preparedMaintenance } = runSimulation(maintenance, { icePrepared: true });
+  const { input: standardInput, ...standardMaintenance } = runSimulation(maintenance);
+  assert.deepEqual(preparedMaintenance, standardMaintenance);
+  assert.notDeepEqual(preparedInput, standardInput); // Preserve the recorded setting even when this choice does not use it.
   const prefix = runSimulation(choices.slice(0, 3), { icePrepared: true });
   assert.equal(prefix.icePrepared, false);
   assert.deepEqual(compareRuns(prefix, prepared).changedSteps, []);
@@ -227,6 +232,8 @@ test('conserves energy and crew stores across all 729 routes for every station s
     { solarCalibrated: true },
     { icePrepared: true },
     { solarCalibrated: true, icePrepared: true },
+    { solarCalibrated: true, icePrepared: true, eclssSealed: true, busPatched: true,
+      extraIceCores: 5, stormClamped: true, dishAligned: true, fieldSamplesCount: 6, stormPeakPfu: 840 },
   ];
   for (let input = 0; input < equipmentSettings.length * routeCount; input++) {
     const choices = [...(input % routeCount).toString(3).padStart(6, '0')].map(Number);
@@ -357,4 +364,97 @@ test('simulates Bonus Mission 2 (Mars Jezero Global Dust Storm) deterministicall
 
   const reckless = runMarsSimulation([1, 1, 0]);
   assert.ok(reckless.powerKwh < safe.powerKwh || reckless.outcome !== 'success');
+});
+
+test('copies, freezes and validates committed experiment inputs without accepting mutable drafts', () => {
+  const choices = [2, 2];
+  const draft = { solarCalibrated: true, icePrepared: false, stormPeakPfu: 207 };
+  const input = createRunInput(choices, draft);
+  const before = runExperiment(input);
+  choices[0] = 0;
+  draft.solarCalibrated = false;
+  draft.stormPeakPfu = 840;
+  assert.deepEqual(runExperiment(input), before);
+  assert.equal(input.phases[0].choiceIndex, 2);
+  assert.equal(input.phases[0].tasks.solarCalibrated, true);
+  assert.equal(input.scenario.stormPeakPfu, 207);
+  assert.ok(Object.isFrozen(input) && Object.isFrozen(input.scenario) && Object.isFrozen(input.phases));
+  assert.ok(input.phases.every((phase) => Object.isFrozen(phase) && Object.isFrozen(phase.tasks)));
+  assert.throws(() => { input.phases[0].tasks.solarCalibrated = false; }, TypeError);
+  assert.notEqual(cloneRunInput(input), input);
+  assert.deepEqual(before.input, input);
+
+  for (const stormPeakPfu of [NaN, Infinity, -1, 5001, '207', null]) {
+    assert.throws(() => createRunInput([], { stormPeakPfu }));
+  }
+  for (const tasks of [{ eclssSealed: 'true' }, { solarCalibrated: 1 }, { fieldSamplesCount: 1.5 },
+    { fieldSamplesCount: 7 }, { fieldSamplesCount: null }, { extraIceCores: -1 }, { extraIceCores: 6 }]) {
+    assert.throws(() => normalizePhaseTasks(tasks));
+  }
+  assert.throws(() => createRunInput(Array(2)), RangeError);
+  assert.throws(() => applyRunChoice(input, 4, 0, getRunTasks(input, 3)), RangeError);
+});
+
+test('commits field work at its chosen phase without retroactive credit or repeated sample awards', () => {
+  const prefix = createRunInput([0, 0]);
+  const previous = runExperiment(prefix);
+  const pending = { ...getRunTasks(prefix, 3), busPatched: true, fieldSamplesCount: 2 };
+  const applied = applyRunChoice(prefix, 3, 1, pending);
+  pending.busPatched = false;
+  pending.fieldSamplesCount = 6;
+  const withTask = runExperiment(applied);
+  assert.deepEqual(runExperiment(prefix), previous);
+  assert.deepEqual(withTask.steps.slice(0, 2), previous.steps);
+  assert.equal(withTask.input.phases[2].tasks.busPatched, true);
+  const fieldAward = (step) => step.contributions.filter(({ label }) => label.en.startsWith('Field geology dossier'));
+  assert.deepEqual(withTask.steps.slice(0, 2).flatMap(fieldAward), []);
+  assert.equal(fieldAward(withTask.steps[2])[0].delta.sciencePoints, 4);
+
+  const next = applyRunChoice(applied, 4, 0, getRunTasks(applied, 4));
+  const continued = runExperiment(next);
+  assert.deepEqual(continued.steps.slice(0, 3), withTask.steps);
+  assert.deepEqual(fieldAward(continued.steps[3]), []);
+  assert.equal(getRunTasks(applied, 4).fieldSamplesCount, 2);
+  assert.equal(getPhaseContext(next, 3).fieldSamplesCount, 0);
+  const resetCount = applyRunChoice(next, 4, 0, { ...getRunTasks(next, 4), fieldSamplesCount: 0 });
+  const collectedAgain = applyRunChoice(resetCount, 5, 2, { ...getRunTasks(resetCount, 5), fieldSamplesCount: 2 });
+  assert.equal(getPhaseContext(collectedAgain, 4).fieldSamplesCount, 0);
+});
+
+test('replacing one choice preserves later snapshots and never replaces the experiment scenario', () => {
+  const original = createRunInput([0, 0, 2, 0, 2, 1], { icePrepared: true, fieldSamplesCount: 2 });
+  const revised = applyRunChoice(original, 3, 1, { ...getRunTasks(original, 3), busPatched: true, stormPeakPfu: 840 });
+  assert.equal(original.phases[2].choiceIndex, 2);
+  assert.equal(revised.phases[2].choiceIndex, 1);
+  assert.deepEqual(revised.phases.slice(0, 2), original.phases.slice(0, 2));
+  assert.deepEqual(revised.phases.slice(3), original.phases.slice(3));
+  assert.deepEqual(revised.scenario, original.scenario);
+  assert.deepEqual(runExperiment(revised).steps.slice(0, 2), runExperiment(original).steps.slice(0, 2));
+  const extended = applyRunChoice(createRunInput([0, 0]), 3, 1, getRunTasks(original, 3));
+  assert.equal(extended.phases.length, 3);
+});
+
+test('orders all effective phase input differences chronologically through one comparison', () => {
+  const input = createRunInput([0, 0, 1, 0, 2, 1]);
+  const base = runExperiment(input);
+  for (const [step, patch] of [
+    [1, { solarCalibrated: true }], [2, { eclssSealed: true }], [3, { busPatched: true }],
+    [4, { icePrepared: true }], [4, { extraIceCores: 3 }], [5, { stormClamped: true }],
+    [6, { dishAligned: true }], [3, { fieldSamplesCount: 2 }],
+  ]) {
+    const changed = applyRunChoice(input, step, input.phases[step - 1].choiceIndex, { ...getRunTasks(input, step), ...patch });
+    const cmp = compareRuns(base, runExperiment(changed));
+    assert.deepEqual(cmp.changedSteps, [step], JSON.stringify(patch));
+    assert.equal(cmp.firstDivergence, step);
+  }
+  const weather = cloneRunInput({ ...input, scenario: { stormPeakPfu: 840 } });
+  assert.deepEqual(compareRuns(base, runExperiment(weather)).changedSteps, [5]);
+  assert.equal(base.input.scenario.stormPeakPfu, 207);
+
+  const laterTask = applyRunChoice(input, 2, 0, { ...getRunTasks(input, 2), eclssSealed: true });
+  const earlierChoice = applyRunChoice(laterTask, 1, 2, getRunTasks(laterTask, 1));
+  assert.deepEqual(compareRuns(base, runExperiment(earlierChoice)).changedSteps, [1, 2]);
+  const short = runExperiment(createRunInput([0, 0]));
+  assert.deepEqual(compareRuns(short, base).changedSteps, []);
+  assert.equal(compareRuns(short, base).firstDivergence, null); // No two matching reached records for later phases.
 });
