@@ -39,9 +39,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 1,
     title: { en: 'Touchdown: Power Architecture', az: 'Eniş: Enerji Arxitekturası' },
+    cadetTitle: { en: 'Day 1: Catching Sideways Sunlight!', az: '1-ci Gün: Üfüqdəki Günəş İşığını Tutun!' },
     context: {
       en: 'Your lander has touched down on the Shackleton Crater rim. The Sun never rises high here — it skims the horizon at about 1–2°. How you deploy the solar arrays today decides how the outpost survives the shadows ahead.',
       az: 'Eniş modulunuz Şeklton kraterinin kənarına endi. Burada Günəş heç vaxt yüksəyə qalxmır — üfüqün təxminən 1–2° yuxarısında sürüşür. Bu gün günəş panellərini necə quraşdırmağınız qarşıdakı kölgə dövrlərində bazanın necə sağ qalacağını müəyyən edəcək.',
+    },
+    cadetContext: {
+      en: 'Touchdown at the Moon’s South Pole! Up here, the Sun skims sideways along mountain peaks like a flashlight on the floor. Soon a giant crater ridge will block the light for 3 days — how will you set up your solar wings today?',
+      az: 'Ayın Cənub Qütbünə endiniz! Burada Günəş döşəmədəki fənər kimi dağ zirvələri boyunca üfüqi hərəkət edir. Tezliklə nəhəng krater silsiləsi 3 gün işığı kəsəcək — bu gün günəş qanadlarını necə quracaqsınız?',
     },
     phase: { startHour: 0, endHour: 24, label: { en: 'Hours 0–24 · Touchdown', az: 'Saat 0–24 · Eniş' } },
     nasaDataTrigger: null,
@@ -51,6 +56,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Raise a 10 m vertical solar mast on the rim crest',
           az: 'Krater kənarının zirvəsində 10 m-lik şaquli günəş dirəyi qurun',
+        },
+        cadetLabel: {
+          en: 'Build a tall 10 m solar tower to peek over shadows',
+          az: 'Kölgələrin üstündən baxan 10 m-lik hündür günəş qülləsi qurun',
+        },
+        cadetSummary: {
+          en: 'Uses a bit of battery now, but stands tall like a giraffe to catch sunlight even when low ridges cast shadows later!',
+          az: 'İndi bir az batareya aparır, amma sonradan kölgə düşəndə də hündürdən günəş işığını tutur!',
         },
         effects: { powerKwh: -4, radiationMsv: 1.0 },
         solarIncidenceDeg: 10,
@@ -77,6 +90,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Unfold low deck panels beside the lander',
           az: 'Eniş modulunun yanında alçaq panelləri açın',
         },
+        cadetLabel: {
+          en: 'Open quick low solar wings right next to the lander',
+          az: 'Eniş modulunun yanında sürətli alçaq günəş qanadlarını açın',
+        },
+        cadetSummary: {
+          en: 'Super fast setup with time to grab a Moon rock (+4 Science), but mountain shadows will block these low wings later!',
+          az: 'Çox sürətli qurulur və ilk Ay daşını toplamağa vaxt qalır (+4 Elm), amma sonradan dağ kölgəsi alçaq panelləri örtəcək!',
+        },
         effects: { radiationMsv: 0.3, sciencePoints: 4 },
         solarIncidenceDeg: 0,
         causeAndEffectExplanation: {
@@ -98,6 +119,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Leave panels 25° off-axis and start science',
           az: 'Panelləri 25° sapma ilə saxlayın və elmi işə başlayın',
+        },
+        cadetLabel: {
+          en: 'Skip careful aiming and rush out for Moon rocks!',
+          az: 'Dəqiq yönəltməni ötürün və dərhal Ay daşları toplamağa qaçın!',
+        },
+        cadetSummary: {
+          en: 'Big early discovery (+12 Science!), but crooked panels charge poorly and drain your battery before the dark hits.',
+          az: ' Böyük erkən kəşf (+12 Elm!), amma əyri panellər zəif enerji yığır və qaranlıqdan əvvəl batareyanı azaldır.',
         },
         effects: { powerKwh: -8, radiationMsv: 1.5, sciencePoints: 12 },
         solarIncidenceDeg: 25,
@@ -121,9 +150,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 2,
     title: { en: 'Habitat Configuration', az: 'Yaşayış Modulunun Konfiqurasiyası' },
+    cadetTitle: { en: 'Day 2: Armor, Air, or Space Salad?', az: '2-ci Gün: Zireh, Hava, yoxsa Kosmik Salat?' },
     context: {
       en: 'Day 2. The habitat is pressurised. Robots and crew can complete one major setup task before the terrain shadow arrives. Each option protects the mission in a different way.',
       az: '2-ci gün. Yaşayış modulu hermetikləşdirildi. Relyef kölgəsi gəlməzdən əvvəl robotlar və ekipaj yalnız bir böyük quraşdırma işini görə bilər. Hər seçim missiyanı fərqli şəkildə qoruyur.',
+    },
+    cadetContext: {
+      en: 'Your Moon home has air and warmth! You have time to build ONE big upgrade before the 3-day mountain shadow arrives: Moon-dirt armor against space storms, a rock-to-oxygen machine, or a mini space garden.',
+      az: 'Ay eviniz hazırdır! 3 günlük dağ kölgəsindən əvvəl YALNIZ BİR böyük yeniləmə qura bilərsiniz: kosmik fırtınaya qarşı Ay-torpağı qalxanı, daşdan oksigen çıxaran maşın və ya mini kosmik bağça.',
     },
     phase: { startHour: 24, endHour: 48, label: { en: 'Hours 24–48 · Setup', az: 'Saat 24–48 · Quraşdırma' } },
     nasaDataTrigger: null,
@@ -133,6 +167,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Pile a regolith berm around the habitat (robotic excavator)',
           az: 'Yaşayış modulunun ətrafına reqolit (Ay torpağı) səddi tökün (robot ekskavator)',
+        },
+        cadetLabel: {
+          en: 'Scoop thick Moon-dirt walls around your shelter (Storm Armor)',
+          az: 'Sığınacağın ətrafına qalın Ay torpağı divarı yığın (Fırtına Zirehi)',
+        },
+        cadetSummary: {
+          en: 'Robot digger piles Moon soil over the bunker — blocks 94% of radiation if a giant solar storm hits on Day 7!',
+          az: 'Robot ekskavator sığınacağın üstünə Ay torpağı yığır — 7-ci gündə Günəş fırtınası olarsa radiasiyanın 94%-ni saxlayır!',
         },
         effects: { powerKwh: -8, radiationMsv: 0.8, sciencePoints: 2 },
         setsFlags: ['regolithBerm'],
@@ -158,6 +200,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Start the ISRU oxygen-from-regolith demonstrator',
           az: 'Reqolitdən oksigen alan ISRU (yerli resurslardan istifadə) qurğusunu işə salın',
         },
+        cadetLabel: {
+          en: 'Bake Moon rocks to make extra breathing oxygen (+3 kg O₂)',
+          az: 'Əlavə nəfəs oksigeni (+3 kq O₂) almaq üçün Ay daşlarını qızdırın',
+        },
+        cadetSummary: {
+          en: 'Extracts real breathing air right out of Moon dust (+10 Science & +8% Life Support), using extra battery power.',
+          az: 'Ay tozundan nəfəs havası çıxarır (+10 Elm və +8% Həyat Təminatı), lakin əlavə batareya enerjisi sərf edir.',
+        },
         effects: { powerKwh: -10, lifeSupportPct: 8, sciencePoints: 10 },
         resourceEffects: { oxygenKg: 3 },
         setsFlags: ['isruOxygen'],
@@ -181,6 +231,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Start the greenhouse crop trial',
           az: 'İstixanada bitki sınağına başlayın',
         },
+        cadetLabel: {
+          en: 'Turn on purple grow-lights for fresh space greens',
+          az: 'Təzə kosmik göyərti üçün bənövşəyi bitki işıqlarını yandırın',
+        },
+        cadetSummary: {
+          en: 'Grows tasty greens in 5 days if the power never cuts out — sips water and electricity every hour.',
+          az: 'İşıq kəsilməsə 5 günə təzə göyərti yetişdirir — hər saat azca su və elektrik işlədir.',
+        },
         effects: { powerKwh: -3, sciencePoints: 4 },
         setsFlags: ['greenhouse'],
         causeAndEffectExplanation: {
@@ -203,9 +261,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 3,
     title: { en: '72-Hour Horizon Shadow', az: '72 Saatlıq Üfüq Kölgəsi' },
+    cadetTitle: { en: 'Days 3–5: Frozen 3-Day Mountain Shadow!', az: '3–5-ci Günlər: Şaxtalı 3 Günlük Dağ Kölgəsi!' },
     context: {
       en: 'In this scenario, a ridge hides most of the Sun for 72 hours. The surface cools and cabin heating takes more energy. What can you switch off or power from another source?',
       az: 'Bu ssenaridə silsilə 72 saat Günəşin böyük hissəsini örtür. Səth soyuyur və kabini qızdırmaq üçün daha çox enerji tələb olunur. Hansı avadanlığı söndürmək və ya başqa mənbədən qidalandırmaq olar?',
+    },
+    cadetContext: {
+      en: 'Brrr! A giant mountain ridge just blocked the Sun for 72 hours! Outside drops to −183 °C, and your heaters are gulping battery power. How do you keep the lights and warm air running?',
+      az: 'Brrr! Nəhəng dağ silsiləsi 72 saatlığa Günəşi örtdü! Çöldə şaxta −183 °C-yə düşür və qızdırıcılar batareyanı sürətlə içir. İşığı və isti havanı necə qoruyacaqsınız?',
     },
     phase: { startHour: 48, endHour: 120, label: { en: 'Hours 48–120 · Shadow', az: 'Saat 48–120 · Kölgə' } },
     nasaDataTrigger: {
@@ -226,6 +289,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Enter survival mode — shed non-critical loads',
           az: 'Sağ qalma rejiminə keçin — vacib olmayan yükləri söndürün',
+        },
+        cadetLabel: {
+          en: 'Cozy sleep-bag mode — turn off lab gadgets to save battery',
+          az: 'Qənaət rejimi — batareyanı qorumaq üçün laboratoriya cihazlarını söndürün',
+        },
+        cadetSummary: {
+          en: 'Saves lots of battery (+14 kWh), though the chilly cabin makes air scrubbers work slower (−6% Life Support).',
+          az: 'Çoxlu batareya qoruyur (+14 kVt·s), amma sərin kabin hava təmizləyicilərini bir az zəiflədir (−6% Həyat Təminatı).',
         },
         effects: { powerKwh: 14, lifeSupportPct: -6 },
         powerStrategy: 'load-shed',
@@ -248,6 +319,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Switch on the backup fuel cells',
           az: 'Ehtiyat yanacaq elementlərini işə salın',
+        },
+        cadetLabel: {
+          en: 'Fire up the backup hydrogen-oxygen power cells',
+          az: 'Ehtiyat hidrogen-oksigen enerji elementlərini işə salın',
+        },
+        cadetSummary: {
+          en: 'Keeps the base warm and bright (+18 kWh & +4 Science!), but uses up your one-time backup tank before Day 9.',
+          az: 'Bazanı isti və işıqlı saxlayır (+18 kVt·s və +4 Elm!), lakin birdəfəlik ehtiyat çənini son günə qədər bitirir.',
         },
         effects: { powerKwh: 18, lifeSupportPct: -1, sciencePoints: 4 },
         powerStrategy: 'backup',
@@ -274,6 +353,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Keep full operations — drill at the cold-trap edge',
           az: 'Tam iş rejimini saxlayın — soyuq tələnin kənarında qazma aparın',
         },
+        cadetLabel: {
+          en: 'Drill for ancient ice in the dark anyway (+20 Science!)',
+          az: 'Qaranlığa baxmayaraq qədim buz üçün qazma aparın (+20 Elm!)',
+        },
+        cadetSummary: {
+          en: 'Huge discovery (+20 Science!), but heavy drilling in the dark can drain batteries and trigger a dangerous brownout!',
+          az: 'Nəhəng kəşf (+20 Elm!), amma qaranlıqda ağır qazma batareyanı boşaldıb təhlükəli enerji kəsilməsi yarada bilər!',
+        },
         effects: { powerKwh: -6, lifeSupportPct: -2, radiationMsv: 0.8, sciencePoints: 20 },
         causeAndEffectExplanation: {
           en: 'Diviner measured some of the coldest places in the Solar System in nearby permanently shadowed craters — ideal for finding water ice (+20 science). But drilling in the dark costs 6 kWh on top of the shadow drain. If the battery falls below 20 kWh, a brownout will throttle life support.',
@@ -295,9 +382,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 4,
     title: { en: 'Sunrise: Ice Prospecting', az: 'Gün Çıxışı: Buz Kəşfiyyatı' },
+    cadetTitle: { en: 'Day 6: Sunlight Returns — Hunt for Moon Ice!', az: '6-cı Gün: Günəş Qayıtdı — Ay Buzu Axtarışı!' },
     context: {
       en: 'The Sun clears the ridge again and the arrays recover. The rim is warming from 140 K back towards 200 K. Mission Control asks: what is today’s priority?',
       az: 'Günəş yenidən silsilənin üstünə çıxır və panellər bərpa olunur. Krater kənarı 140 K-dən yenidən 200 K-ə doğru isinir. Missiya İdarəetmə Mərkəzi soruşur: bugünkü prioritet nədir?',
+    },
+    cadetContext: {
+      en: 'Golden sunlight shines over Shackleton Rim again! Nearby lies a billion-year-old dark crater holding real frozen water. Should you drive the Lunar Rover down, fix up the base, or send a little robot?',
+      az: 'Şeklton kənarına yenidən qızılı günəş doğdu! Yaxınlıqda milyard illik qaranlıq kraterdə əsl su buzu gizlənir. Ay Maşınını özünüz sürəcəksiniz, bazanı təmir edəcəksiniz, yoxsa kiçik robot göndərəcəksiniz?',
     },
     phase: { startHour: 120, endHour: 144, label: { en: 'Hours 120–144 · Sunrise', az: 'Saat 120–144 · Gün çıxışı' } },
     nasaDataTrigger: null,
@@ -307,6 +399,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Crewed rover traverse to the permanently shadowed crater edge',
           az: 'Daimi kölgəli kraterin kənarına ekipajlı rover səfəri',
+        },
+        cadetLabel: {
+          en: 'Drive the Lunar Rover to scoop & melt real Moon ice!',
+          az: 'Əsl Ay buzunu qazıb əritmək üçün Ay Maşınını sürün!',
+        },
+        cadetSummary: {
+          en: 'Awesome adventure (+22 Science + fresh melted drinking water!), using rover battery and suit air.',
+          az: 'Möhtəşəm macəra (+22 Elm + təzə əridilmiş içməli su!), rover batareyası və skafandr havası sərf edir.',
         },
         effects: { powerKwh: -14, lifeSupportPct: -3, radiationMsv: 3.5, sciencePoints: 22 },
         resourceEffects: { oxygenKg: -0.8, waterKg: -0.5 },
@@ -332,6 +432,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Recharge batteries and service life support',
           az: 'Batareyaları doldurun və həyat təminatı sisteminə xidmət göstərin',
+        },
+        cadetLabel: {
+          en: 'Stay home to recharge batteries & tune up water recyclers',
+          az: 'Batareyaları doldurmaq və su filtrlərini təmir etmək üçün bazada qalın',
+        },
+        cadetSummary: {
+          en: 'Boosts battery (+10 kWh) and air/water health (+6% Life Support), plus bonus repair parts if you built the O₂ machine!',
+          az: 'Batareyanı (+10 kVt·s) və hava/su sistemini (+6%) gücləndirir; O₂ maşını qurmusunuzsa əlavə bonus verir!',
         },
         effects: { powerKwh: 10, lifeSupportPct: 6, sciencePoints: 3 },
         powerStrategy: 'load-shed',
@@ -366,6 +474,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Teleoperate a robotic scout from inside the habitat',
           az: 'Yaşayış modulunun içindən robot kəşfiyyatçını uzaqdan idarə edin',
         },
+        cadetLabel: {
+          en: 'Drive a remote-control mini-robot into the dark crater',
+          az: 'Qaranlıq kraterə uzaqdan idarə olunan mini-robot göndərin',
+        },
+        cadetSummary: {
+          en: 'Safe and smart! Crew stays cozy indoors (0 radiation) while the robot beams back +13 Science.',
+          az: 'Təhlükəsiz və ağıllı! Ekipaj içəridə qorunur (0 radiasiya), robot isə +13 Elm xalı göndərir.',
+        },
         effects: { powerKwh: -7, sciencePoints: 13 },
         causeAndEffectExplanation: {
           en: 'The robot drives into the cold, dark crater while the crew stays shielded (no extra mSv). It costs 7 kWh and returns less science than a crewed traverse (+13).',
@@ -387,9 +503,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 5,
     title: { en: 'Solar Storm Alert', az: 'Günəş Fırtınası Xəbərdarlığı' },
+    cadetTitle: { en: 'Days 7–8: Red Alert — Solar Storm Incoming!', az: '7–8-ci Günlər: Qırmızı Həyəcan — Günəş Fırtınası Gəlir!' },
     context: {
       en: 'A scripted particle storm is approaching. Its peak is anchored to a May 2024 GOES proton observation near Earth. Decide how much time to spend outside and which shelter to use.',
       az: 'Ssenaridə zərrəcik fırtınası yaxınlaşır. Pik qiymət 2024-cü ilin mayında Yer yaxınlığında GOES peykinin proton ölçməsinə əsaslanır. Açıqda qalma müddətinə və sığınacaq növünə qərar verin.',
+    },
+    cadetContext: {
+      en: 'RED ALERT! The Sun just blasted an invisible wave of fast space particles toward the Moon (modeled on NASA’s real May 2024 storm!). Unlike Earth, the Moon has no air shield. Where will your astronauts hide?',
+      az: 'QIRMIZI HƏYƏCAN! Günəş indicə Aya doğru sürətli kosmik zərrəciklər dalğası püskürdü (NASA-nın real May 2024 fırtınası əsasında!). Yerdən fərqli olaraq Ayın qoruyucu atmosferi yoxdur. Harada gizlənəcəksiniz?',
     },
     phase: { startHour: 144, endHour: 192, label: { en: 'Hours 144–192 · Solar storm', az: 'Saat 144–192 · Günəş fırtınası' } },
     nasaDataTrigger: {
@@ -411,6 +532,14 @@ export const MISSION_DECISIONS: Decision[] = [
           en: 'Finish the planned EVA before sheltering',
           az: 'Sığınmazdan əvvəl planlaşdırılmış EVA-nı başa çatdırın',
         },
+        cadetLabel: {
+          en: 'Stay outside in spacesuits first to finish collecting rocks',
+          az: 'Daş toplamağı bitirmək üçün əvvəlcə skafandrla çöldə qalın',
+        },
+        cadetSummary: {
+          en: 'DANGER! Spacesuits barely block storm rays — huge radiation spike even though you score +18 Science!',
+          az: 'TƏHLÜKƏ! Skafandr fırtına şüalarını zəif saxlayır — +18 Elm qazansanız da radiasiya kəskin artır!',
+        },
         effects: { powerKwh: -2, sciencePoints: 18 },
         stormProtection: 'finishEva',
         causeAndEffectExplanation: {
@@ -430,6 +559,11 @@ export const MISSION_DECISIONS: Decision[] = [
       {
         id: 'D5-B',
         label: { en: 'Shelter inside the habitat', az: 'Yaşayış modulunun içində sığının' },
+        cadetLabel: { en: 'Go inside the regular Moon habitat rooms', az: 'Adi yaşayış modulunun otaqlarına keçin' },
+        cadetSummary: {
+          en: 'Blocks 75% of the storm rays, letting through a medium dose (~46 mSv) while you do indoor lab tests.',
+          az: 'Fırtına şüalarının 75%-ni saxlayır, orta doza (~46 mSv) keçir və içəridə laboratoriya işi davam edir.',
+        },
         effects: { lifeSupportPct: -2, sciencePoints: 4 },
         stormProtection: 'habitat',
         causeAndEffectExplanation: {
@@ -449,6 +583,11 @@ export const MISSION_DECISIONS: Decision[] = [
       {
         id: 'D5-C',
         label: { en: 'Move into a dedicated storm shelter', az: 'Xüsusi fırtına sığınacağına keçin' },
+        cadetLabel: { en: 'Huddle inside the deep Storm Bunker!', az: 'Dərin Fırtına Sığınacağına keçin!' },
+        cadetSummary: {
+          en: 'Best shield! Free & blocks 94% of rays if you built Day 2 Moon-dirt armor — otherwise stacks water bags using pump power.',
+          az: 'Ən güclü qalxan! 2-ci gündə Ay-torpağı zirehi qurmusunuzsa 94% qoruyur — yoxsa su çənlərindən divar qurur.',
+        },
         effects: { powerKwh: -5, lifeSupportPct: -5, sciencePoints: 2 },
         stormProtection: 'shelter',
         conditionals: [
@@ -483,9 +622,14 @@ export const MISSION_DECISIONS: Decision[] = [
   {
     id: 6,
     title: { en: 'Final Day: Mission Close-out', az: 'Son Gün: Missiyanın Yekunlaşdırılması' },
+    cadetTitle: { en: 'Day 9: Liftoff Countdown — One Last Mission!', az: '9-cu Gün: Uçuşa Geri Sayım — Son Tapşırıq!' },
     context: {
       en: 'Day 9. The ascent vehicle is ready. You have one last day of resources. How will you finish Mission 1?',
       az: '9-cu gün. Qalxış aparatı hazırdır. Son bir günlük resursunuz var. 1-ci Missiyanı necə başa çatdıracaqsınız?',
+    },
+    cadetContext: {
+      en: 'Day 9! Your rocket home to Earth is fueled and ready. You have 24 hours left on the Moon — will you go on one last Moonwalk, pack up safely, or beam giant science files to Earth?',
+      az: '9-cu Gün! Yerə qayıdacaq raketiniz hazırdır. Ayda son 24 saatınız qalıb — son dəfə gəzintiyə çıxacaqsınız, təhlükəsiz yığışacaqsınız, yoxsa Yerə nəhəng elm faylları ötürəcəksiniz?',
     },
     phase: { startHour: 192, endHour: 216, label: { en: 'Hours 192–216 · Close-out', az: 'Saat 192–216 · Yekun' } },
     nasaDataTrigger: null,
@@ -495,6 +639,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'Extended EVA to fill the sample cache',
           az: 'Nümunə konteynerini doldurmaq üçün uzadılmış EVA',
+        },
+        cadetLabel: {
+          en: 'One last big Moonwalk to fill the rock trunk (+16 Science)',
+          az: 'Daş sandığını doldurmaq üçün son böyük Ay gəzintisi (+16 Elm)',
+        },
+        cadetSummary: {
+          en: 'Brings home awesome Moon rocks, but watch out if you already burned your backup fuel cells during the shadow!',
+          az: 'Möhtəşəm Ay daşları gətirir, amma kölgədə ehtiyat yanacaq elementlərini artıq bitirmisinizsə diqqətli olun!',
         },
         effects: { powerKwh: -10, lifeSupportPct: -8, radiationMsv: 3.0, sciencePoints: 16 },
         conditionals: [
@@ -524,6 +676,11 @@ export const MISSION_DECISIONS: Decision[] = [
       {
         id: 'D6-B',
         label: { en: 'Nominal close-out and stow', az: 'Standart yekunlaşdırma və yığışdırma' },
+        cadetLabel: { en: 'Pack rock boxes safely & tidy the base for robots', az: 'Daş qutularını təhlükəsiz qablaşdırın və bazanı hazırlayın' },
+        cadetSummary: {
+          en: 'Steady, safe astronaut teamwork (+5 Science) that protects low batteries and air reserves for liftoff!',
+          az: 'Uçuş üçün az qalan batareya və hava ehtiyatını qoruyan təhlükəsiz astronavt işi (+5 Elm)!',
+        },
         effects: { powerKwh: -4, lifeSupportPct: -2, sciencePoints: 5 },
         causeAndEffectExplanation: {
           en: 'Pack the samples, safe the habitat for the robots and review the data. Low risk, modest science (+5).',
@@ -546,6 +703,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: {
           en: 'High-rate downlink of all science data to Earth',
           az: 'Bütün elmi məlumatların Yerə yüksək sürətlə ötürülməsi',
+        },
+        cadetLabel: {
+          en: 'Beam giant HD science videos to Earth with the big dish!',
+          az: 'Böyük antena ilə Yerə HD elmi məlumatları ötürün!',
+        },
+        cadetSummary: {
+          en: 'Scores +12 Science! Uses big dish power (−16 kWh), unless your Day 1 tall solar tower recharges +8 kWh back!',
+          az: '+12 Elm qazandırır! Antena çox enerji çəkir (−16 kVt·s), amma 1-ci gündəki hündür qüllə +8 kVt·s geri qaytarır!',
         },
         effects: { powerKwh: -16, sciencePoints: 12 },
         conditionals: [

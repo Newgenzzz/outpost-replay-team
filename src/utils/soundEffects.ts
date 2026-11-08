@@ -25,6 +25,8 @@ export type SoundEffectType =
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private muted: boolean = false;
+  private ambientOsc: OscillatorNode | null = null;
+  private ambientGain: GainNode | null = null;
 
   private getContext(): AudioContext | null {
     if (this.muted || typeof window === 'undefined') return null;
@@ -50,14 +52,56 @@ class SoundEngine {
 
   public setMuted(mute: boolean): void {
     this.muted = mute;
+    if (mute) {
+      this.stopAmbient();
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    }
   }
 
   public toggleMute(): boolean {
-    this.muted = !this.muted;
+    this.setMuted(!this.muted);
     if (!this.muted) {
       this.play('choice');
     }
     return this.muted;
+  }
+
+  public startAmbient(): void {
+    if (this.muted || this.ambientOsc) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(58, ctx.currentTime);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(140, ctx.currentTime);
+      gain.gain.setValueAtTime(0.012, ctx.currentTime);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      this.ambientOsc = osc;
+      this.ambientGain = gain;
+    } catch {
+      // Ignore audio restrictions
+    }
+  }
+
+  public stopAmbient(): void {
+    try {
+      this.ambientOsc?.stop();
+      this.ambientOsc?.disconnect();
+      this.ambientGain?.disconnect();
+    } catch {
+      // Ignore stop errors
+    }
+    this.ambientOsc = null;
+    this.ambientGain = null;
   }
 
   public play(type: SoundEffectType): void {
@@ -399,22 +443,74 @@ class SoundEngine {
   }
 
   public speakRadio(text: string, lang: 'en' | 'az' = 'en'): void {
-    if (this.muted || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (this.muted || typeof window === 'undefined') return;
+    this.play('quindarIntro');
+
+    const playTelemetryFallback = () => {
+      const ctx = this.getContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      [640, 760, 580, 820, 690].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t0 = now + 0.24 + idx * 0.09;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0.025, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.07);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.075);
+      });
+      setTimeout(() => this.play('quindarOutro'), 780);
+    };
+
+    if (!window.speechSynthesis) {
+      playTelemetryFallback();
+      return;
+    }
+
     try {
-      this.play('quindarIntro');
+      const voices = window.speechSynthesis.getVoices();
+      if (lang === 'az') {
+        const azVoice = voices.find((v) => v.lang.toLowerCase().startsWith('az') || v.lang.toLowerCase().startsWith('tr'));
+        if (!azVoice) {
+          // Avoid garbled English-phonetic reading when no Azerbaijani/Turkic TTS voice is installed
+          playTelemetryFallback();
+          return;
+        }
+      }
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang === 'az' ? 'az-AZ' : 'en-US';
-      utterance.rate = 1.05;
-      utterance.pitch = 0.95;
+      utterance.rate = 1.04;
+      utterance.pitch = 0.96;
       utterance.onend = () => {
         this.play('quindarOutro');
       };
+      utterance.onerror = () => {
+        playTelemetryFallback();
+      };
       window.speechSynthesis.speak(utterance);
     } catch {
-      // Speech synthesis not supported or blocked
+      playTelemetryFallback();
     }
   }
 }
 
 export const soundFX = new SoundEngine();
+
+export function playSfx(
+  alias: SoundEffectType | 'confirm' | 'radio' | 'click',
+): void {
+  if (alias === 'confirm') {
+    soundFX.play('choice');
+  } else if (alias === 'radio') {
+    soundFX.play('quindarIntro');
+  } else if (alias === 'click') {
+    soundFX.play('uiClick');
+  } else {
+    soundFX.play(alias);
+  }
+}

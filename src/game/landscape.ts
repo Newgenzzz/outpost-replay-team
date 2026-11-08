@@ -99,15 +99,31 @@ export function terrain(): SvgAsset {
       <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".09"/>
       <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 139l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#465661" opacity=".19"/>
 
-      <!-- Far Northern Space-Horizon Rim Silhouette -->
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78V0H0Z" fill="#08131e"/>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78" stroke="#ded0b4" stroke-width="2.5" opacity=".56"/>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44l-58 52-93 20-190-10-96 26L0 137Z" fill="#455260" opacity=".57"/>
-      <g fill="#e8f0ec" opacity=".65">
-        <circle cx="95" cy="28" r="1.3"/><circle cx="242" cy="36" r="1.6"/><circle cx="430" cy="22" r="1.1"/>
-        <circle cx="670" cy="34" r="1.5"/><circle cx="885" cy="26" r="1.2"/><circle cx="1115" cy="31" r="1.7"/>
-        <circle cx="1365" cy="24" r="1.2"/><circle cx="1630" cy="29" r="1.5"/><circle cx="1775" cy="38" r="1.1"/>
+      <!-- Far Northern Space-Horizon Rim Silhouette, Starfield, Grazing Sun & Crescent Earth -->
+      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78V0H0Z" fill="#040b14"/>
+      ${Array.from({ length: 76 }, (_, i) => {
+        const sx = (((Math.sin(i * 91.7 + 4) * 43758.5453) % 1) + 1) % 1 * 1820 + 10;
+        const sy = (((Math.sin(i * 47.3 + 9) * 24631.193) % 1) + 1) % 1 * 62 + 4;
+        const sr = (0.7 + (i % 5) * 0.35).toFixed(1);
+        const col = i % 7 === 0 ? '#bae6fd' : i % 5 === 0 ? '#fef08a' : '#f1f5f9';
+        return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr}" fill="${col}" opacity="${(0.45 + (i % 4) * 0.16).toFixed(2)}"/>`;
+      }).join('')}
+      <!-- 1.5 deg Grazing South-Polar Horizon Sun & Corona Glow -->
+      <g transform="translate(388 58)">
+        <ellipse cx="0" cy="0" rx="88" ry="30" fill="#fde047" opacity=".16"/>
+        <ellipse cx="0" cy="0" rx="42" ry="16" fill="#fef08a" opacity=".32"/>
+        <line x1="-115" y1="0" x2="115" y2="0" stroke="#fef9c3" stroke-width="1.4" opacity=".55"/>
+        <circle cx="0" cy="0" r="11" fill="#fffbeb"/>
       </g>
+      <!-- Crescent Blue-Marble Earth low above Northern Horizon -->
+      <g transform="translate(1335 34)">
+        <circle cx="0" cy="0" r="21" fill="#0ea5e9" opacity=".18"/>
+        <circle cx="0" cy="0" r="15" fill="#082f49"/>
+        <path d="M-4 -14 A15 15 0 0 1 -4 14 A11 14 0 0 0 -4 -14Z" fill="#38bdf8"/>
+        <path d="M2 -10 A12 12 0 0 1 6 8 A9 11 0 0 0 2 -10Z" fill="#e0f2fe" opacity=".75"/>
+      </g>
+      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78" stroke="#f5e7c6" stroke-width="2.6" opacity=".68"/>
+      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44l-58 52-93 20-190-10-96 26L0 137Z" fill="#455260" opacity=".57"/>
 
       <!-- ZONE 1: NW ELEVATED SUNLIT SHACKLETON RIM CREST (+2 ELEVATION, D1 SOLAR) -->
       <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398 694 330 715 165 618 154 510 132 401 147 310 136 195 140 132 167 40 205Z" fill="url(#sunlit-ridge)"/>
@@ -130,7 +146,8 @@ export function terrain(): SvgAsset {
       <path d="M1035 675 1108 652 1185 622 1300 615 1388 628 1465 618 1558 632 1612 655 1695 668" stroke="#a1a8a6" stroke-width="2.5" opacity=".42"/>
       <path d="m1181 628 15 21m85-31 21 25m121-18 11 26m112-17-12 25m75-5-21 26m76-10 8 26m67 59-24 7m45 51-22 12m9 63-21 1" stroke="#536778" stroke-width="3" opacity=".65"/>
       <path d="m1027 864 31 38 60 28 66 63 103 19 88-14 126 20 71-13 136-45-12 19-103 41-89 14-128-15-98 16-90-11-82-39-73-55Z" fill="#819095" opacity=".25"/>
-      <path d="m1138 759 57-17 56 12 50-16m78 31 42-14 54 15 39-9m-305 147 48-26 75 11 55 27m65-20 58-18 62-6" stroke="#89969c" stroke-width="1.3" opacity=".27"/>
+      <path d="m1138 759 57-17 56 12 50-16m78 31 42-14 54 15 39-9m-305 147 48-26 75 11 55 27m65-20 58-18 62-6" stroke="#7dd3fc" stroke-width="1.6" opacity=".36"/>
+      <ellipse cx="1370" cy="855" rx="250" ry="95" fill="#0ea5e9" opacity=".08"/>
 
       <!-- Ambient Impact Craters (placed outside main walkways) -->
       ${IMPACT_CRATERS.map(({ x, y, radius }) => depression(x, y, radius)).join('')}

@@ -55,8 +55,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: ShieldCheck,
     title: { en: 'Storm Sentinel', az: 'Fırtına Qalxanı' },
     description: {
-      en: 'Sheltered the crew behind a dense regolith berm during the May 2024 X5.8 solar superstorm (94% radiation blocked).',
-      az: '11 May 2024 X5.8 Günəş superfırtınasında reqolit səddi ilə radiasiyanın 94%-ni dəf etdiniz.',
+      en: 'Sheltered the crew behind a dense regolith berm during the May 2024 GOES solar particle storm (94% modeled dose blocked).',
+      az: 'May 2024 GOES Günəş zərrəcik fırtınasında reqolit səddi ilə model dozasının 94%-ni dəf etdiniz.',
     },
     hint: {
       en: 'Build the Regolith Berm at Decision 2 and shelter in the bunker at Decision 5.',
@@ -87,10 +87,24 @@ export const ACHIEVEMENTS: Achievement[] = [
       az: 'Deterministik zaman maşınından istifadə edərək keçmiş qərarları geri sardınız və paralel zaman xətlərini müqayisə etdiniz.',
     },
     hint: {
-      en: 'Open Rewind & Compare [Tab] and branch any past decision to spawn Run B.',
-      az: 'Geri Sar və Müqayisə [Tab] pəncərəsini açın və qərarlardan birini dəyişərək B gedişi yaradın.',
+      en: 'Open Rewind & Compare [R] and branch any past decision to spawn Run B.',
+      az: 'Geri Sar və Müqayisə [R] pəncərəsini açın və qərarlardan birini dəyişərək B gedişi yaradın.',
     },
     category: 'temporal',
+  },
+  {
+    id: 'mars_pioneer',
+    icon: SunDim,
+    title: { en: 'Jezero Dust Pioneer', az: 'Yezero Toz Pioneri' },
+    description: {
+      en: 'Survived a 3-Sol Mars global dust storm and 14-minute Earth radio delay using autonomous MOXIE & power triage.',
+      az: 'Avtonom MOXIE və enerji qərarları ilə 3-Solluq Mars toz fırtınasından və 14 dəqiqəlik rabitə gecikməsindən sağ çıxdınız.',
+    },
+    hint: {
+      en: 'Complete Bonus Mission 2: Mars Jezero Dust Storm from the Mission Control bar.',
+      az: 'İdarəetmə panelindən Bonus Missiya 2: Mars Yezero Toz Fırtınasını uğurla tamamlayın.',
+    },
+    category: 'science',
   },
   {
     id: 'master_commander',

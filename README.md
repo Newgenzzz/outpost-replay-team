@@ -1,6 +1,15 @@
 # Outpost Replay
 
-A bilingual lunar engineering game for the Junior Astronaut Mission Trainer challenge. Lead a two-person crew through nine simulated days near Shackleton crater. Explore the outpost, preview engineering choices, then rewind to test how a different choice changes the outcome.
+A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the **2026 NASA International Space Apps Challenge — "Build a Junior Astronaut Mission Trainer"**. Lead a two-person crew through nine simulated days (216 hours) near Shackleton Crater’s sunlit south-polar rim, explore a 2.5D WebGL outpost, inspect a 3D NASA LOLA crater illumination hologram, rewind any decision to run a controlled counterfactual experiment, and unlock **Bonus Mission 2: Mars Jezero Global Dust Storm & 14-Min Comms Delay**.
+
+## Key Features
+
+- **Dual-Layer Cadet & Flight Engineer UX:** Designed for the official **ages 7–12** Junior Astronaut audience (`Cadet Mode` with clear story cards and plain-language cause-and-effect) while offering a 1-click switch to `Engineer Mode` with full `kWh`, `kg O₂/H₂O/Food`, `mSv`, and hourly reserve forecasts for educators and NASA judges.
+- **3D Shackleton Crater LOLA Hologram & Grazing Sun Raymarcher:** Orbit a parameterized 36×36 km Lunar South Pole digital elevation model (`21 km` diameter, `4.2 km` deep `88 K` cold trap) with real-time `0°–360°` grazing solar azimuth and `2 m` vs `10 m` vertical solar mast comparison (`WebGLErrorBoundary` 2D fallback included).
+- **Live & Historical NASA Space Weather (`DONKI` + `OSDR RadLab`):** Test your shelter strategy against the default May 2024 AR 13664 superstorm (`207 pfu`), the extreme Sept 2017 event (`840 pfu`), a quiet window (`18 pfu`), or query live `api.nasa.gov/DONKI` solar flare alerts with automatic offline fallback, alongside ISS `OSDR RadLab` vs. unshielded lunar surface dose curves.
+- **216-Hour Counterfactual Rewind Lab, PNG Patch & Shareable Replay URLs:** Inspect continuous 216-hour `hourlyHistory` telemetry curves comparing **Run A** vs **Run B**, export a custom HTML5 Canvas **Mission Patch PNG** with your Commander Callsign, or copy a `?m=` shareable replay URL that restores your exact comparison run.
+- **Hands-On Station Calibrations & Fieldwork Wired to Physics:** Aligning the D1 solar mast, sealing the D2 water loop, patching the D3 HVDC bus, pre-heating the D4 cryo-extractor, mining 90K basin ice cores (`[Space]`), clamping the D5 storm bulkhead, aligning the D6 Ka-band dish, and logging lunar geology samples directly improve simulated reserves and science output.
+- **Bonus Mission 2 — Mars Jezero Global Dust Storm:** Survive 3 Martian Sols under `τ = 4.2` atmospheric dust (`−82%` solar output), `−68 °C` nights, MOXIE `CO₂ → O₂` power trade-offs, and a simulated 28-minute round-trip Earth radio delay.
 
 ## Run locally
 

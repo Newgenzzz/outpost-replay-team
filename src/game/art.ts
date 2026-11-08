@@ -134,6 +134,43 @@ function solar(active: boolean): SvgAsset {
   );
 }
 
+/** 10 m Vertical Solar Array Technology (VSAT) mast unlocked by choosing D1-A. */
+function solarMast(active: boolean): SvgAsset {
+  const key = active ? 'solar-mast' : 'solar-mast-off';
+  const towers = [
+    [76, 126],
+    [168, 148],
+  ]
+    .map(
+      ([bx, by]) => `
+    <g transform="translate(${bx} ${by})">
+      <ellipse cx="0" cy="8" rx="34" ry="11" fill="#0d2230" opacity=".46"/>
+      <path d="m-22 4 22-11 22 11-22 11Z" fill="#5b7884" stroke="#b9ccc8" stroke-width="1.5"/>
+      <!-- 10 m Gold Kapton Truss Mast -->
+      <path d="M-4 2V-108h8V2Z" fill="#ca8a04" stroke="#fef08a" stroke-width="1.2"/>
+      <path d="M-4-14 4-28m-8 0 8-14m-8 0 8-14m-8 0 8-14m-8 0 8-14m-8 0 8-14" stroke="#fef9c3" stroke-width="1.1"/>
+      <!-- Bifacial Vertical Grazing-Sun Solar Wings -->
+      <path d="m-46-102 41 8v68l-41-8Z" fill="${active ? '#0e4166' : '#1e3547'}" stroke="${active ? '#fef08a' : '#8da4ad'}" stroke-width="1.8"/>
+      <path d="m5-94 41-8v68l-41 8Z" fill="${active ? '#124e78' : '#223b4e'}" stroke="${active ? '#fef08a' : '#8da4ad'}" stroke-width="1.8"/>
+      <path d="M-36-99v66m-10-50 40 8m-40 16 40 8m-40 16 40 8M15-96v66m12-69v66M6-78l40-8M6-62l40-8M6-46l40-8" stroke="${active ? '#7dd3fc' : '#64748b'}" stroke-width=".85" opacity=".8"/>
+      <circle cx="0" cy="-112" r="4" fill="${active ? '#fde047' : '#fb923c'}"/>
+    </g>`,
+    )
+    .join('');
+  return asset(
+    key,
+    270,
+    190,
+    `
+    <path d="m17 131 141 47 96-47-141-45Z" fill="#142a35" opacity=".32"/>
+    <path d="m54 122 122 28" stroke="#1e3a4c" stroke-width="7"/>
+    <path d="m54 122 122 28" stroke="#fde047" stroke-width="1.5" stroke-dasharray="4 4"/>
+    ${towers}
+  `,
+    { x: 22, y: 65, width: 224, height: 101 },
+  );
+}
+
 function water(): SvgAsset {
   const tanks = [0, 1, 2]
     .map(
@@ -225,6 +262,34 @@ function shelter(): SvgAsset {
     <path d="m33 109 14-5m21-39 10-13m73 42 12 4m-96 26 11 4" stroke="#c1c6b6" stroke-opacity=".4" stroke-width="2"/>
     <path d="m147 65 9-5 12 5-9 6Z" fill="#a8b6aa"/><path d="m147 65 12 6v10l-12-5Z" fill="#4b6670"/>
     <circle cx="115" cy="77" r="3" fill="#c2e2b0"/>
+  `,
+    { x: 28, y: 87, width: 153, height: 52 },
+  );
+}
+
+/** Armored regolith sandbag & heaped Moon-soil berm over D5 Storm Shelter when D2-A is chosen. */
+function shelterBerm(): SvgAsset {
+  const bags = [
+    [32, 96], [56, 82], [82, 68], [112, 66], [138, 78], [156, 96],
+    [40, 112], [66, 98], [134, 102], [152, 116],
+  ]
+    .map(
+      ([x, y]) =>
+        `<ellipse cx="${x}" cy="${y}" rx="15" ry="7" fill="#9c9383" stroke="#534d42" stroke-width="1.4"/>`,
+    )
+    .join('');
+  return asset(
+    'shelter-berm',
+    200,
+    165,
+    `
+    <ellipse cx="104" cy="138" rx="92" ry="25" fill="#132b35" opacity=".48"/>
+    <path d="m10 118 28-72 62-30 68 30 24 72-56 30-94-12Z" fill="#8b8273" stroke="#4f493f" stroke-width="2.2"/>
+    <path d="m18 114 38-64 46-26 60 26-34 20-34-12-38 42-16 24Z" fill="#b4aa97"/>
+    ${bags}
+    <path d="m93 134-1-46q14-19 34 2l2 54Z" fill="#173542" stroke="#fde047" stroke-width="3.5"/>
+    <path d="m105 98 12 4v17l-12-4Z" fill="#38bdf8"/>
+    <circle cx="115" cy="75" r="4" fill="#4ade80"/>
   `,
     { x: 28, y: 87, width: 153, height: 52 },
   );
@@ -486,6 +551,9 @@ export const GAME_ART: SvgAsset[] = [
     lifeSupport(),
     ascent(),
   ].map(detailFacility),
+  solarMast(true),
+  solarMast(false),
+  shelterBerm(),
   lunarCar(false),
   lunarCar(true),
   lunarCar(true, true),

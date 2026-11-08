@@ -4,8 +4,9 @@ import { LUNAR_PLANNING_SITES, LUNAR_SITE_SOURCE } from '../data/lunarSiteIntell
 import { GAME_CONSTANTS } from '../data/nasaTelemetry';
 import { estimateSitePower } from '../engine/sitePowerPlanning';
 import { useI18n } from '../i18n/LanguageContext';
+import { Shackleton3DHologram } from './Shackleton3DHologram';
 
-export default function LunarSiteIntelligence() {
+export default function LunarSiteIntelligence({ hide3D = false }: { hide3D?: boolean }) {
   const { lang, t, tr } = useI18n();
   const [reserve, setReserve] = useState(35);
   const [evidence, setEvidence] = useState(0);
@@ -28,6 +29,7 @@ export default function LunarSiteIntelligence() {
       </summary>
 
       <div className="mt-3 space-y-3 text-xs text-slate-300">
+        {!hide3D && <Shackleton3DHologram compact />}
         <div className="rounded-lg border border-white/15 bg-slate-950/50 p-3">
           <div className="flex flex-wrap gap-1.5" role="group" aria-label={az ? 'Elmi sübutun yolunu izlə' : 'Trace the evidence'}>
             {(az ? ['1 · Ölçmələr', '2 · Tədqiqat modeli', '3 · Sizin qərarınız'] : ['1 · Measurements', '2 · Research model', '3 · Your decision']).map((label, index) => (

@@ -11,15 +11,19 @@ import {
   BookOpen,
   Check,
   CheckCheck,
+  ChevronDown,
   ChevronRight,
   Compass,
   FlaskConical,
+  FolderOpen,
   GitBranch,
+  GraduationCap,
   HeartPulse,
   Map as MapIcon,
   Orbit,
   PlayCircle,
   Radio,
+  Rocket,
   RotateCcw,
   ShieldAlert,
   Snowflake,
@@ -29,6 +33,7 @@ import {
   Truck,
   Volume2,
   VolumeX,
+  Wind,
   Wrench,
   X,
   Zap,
@@ -60,6 +65,8 @@ import EvidencePanel from './components/EvidencePanel';
 import { JudgeTourBanner, type DemoStage } from './components/JudgeTourBanner';
 import { FlightCertificateModal } from './components/FlightCertificateModal';
 import { NasaSensorDeckModal } from './components/NasaSensorDeckModal';
+import { MissionLaunchScreen } from './components/MissionLaunchScreen';
+import { MarsBonusModal } from './components/MarsBonusModal';
 import {
   ACHIEVEMENTS,
   AchievementsModal,
@@ -72,12 +79,68 @@ import { useI18n } from './i18n/LanguageContext';
 import { runSimulation, type StepRecord } from './engine/simulation';
 import { canPowerCrop, CROP_TRIAL } from './engine/resources';
 import { environmentAtHour } from './engine/power';
-import type { MissionTaskSettings } from './types';
+import type { MissionTaskSettings, TrainingMode } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
 
 const DEFAULT_TASK_SETTINGS: MissionTaskSettings = { solarCalibrated: false, icePrepared: false };
+const STORAGE_MODE_KEY = 'outpost_training_mode';
+const STORAGE_CALLSIGN_KEY = 'outpost_commander_callsign';
+
+interface SharedReplayPayload {
+  a: number[];
+  b?: number[] | null;
+  m?: TrainingMode;
+  p?: number;
+}
+
+function isValidChoiceArray(arr: unknown): arr is number[] {
+  return (
+    Array.isArray(arr) &&
+    arr.length <= DECISION_COUNT &&
+    arr.every((v) => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 2)
+  );
+}
+
+function parseSharedReplayFromUrl(): SharedReplayPayload | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = new URLSearchParams(window.location.search).get('m');
+    if (!raw) return null;
+    const padded = raw.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
+    const parsed = JSON.parse(json) as Partial<SharedReplayPayload>;
+    if (!isValidChoiceArray(parsed.a) || parsed.a.length === 0) return null;
+    const branch = parsed.b && isValidChoiceArray(parsed.b) ? parsed.b : null;
+    const mode: TrainingMode = parsed.m === 'engineer' ? 'engineer' : 'cadet';
+    const peak = typeof parsed.p === 'number' && parsed.p > 0 && parsed.p <= 5000 ? parsed.p : undefined;
+    return { a: parsed.a, b: branch, m: mode, p: peak };
+  } catch {
+    return null;
+  }
+}
+
+function encodeSharedReplayUrl(payload: SharedReplayPayload): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const base = `${window.location.origin}${window.location.pathname}`;
+    if (payload.a.length === 0) return base;
+    const compact: SharedReplayPayload = {
+      a: payload.a,
+      ...(payload.b && payload.b.length > 0 ? { b: payload.b } : {}),
+      ...(payload.m ? { m: payload.m } : {}),
+      ...(payload.p && payload.p !== SEP_PEAK_FLUX_PFU ? { p: payload.p } : {}),
+    };
+    const encoded = btoa(JSON.stringify(compact))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    return `${base}?m=${encoded}`;
+  } catch {
+    return '';
+  }
+}
 
 const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string }> = {
   high_ridge: {
@@ -100,17 +163,52 @@ const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string 
 export default function App() {
   const { t, tr, lang, setLang } = useI18n();
 
+  const initialShared = useMemo(() => parseSharedReplayFromUrl(), []);
+
+  const [trainingMode, setTrainingMode] = useState<TrainingMode>(() => {
+    if (initialShared?.m) return initialShared.m;
+    try {
+      const saved = window.localStorage.getItem(STORAGE_MODE_KEY);
+      return saved === 'engineer' ? 'engineer' : 'cadet';
+    } catch {
+      return 'cadet';
+    }
+  });
+
+  const [commanderCallsign, setCommanderCallsign] = useState<string>(() => {
+    try {
+      return window.localStorage.getItem(STORAGE_CALLSIGN_KEY) ?? '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [stormPeakPfu, setStormPeakPfu] = useState<number>(
+    () => initialShared?.p ?? SEP_PEAK_FLUX_PFU,
+  );
+
   /** Run A — locked step by step through deterministic simulation. */
-  const [baselineChoices, setBaselineChoices] = useState<number[]>([]);
+  const [baselineChoices, setBaselineChoices] = useState<number[]>(
+    () => initialShared?.a ?? [],
+  );
   /** Run B — copy of Run A with one or more rewound decisions (null = no branch yet). */
-  const [rewoundChoices, setRewoundChoices] = useState<number[] | null>(null);
-  const [baselineTasks, setBaselineTasks] = useState(DEFAULT_TASK_SETTINGS);
-  const [branchTasks, setBranchTasks] = useState(DEFAULT_TASK_SETTINGS);
-  const [viewStep, setViewStep] = useState(1);
+  const [rewoundChoices, setRewoundChoices] = useState<number[] | null>(
+    () => initialShared?.b ?? null,
+  );
+  const [baselineTasks, setBaselineTasks] = useState<MissionTaskSettings>(() =>
+    initialShared?.p ? { ...DEFAULT_TASK_SETTINGS, stormPeakPfu: initialShared.p } : DEFAULT_TASK_SETTINGS,
+  );
+  const [branchTasks, setBranchTasks] = useState<MissionTaskSettings>(() =>
+    initialShared?.p ? { ...DEFAULT_TASK_SETTINGS, stormPeakPfu: initialShared.p } : DEFAULT_TASK_SETTINGS,
+  );
+  const [viewStep, setViewStep] = useState(() =>
+    initialShared?.a.length ? Math.min(DECISION_COUNT, initialShared.a.length) : 1,
+  );
 
   // Overlays & Modals
+  const [launchScreenOpen, setLaunchScreenOpen] = useState<boolean>(() => !initialShared);
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
-  const [telemetryDrawerOpen, setTelemetryDrawerOpen] = useState(false);
+  const [telemetryDrawerOpen, setTelemetryDrawerOpen] = useState<boolean>(() => Boolean(initialShared));
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
   const [demoStage, setDemoStage] = useState<DemoStage | null>(null);
@@ -118,10 +216,41 @@ export default function App() {
   const [sensorDeckOpen, setSensorDeckOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
   const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
+  const [marsModalOpen, setMarsModalOpen] = useState(false);
+  const [dossierMenuOpen, setDossierMenuOpen] = useState(false);
+  const dossierMenuRef = useRef<HTMLDivElement | null>(null);
+
   const [unlockedBadges, setUnlockedBadges] = useState<string[]>([]);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
   const [muted, setMuted] = useState(() => soundFX.isMuted());
   const [guideDismissed, setGuideDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_MODE_KEY, trainingMode);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [trainingMode]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_CALLSIGN_KEY, commanderCallsign);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [commanderCallsign]);
+
+  useEffect(() => {
+    if (!dossierMenuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (dossierMenuRef.current && !dossierMenuRef.current.contains(e.target as Node)) {
+        setDossierMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [dossierMenuOpen]);
 
   const unlockedBadgeIds = useRef(new Set<string>());
   const awardAchievement = useCallback((id: string) => {
@@ -139,6 +268,7 @@ export default function App() {
     const timer = window.setTimeout(() => setAchievementToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [achievementToast]);
+
   const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
   const [trackedSample, setTrackedSample] = useState<number | null>(null);
   const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(null);
@@ -202,6 +332,9 @@ export default function App() {
 
   const world = useRef<WorldHandle>(null);
   const pointerStarted = useRef(0);
+  const hasBranchRef = useRef(false);
+  hasBranchRef.current = rewoundChoices !== null;
+
   const drillStateRef = useRef({
     progress: 0,
     temp: 18,
@@ -218,6 +351,7 @@ export default function App() {
   }, [lang]);
 
   const anyOverlayOpen =
+    launchScreenOpen ||
     decisionModalOpen ||
     telemetryDrawerOpen ||
     mapModalOpen ||
@@ -225,7 +359,8 @@ export default function App() {
     sensorDeckOpen ||
     certificateOpen ||
     achievementsModalOpen ||
-    sampleModalOpen;
+    sampleModalOpen ||
+    marsModalOpen;
 
   // Keep keyboard navigation inside the active dialog and return to its opener.
   useLayoutEffect(() => {
@@ -241,16 +376,29 @@ export default function App() {
     if (dialog && !dialog.contains(document.activeElement)) {
       dialog.querySelector<HTMLElement>('button:not(:disabled), input')?.focus();
     }
-  }, [anyOverlayOpen, decisionModalOpen, telemetryDrawerOpen, mapModalOpen, showBriefing,
-    sensorDeckOpen, certificateOpen, achievementsModalOpen, sampleModalOpen]);
+  }, [
+    anyOverlayOpen,
+    launchScreenOpen,
+    decisionModalOpen,
+    telemetryDrawerOpen,
+    mapModalOpen,
+    showBriefing,
+    sensorDeckOpen,
+    certificateOpen,
+    achievementsModalOpen,
+    sampleModalOpen,
+    marsModalOpen,
+  ]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Tab' && anyOverlayOpen) {
         const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"]');
-        const controls = [...(dialogs[dialogs.length - 1]?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), a[href], input:not(:disabled), summary, [tabindex="0"]',
-        ) ?? [])].filter((element) => element.getClientRects().length > 0);
+        const controls = [
+          ...(dialogs[dialogs.length - 1]?.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), a[href], input:not(:disabled), summary, [tabindex="0"]',
+          ) ?? []),
+        ].filter((element) => element.getClientRects().length > 0);
         if (!controls.length) return;
         const index = controls.indexOf(document.activeElement as HTMLElement);
         if (index < 0 || (e.shiftKey ? index === 0 : index === controls.length - 1)) {
@@ -260,7 +408,8 @@ export default function App() {
         return;
       }
 
-      const editing = e.target instanceof HTMLElement &&
+      const editing =
+        e.target instanceof HTMLElement &&
         (e.target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName));
       if (!editing && !anyOverlayOpen && !e.altKey && !e.ctrlKey && !e.metaKey && !e.repeat) {
         if (e.key.toLowerCase() === 'r') {
@@ -274,8 +423,16 @@ export default function App() {
         }
       }
       if (e.key !== 'Escape') return;
+      if (dossierMenuOpen) {
+        setDossierMenuOpen(false);
+        return;
+      }
       if (certificateOpen) {
         setCertificateOpen(false);
+        return;
+      }
+      if (launchScreenOpen) {
+        setLaunchScreenOpen(false);
         return;
       }
       setDecisionModalOpen(false);
@@ -285,11 +442,12 @@ export default function App() {
       setSensorDeckOpen(false);
       setAchievementsModalOpen(false);
       setSampleModalOpen(false);
+      setMarsModalOpen(false);
       if (!anyOverlayOpen) setDemoStage(null);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [anyOverlayOpen, certificateOpen]);
+  }, [anyOverlayOpen, certificateOpen, dossierMenuOpen, launchScreenOpen]);
 
   // Passive Cryo-Laser Thermal Cooldown
   useEffect(() => {
@@ -306,35 +464,47 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const handleDrillTick = useCallback((crystalIdx: number, dt: number) => {
-    const ds = drillStateRef.current;
-    if (ds.overheated || ds.mined[crystalIdx]) return;
-
-    ds.temp = Math.min(100, ds.temp + dt * 34);
-    setDrillTempPct(Math.round(ds.temp));
-
-    if (ds.temp >= 98) {
-      ds.overheated = true;
-      setDrillOverheated(true);
-      soundFX.play('shadowAlert');
-      return;
-    }
-
-    soundFX.play('laserDrill');
-    ds.progress = Math.min(100, ds.progress + dt * 66);
-    setDrillProgressPct(Math.round(ds.progress));
-
-    if (ds.progress >= 100) {
-      ds.progress = 0;
-      setDrillProgressPct(0);
-      world.current?.setDrillHeld(false);
-      const nextMined = [...ds.mined];
-      nextMined[crystalIdx] = true;
-      ds.mined = nextMined;
-      setMinedCrystals(nextMined);
-      soundFX.play('hotspot');
+  const updateActiveTasks = useCallback((patch: Partial<MissionTaskSettings>) => {
+    if (hasBranchRef.current) {
+      setBranchTasks((prev) => ({ ...prev, ...patch }));
+    } else {
+      setBaselineTasks((prev) => ({ ...prev, ...patch }));
     }
   }, []);
+
+  const handleDrillTick = useCallback(
+    (crystalIdx: number, dt: number) => {
+      const ds = drillStateRef.current;
+      if (ds.overheated || ds.mined[crystalIdx]) return;
+
+      ds.temp = Math.min(100, ds.temp + dt * 34);
+      setDrillTempPct(Math.round(ds.temp));
+
+      if (ds.temp >= 98) {
+        ds.overheated = true;
+        setDrillOverheated(true);
+        soundFX.play('shadowAlert');
+        return;
+      }
+
+      soundFX.play('laserDrill');
+      ds.progress = Math.min(100, ds.progress + dt * 66);
+      setDrillProgressPct(Math.round(ds.progress));
+
+      if (ds.progress >= 100) {
+        ds.progress = 0;
+        setDrillProgressPct(0);
+        world.current?.setDrillHeld(false);
+        const nextMined = [...ds.mined];
+        nextMined[crystalIdx] = true;
+        ds.mined = nextMined;
+        setMinedCrystals(nextMined);
+        updateActiveTasks({ extraIceCores: nextMined.filter(Boolean).length });
+        soundFX.play('hotspot');
+      }
+    },
+    [updateActiveTasks],
+  );
 
   const handleTelemetry = useCallback((payload: WorldTelemetryPayload) => {
     setPosition(payload.player);
@@ -348,29 +518,60 @@ export default function App() {
     setNearbyCrewSpeech(payload.nearbyCrewSpeech);
   }, []);
 
-  const handleCollectSample = useCallback((idx: number) => {
-    setCollectedSamples((prev) => prev.map((collected, index) => collected || index === idx));
-    soundFX.play('hotspot');
-    setInspectSampleIdx(idx);
-    setSampleModalOpen(true);
-    setTrackedSample((current) => current === idx ? null : current);
-  }, []);
+  const handleCollectSample = useCallback(
+    (idx: number) => {
+      setCollectedSamples((prev) => {
+        const next = prev.map((collected, index) => collected || index === idx);
+        updateActiveTasks({ fieldSamplesCount: next.filter(Boolean).length });
+        return next;
+      });
+      soundFX.play('hotspot');
+      setInspectSampleIdx(idx);
+      setSampleModalOpen(true);
+      setTrackedSample((current) => (current === idx ? null : current));
+    },
+    [updateActiveTasks],
+  );
 
   const handleToggleRover = useCallback(() => {
     setControllingRover((v) => !v);
   }, []);
 
-  const handleCalibrateTask = useCallback((stepNum: number) => {
-    setCalibratedTasks((prev) => {
-      const next = [...prev];
-      next[stepNum - 1] = true;
-      return next;
-    });
+  const handleCalibrateTask = useCallback(
+    (stepNum: number) => {
+      setCalibratedTasks((prev) => {
+        const next = [...prev];
+        next[stepNum - 1] = true;
+        return next;
+      });
+      const patch: Partial<MissionTaskSettings> =
+        stepNum === 1
+          ? { solarCalibrated: true }
+          : stepNum === 2
+            ? { eclssSealed: true }
+            : stepNum === 3
+              ? { busPatched: true }
+              : stepNum === 4
+                ? { icePrepared: true }
+                : stepNum === 5
+                  ? { stormClamped: true }
+                  : { dishAligned: true };
+      updateActiveTasks(patch);
+    },
+    [updateActiveTasks],
+  );
+
+  const handleSelectStormPeakPfu = useCallback((peakPfu: number) => {
+    setStormPeakPfu(peakPfu);
+    setBaselineTasks((prev) => ({ ...prev, stormPeakPfu: peakPfu }));
+    setBranchTasks((prev) => ({ ...prev, stormPeakPfu: peakPfu }));
   }, []);
 
   // Deterministic Simulation Runs
-  const runA = useMemo(() => runSimulation(baselineChoices, baselineTasks),
-    [baselineChoices, baselineTasks]);
+  const runA = useMemo(
+    () => runSimulation(baselineChoices, baselineTasks),
+    [baselineChoices, baselineTasks],
+  );
   const runB = useMemo(
     () => (rewoundChoices ? runSimulation(rewoundChoices, branchTasks) : null),
     [rewoundChoices, branchTasks],
@@ -384,24 +585,43 @@ export default function App() {
   const lastAvailableStep = Math.min(DECISION_COUNT, completedPhases + (activeRun.complete ? 0 : 1));
   const phase = MISSION_DECISIONS[viewStep - 1].phase;
   const scenarioSamples = LRO_PROFILE.filter(({ hour }) => hour >= phase.startHour && hour < phase.endHour);
-  const availableSunlight = scenarioSamples.reduce((total, sample) => total + sample.arrayOutputFactor, 0) / scenarioSamples.length;
-  const surfaceTemperature = scenarioSamples.reduce((total, sample) => total + sample.surfaceTempK, 0) / scenarioSamples.length;
+  const availableSunlight =
+    scenarioSamples.reduce((total, sample) => total + sample.arrayOutputFactor, 0) / scenarioSamples.length;
+  const surfaceTemperature =
+    scenarioSamples.reduce((total, sample) => total + sample.surfaceTempK, 0) / scenarioSamples.length;
   const displayedResources = activeRun.resourceHistory[viewStep] ?? activeRun.resources;
 
   const divergedStep = useMemo(() => {
     if (!rewoundChoices) return null;
     if (baselineTasks.solarCalibrated !== branchTasks.solarCalibrated) return 1;
+    if (Boolean(baselineTasks.eclssSealed) !== Boolean(branchTasks.eclssSealed)) return 2;
+    if (Boolean(baselineTasks.busPatched) !== Boolean(branchTasks.busPatched)) return 3;
     for (let i = 0; i < baselineChoices.length; i++) {
-      if (baselineChoices[i] !== rewoundChoices[i] || (i === 3 && runA.icePrepared !== runB?.icePrepared)) return i + 1;
+      if (baselineChoices[i] !== rewoundChoices[i] || (i === 3 && runA.icePrepared !== runB?.icePrepared)) {
+        return i + 1;
+      }
     }
+    if (Boolean(baselineTasks.stormClamped) !== Boolean(branchTasks.stormClamped)) return 5;
+    if (Boolean(baselineTasks.dishAligned) !== Boolean(branchTasks.dishAligned)) return 6;
     return rewoundChoices.length > baselineChoices.length ? baselineChoices.length + 1 : null;
-  }, [baselineChoices, rewoundChoices, baselineTasks.solarCalibrated, branchTasks.solarCalibrated, runA.icePrepared, runB?.icePrepared]);
+  }, [baselineChoices, rewoundChoices, baselineTasks, branchTasks, runA.icePrepared, runB?.icePrepared]);
 
   const runAChoiceLabel = useMemo(() => {
     if (divergedStep === null) return 'CHOICE A';
     const idx = baselineChoices[divergedStep - 1];
     return idx !== undefined ? `OPT ${CHOICE_LETTERS[idx]}` : 'RUN A';
   }, [baselineChoices, divergedStep]);
+
+  const shareUrl = useMemo(
+    () =>
+      encodeSharedReplayUrl({
+        a: baselineChoices,
+        b: rewoundChoices,
+        m: trainingMode,
+        p: stormPeakPfu,
+      }),
+    [baselineChoices, rewoundChoices, trainingMode, stormPeakPfu],
+  );
 
   // Trigger audio cues on LRO Shadow (Step 3) and DONKI Solar Storm (Step 5)
   useEffect(() => {
@@ -422,8 +642,8 @@ export default function App() {
     return prev ? prev.flagsAfter : activeRun.flags;
   }, [activeRun, viewStep]);
 
-  const canChoose = viewStep <= lastAvailableStep &&
-    (hasBranch || (!runA.complete && viewStep === completedPhases + 1));
+  const canChoose =
+    viewStep <= lastAvailableStep && (hasBranch || (!runA.complete && viewStep === completedPhases + 1));
 
   function celebrateVictory() {
     soundFX.play('success');
@@ -440,10 +660,23 @@ export default function App() {
     }
   }
 
+  function closeAllModals() {
+    setLaunchScreenOpen(false);
+    setDecisionModalOpen(false);
+    setTelemetryDrawerOpen(false);
+    setMapModalOpen(false);
+    setShowBriefing(false);
+    setSensorDeckOpen(false);
+    setCertificateOpen(false);
+    setAchievementsModalOpen(false);
+    setSampleModalOpen(false);
+    setMarsModalOpen(false);
+    setDossierMenuOpen(false);
+  }
+
   function handleChoose(choiceIndex: number, tasks: MissionTaskSettings, prediction: ShadowStrategy | null) {
     if (!canChoose) return;
 
-    // Run B keeps the original plan for executed phases and can extend a rescued run.
     const nextChoices = activeChoices.slice();
     nextChoices[viewStep - 1] = choiceIndex;
     const preview = runSimulation(nextChoices, tasks);
@@ -460,7 +693,11 @@ export default function App() {
     }
     setLastDebrief(debriefStep);
     if (!hasBranch && viewStep === 3) {
-      setShadowPrediction(prediction ? { expected: prediction, priorChoices: nextChoices.slice(0, 2), solarCalibrated: tasks.solarCalibrated } : null);
+      setShadowPrediction(
+        prediction
+          ? { expected: prediction, priorChoices: nextChoices.slice(0, 2), solarCalibrated: tasks.solarCalibrated }
+          : null,
+      );
     }
 
     setDecisionModalOpen(false);
@@ -507,15 +744,14 @@ export default function App() {
   function handleReset() {
     soundFX.play('StepNav');
     resetFieldwork();
+    setStormPeakPfu(SEP_PEAK_FLUX_PFU);
     setBaselineChoices([]);
     setBaselineTasks(DEFAULT_TASK_SETTINGS);
     setBranchTasks(DEFAULT_TASK_SETTINGS);
     setRewoundChoices(null);
     setDemoStage(null);
     setViewStep(1);
-    setDecisionModalOpen(false);
-    setTelemetryDrawerOpen(false);
-    setMapModalOpen(false);
+    closeAllModals();
     requestAnimationFrame(() => world.current?.focus());
   }
 
@@ -531,11 +767,8 @@ export default function App() {
 
   function handleStartTour() {
     handleReset();
+    soundFX.startAmbient();
     soundFX.play('tourChime');
-    setShowBriefing(false);
-    setSensorDeckOpen(false);
-    setCertificateOpen(false);
-    setAchievementsModalOpen(false);
     setDemoStage('setup');
     world.current?.teleportTo({ x: STATIONS[0].x, y: STATIONS[0].y + 38 });
   }
@@ -607,6 +840,7 @@ export default function App() {
   }, []);
 
   const returnToWorld = useCallback(() => {
+    setLaunchScreenOpen(false);
     setDecisionModalOpen(false);
     setTelemetryDrawerOpen(false);
     setMapModalOpen(false);
@@ -614,6 +848,8 @@ export default function App() {
     setSensorDeckOpen(false);
     setCertificateOpen(false);
     setAchievementsModalOpen(false);
+    setMarsModalOpen(false);
+    setDossierMenuOpen(false);
   }, []);
 
   // Automated Artemis Expedition Achievement Checks
@@ -667,29 +903,44 @@ export default function App() {
   const minedCount = minedCrystals.filter(Boolean).length;
   const calibratedCount = calibratedTasks.filter(Boolean).length;
   const collectedCount = collectedSamples.filter(Boolean).length;
-  const bonusScience = collectedCount * 4;
   const effectiveSciencePoints = currentMetrics.sciencePoints;
+  const isCadet = trainingMode === 'cadet';
 
   const isShadowCrisis = viewStep === 3 && completedPhases < 3 && !activeRun.complete;
   const isStormCrisis = viewStep === 5 && completedPhases < 5 && !activeRun.complete;
   const nearShelterAccess = nearbyStation?.decisionId === 5;
   const solarSetup = activeRun.steps[0];
-  const solarOutputPct = activeRecord ? Math.round(activeRecord.env.arrayOutputFactor * 100)
-    : solarSetup ? Math.round(100 * environmentAtHour(
-      phase.startHour, new Set(flagsBefore), solarSetup.env.orientationFactor,
-    ).arrayOutputFactor) : null;
+  const solarOutputPct = activeRecord
+    ? Math.round(activeRecord.env.arrayOutputFactor * 100)
+    : solarSetup
+      ? Math.round(
+          100 *
+            environmentAtHour(phase.startHour, new Set(flagsBefore), solarSetup.env.orientationFactor)
+              .arrayOutputFactor,
+        )
+      : null;
   const iceRecord = viewStep >= 4 ? activeRun.steps[3] : undefined;
   const iceWaterKg = iceRecord?.choiceId === 'D4-A' ? iceRecord.resourceFlows.waterExtractedKg : null;
 
   const { cropGrowthDays, harvestedFoodKg } = displayedResources;
-  const cropProgress = Math.max(0, Math.min(1,
-    (cropGrowthDays - CROP_TRIAL.ageAtInstallDays) / (CROP_TRIAL.harvestAgeDays - CROP_TRIAL.ageAtInstallDays),
-  ));
-  const cropStatus: CropStatus = harvestedFoodKg > 0 ? 'harvested'
-    : cropGrowthDays === 0 ? 'idle'
-    : (activeRun.outcome === 'abort' && activeRecord?.endHour === activeRun.elapsedHours) ||
-      !canPowerCrop(displayedResources, currentMetrics.powerKwh) ? 'paused'
-    : cropProgress > 0 ? 'growing' : 'ready';
+  const cropProgress = Math.max(
+    0,
+    Math.min(
+      1,
+      (cropGrowthDays - CROP_TRIAL.ageAtInstallDays) / (CROP_TRIAL.harvestAgeDays - CROP_TRIAL.ageAtInstallDays),
+    ),
+  );
+  const cropStatus: CropStatus =
+    harvestedFoodKg > 0
+      ? 'harvested'
+      : cropGrowthDays === 0
+        ? 'idle'
+        : (activeRun.outcome === 'abort' && activeRecord?.endHour === activeRun.elapsedHours) ||
+            !canPowerCrop(displayedResources, currentMetrics.powerKwh)
+          ? 'paused'
+          : cropProgress > 0
+            ? 'growing'
+            : 'ready';
 
   const worldSnapshot = useMemo(
     () => ({
@@ -767,192 +1018,324 @@ export default function App() {
   return (
     <div className="app-shell">
       {/* =====================================================================
-       * TOP HEADER: Brand + Iconic Crew Task Bar + Mission Controls
+       * UNIFIED MISSION CONTROL HEADER (Brand + Live 4-Gauge HUD + Labeled Controls)
        * =================================================================== */}
-      <header className="topbar">
-        <div className="brand">
+      <header className="mc-header">
+        <button
+          type="button"
+          className="brand text-left"
+          onClick={() => {
+            soundFX.play('uiClick');
+            setLaunchScreenOpen(true);
+          }}
+          title={lang === 'az' ? 'Missiya Başlanğıc Ekranı' : 'Mission Launch Screen'}
+        >
           <span className="brand-symbol">
-            <Orbit size={21} strokeWidth={1.5} />
+            <Orbit size={20} strokeWidth={1.6} />
           </span>
           <div>
             <strong>
               OUTPOST<span>REPLAY</span>
             </strong>
-            <small>{t('tagline')}</small>
+            <small>
+              {commanderCallsign.trim()
+                ? `${lang === 'az' ? 'KMD' : 'CMDR'} ${commanderCallsign.trim().toUpperCase()}`
+                : t('tagline')}
+            </small>
           </div>
-        </div>
+        </button>
 
-        {/* Among-Us Inspired Outpost Total Task Progress Bar */}
-        <div className="crew-taskbar" title="Mission Decisions & Station Calibrations">
-          <span className="crew-taskbar-label">
-            {lang === 'az' ? 'BAZA TAPŞIRIQLARI' : 'TOTAL TASKS'}
-          </span>
-          <div className="crew-taskbar-segments">
-            {STATIONS.map((st, idx) => {
-              const done = st.decisionId <= completedPhases;
-              const cal = calibratedTasks[idx];
-              return (
-                <span
-                  key={st.decisionId}
-                  className={`crew-taskbar-seg ${done ? 'done' : cal ? 'calibrated' : ''}`}
-                />
-              );
-            })}
+        {/* Compact Live Deterministic Telemetry Readout */}
+        <section
+          className="mc-telemetry"
+          aria-label={lang === 'az' ? 'Bazanın telemetriyası' : 'Outpost telemetry'}
+        >
+          <div className="mc-gauge mc-gauge--clock">
+            <span className="mc-gauge-label">{tr(currentDecision.phase.label)}</span>
+            <strong className="mc-gauge-val">
+              {fmt(activeRecord?.endHour ?? activeRun.elapsedHours)}
+              <small>/216h</small>
+            </strong>
           </div>
-          <span className="font-mono text-[10px] font-semibold text-[#c0e6aa]">
-            {completedPhases}/6
-          </span>
-        </div>
 
-        <nav className="topbar-actions" aria-label={lang === 'az' ? 'Missiyanın idarəetmə düymələri' : 'Mission controls'}>
-          {/* Guided judge demo */}
+          <div className="mc-gauge mc-gauge--power">
+            <span className="mc-gauge-label">
+              <Zap size={11} /> {t('power')}
+            </span>
+            <strong className="mc-gauge-val">
+              {fmt(currentMetrics.powerKwh)}
+              <small>{t('unitKwh')}</small>
+              {compareMetrics !== undefined && (
+                <em className="mc-delta">
+                  {signed(Math.round((currentMetrics.powerKwh - compareMetrics.powerKwh) * 10) / 10)}
+                </em>
+              )}
+            </strong>
+            <i className="mc-bar">
+              <span style={{ width: `${Math.min(100, Math.max(0, currentMetrics.powerKwh))}%` }} />
+            </i>
+          </div>
+
+          <div className="mc-gauge mc-gauge--life">
+            <span className="mc-gauge-label">
+              <HeartPulse size={11} /> {t('lifeSupport')}
+            </span>
+            <strong className="mc-gauge-val">
+              {fmt(currentMetrics.lifeSupportPct)}
+              <small>%</small>
+              {compareMetrics !== undefined && (
+                <em className="mc-delta">
+                  {signed(
+                    Math.round((currentMetrics.lifeSupportPct - compareMetrics.lifeSupportPct) * 10) / 10,
+                  )}
+                </em>
+              )}
+            </strong>
+            <i className="mc-bar">
+              <span style={{ width: `${Math.min(100, Math.max(0, currentMetrics.lifeSupportPct))}%` }} />
+            </i>
+          </div>
+
+          <div
+            className={`mc-gauge mc-gauge--rad ${
+              currentMetrics.radiationMsv >= RADIATION_LIMITS.missionWarningMsv ? 'mc-gauge--warn' : ''
+            }`}
+          >
+            <span className="mc-gauge-label">
+              <ShieldAlert size={11} /> {t('radiation')}
+            </span>
+            <strong className="mc-gauge-val">
+              {fmt(currentMetrics.radiationMsv)}
+              <small>/{RADIATION_LIMITS.missionWarningMsv}</small>
+            </strong>
+            <i className="mc-bar">
+              <span
+                style={{
+                  width: `${Math.min(100, Math.max(0, (currentMetrics.radiationMsv / 80) * 100))}%`,
+                }}
+              />
+            </i>
+          </div>
+
+          <div className="mc-gauge mc-gauge--sci">
+            <span className="mc-gauge-label">
+              <FlaskConical size={11} /> {t('science')}
+            </span>
+            <strong className="mc-gauge-val">
+              {fmt(effectiveSciencePoints)}
+              <small>{t('unitPts')}</small>
+            </strong>
+            <i className="mc-bar">
+              <span style={{ width: `${Math.min(100, Math.max(0, effectiveSciencePoints))}%` }} />
+            </i>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.play('StepNav');
+              closeAllModals();
+              setTelemetryDrawerOpen(true);
+            }}
+            className="mc-outcome-btn"
+            title={t('compareTitle')}
+          >
+            <OutcomeBadge result={activeRun} label={hasBranch ? t('runB') : t('runA')} />
+          </button>
+        </section>
+
+        {/* Primary Labeled Mission Controls */}
+        <nav
+          className="mc-actions"
+          aria-label={lang === 'az' ? 'Missiyanın idarəetmə düymələri' : 'Mission controls'}
+        >
+          {/* Cadet vs Engineer Mode Switch */}
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.play('uiClick');
+              setTrainingMode((m) => (m === 'cadet' ? 'engineer' : 'cadet'));
+            }}
+            className={`text-button ${isCadet ? 'text-button--cadet' : 'text-button--engineer'}`}
+            title={
+              lang === 'az'
+                ? 'Gənc Kadet (7–12 yaş) və Uçuş Mühəndisi rejimi arasında keçid'
+                : 'Switch between Junior Cadet (Ages 7–12) and Flight Engineer telemetry'
+            }
+          >
+            {isCadet ? <Rocket size={13} /> : <GraduationCap size={13} />}
+            <span>
+              {isCadet
+                ? lang === 'az'
+                  ? 'Kadet'
+                  : 'Cadet'
+                : lang === 'az'
+                  ? 'Mühəndis'
+                  : 'Engineer'}
+            </span>
+          </button>
+
+          {/* Guided 90-Sec Judge Demo */}
           <button
             type="button"
             className="text-button text-button--tour"
             onClick={handleStartTour}
             title={t('judgeTourButton')}
-            aria-label={t('judgeTourButton')}
           >
-            <Sparkles size={14} className="text-amber-300" />
-            <span className="topbar-tour-label">{t('judgeTourButton')}</span>
+            <Sparkles size={13} className="text-amber-300" />
+            <span>{lang === 'az' ? 'Münsif Demo' : 'Judge Demo'}</span>
           </button>
 
-          {/* Interactive NASA Sensor Deck & Raw Telemetry Explorer */}
+          {/* 3D NASA Sensor Deck (LOLA Hologram + Live DONKI + RadLab) */}
           <button
             type="button"
             className="text-button text-button--sensor"
             onClick={() => {
               soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setTelemetryDrawerOpen(false);
-              setMapModalOpen(false);
-              setShowBriefing(false);
-              setCertificateOpen(false);
-              setSensorDeckOpen((v) => !v);
+              closeAllModals();
+              setSensorDeckOpen(true);
             }}
             title={t('sensorDeckButton')}
-            aria-label={t('sensorDeckButton')}
           >
-            <Activity size={14} className="text-cyan-300" />
-            <span className="topbar-long">{t('sensorDeckButton')}</span>
+            <Activity size={13} className="text-cyan-300" />
+            <span>{lang === 'az' ? '3D NASA' : '3D NASA'}</span>
           </button>
 
-          {/* Downloadable / Printable Flight Certificate */}
+          {/* Rewind & Counterfactual Comparison Lab [R] */}
           <button
             type="button"
-            className="text-button text-button--cert"
+            className="text-button text-button--rewind"
             onClick={() => {
               soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setTelemetryDrawerOpen(false);
-              setMapModalOpen(false);
-              setShowBriefing(false);
-              setSensorDeckOpen(false);
-              setAchievementsModalOpen(false);
-              setCertificateOpen(true);
-            }}
-            title={t('exportCertificateButton')}
-            aria-label={t('exportCertificateButton')}
-          >
-            <Award size={14} className="text-emerald-300" />
-            <span className="topbar-long">{t('exportCertificateButton')}</span>
-          </button>
-
-          {/* Artemis Mission Honors & Achievements */}
-          <button
-            type="button"
-            className="text-button text-button--badge"
-            onClick={() => {
-              soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setTelemetryDrawerOpen(false);
-              setMapModalOpen(false);
-              setShowBriefing(false);
-              setSensorDeckOpen(false);
-              setCertificateOpen(false);
-              setSampleModalOpen(false);
-              setAchievementsModalOpen(true);
-            }}
-            title={t('achievementsButton')}
-            aria-label={t('achievementsButton')}
-          >
-            <Trophy size={14} className="text-amber-300" />
-            <span className="topbar-long">{t('achievementsButton')}</span>
-            <span className="rounded bg-amber-400/25 px-1 font-mono text-[10px] font-bold text-amber-200">
-              {unlockedBadges.length}/6
-            </span>
-          </button>
-
-          {/* NASA Field Science Samples & Geological Dossier */}
-          <button
-            type="button"
-            className="text-button text-button--badge"
-            onClick={() => {
-              soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setTelemetryDrawerOpen(false);
-              setMapModalOpen(false);
-              setShowBriefing(false);
-              setSensorDeckOpen(false);
-              setCertificateOpen(false);
-              setAchievementsModalOpen(false);
-              setInspectSampleIdx(null);
-              setSampleModalOpen(true);
-            }}
-            title={t('samplesButton')}
-            aria-label={t('samplesButton')}
-          >
-            <Sparkles size={14} className="text-sky-300" />
-            <span className="topbar-long">{t('samplesButton')}</span>
-            <span className="rounded bg-sky-400/25 px-1 font-mono text-[10px] font-bold text-sky-200">
-              {collectedCount}/6
-            </span>
-          </button>
-
-          <button type="button" className="text-button text-button--accent" onClick={handleLoadDemo} title={t('loadDemo')} aria-label={t('loadDemo')}>
-            <PlayCircle size={15} />
-            <span className="topbar-long">{t('loadDemo')}</span>
-          </button>
-
-          <button
-            type="button"
-            className="text-button"
-            aria-label={t('compareTitle')}
-            title={t('compareTitle')}
-            onClick={() => {
-              soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setMapModalOpen(false);
-              setShowBriefing(false);
-              setSensorDeckOpen(false);
-              setCertificateOpen(false);
+              closeAllModals();
               setTelemetryDrawerOpen((v) => !v);
             }}
+            title={t('compareTitle')}
           >
-            <BarChart3 size={15} />
-            <span className="topbar-long">
-              {t('compareTitle')}
-            </span>
+            <BarChart3 size={13} />
+            <span>{lang === 'az' ? 'Geri Sar [R]' : 'Rewind [R]'}</span>
           </button>
 
+          {/* Bonus Mission 2: Mars Jezero Dust Storm */}
           <button
             type="button"
-            className="text-button"
-            aria-label={t('missionBriefing')}
-            title={t('missionBriefing')}
+            className="text-button text-button--mars"
             onClick={() => {
               soundFX.play('StepNav');
-              setDecisionModalOpen(false);
-              setTelemetryDrawerOpen(false);
-              setMapModalOpen(false);
-              setSensorDeckOpen(false);
-              setCertificateOpen(false);
-              setShowBriefing(true);
+              closeAllModals();
+              setMarsModalOpen(true);
             }}
+            title={
+              lang === 'az'
+                ? 'Bonus Missiya 2: Mars Jezero Toz Fırtınası və 14 Dəq Rabitə Gecikməsi'
+                : 'Bonus Mission 2: Mars Jezero Dust Storm & 14-Min Comms Delay'
+            }
           >
-            <BookOpen size={15} />
-            <span className="topbar-long">{t('missionBriefing')}</span>
+            <Wind size={13} className="text-orange-300" />
+            <span>Mars</span>
           </button>
+
+          {/* Mission Dossier Dropdown (Certificate, Badges x/7, Samples x/6, Demo Preset, Briefing, Reset) */}
+          <div className="relative" ref={dossierMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.play('uiClick');
+                setDossierMenuOpen((v) => !v);
+              }}
+              aria-expanded={dossierMenuOpen}
+              className="text-button text-button--badge"
+            >
+              <FolderOpen size={13} className="text-amber-300" />
+              <span>{lang === 'az' ? 'Dosye' : 'Dossier'}</span>
+              <span className="rounded bg-amber-400/25 px-1 font-mono text-[10px] font-bold text-amber-200">
+                {unlockedBadges.length}/{ACHIEVEMENTS.length}
+              </span>
+              <ChevronDown size={12} />
+            </button>
+
+            {dossierMenuOpen && (
+              <div
+                className="dossier-menu"
+                role="menu"
+                aria-label={lang === 'az' ? 'Missiya dosyesi menyusu' : 'Mission dossier menu'}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    soundFX.play('StepNav');
+                    closeAllModals();
+                    setCertificateOpen(true);
+                  }}
+                >
+                  <Award size={14} className="text-emerald-300" />
+                  <span>{t('exportCertificateButton')} (PNG + URL)</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    soundFX.play('StepNav');
+                    closeAllModals();
+                    setAchievementsModalOpen(true);
+                  }}
+                >
+                  <Trophy size={14} className="text-amber-300" />
+                  <span>
+                    {t('achievementsButton')} ({unlockedBadges.length}/{ACHIEVEMENTS.length})
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    soundFX.play('StepNav');
+                    closeAllModals();
+                    setInspectSampleIdx(null);
+                    setSampleModalOpen(true);
+                  }}
+                >
+                  <Sparkles size={14} className="text-sky-300" />
+                  <span>
+                    {t('samplesButton')} ({collectedCount}/6)
+                  </span>
+                </button>
+                <button type="button" role="menuitem" onClick={handleLoadDemo}>
+                  <PlayCircle size={14} className="text-[#c0e6aa]" />
+                  <span>{t('loadDemo')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    soundFX.play('StepNav');
+                    closeAllModals();
+                    setShowBriefing(true);
+                  }}
+                >
+                  <BookOpen size={14} className="text-slate-300" />
+                  <span>{t('missionBriefing')}</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    soundFX.play('uiClick');
+                    closeAllModals();
+                    setLaunchScreenOpen(true);
+                  }}
+                >
+                  <Rocket size={14} className="text-amber-200" />
+                  <span>{lang === 'az' ? 'Başlanğıc Ekranı' : 'Launch Screen'}</span>
+                </button>
+                <button type="button" role="menuitem" onClick={handleReset}>
+                  <RotateCcw size={14} className="text-rose-300" />
+                  <span>{t('reset')}</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
@@ -961,7 +1344,7 @@ export default function App() {
             aria-label={muted ? t('unmute') : t('mute')}
             title={muted ? t('unmute') : t('mute')}
           >
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
 
           <button
@@ -973,216 +1356,70 @@ export default function App() {
             }}
             aria-label={t('language')}
           >
-            {lang === 'en' ? 'EN · AZ' : 'AZ · EN'}
-          </button>
-
-          <button
-            type="button"
-            className="icon-button"
-            onClick={handleReset}
-            aria-label={t('reset')}
-            title={t('reset')}
-          >
-            <RotateCcw size={16} />
+            {lang === 'en' ? 'EN·AZ' : 'AZ·EN'}
           </button>
         </nav>
       </header>
 
-      {/* =====================================================================
-       * DETERMINISTIC TELEMETRY BAR (Power, Life Support, Radiation, Science)
-       * =================================================================== */}
-      <section className="resource-hud" aria-label={lang === 'az' ? 'Bazanın telemetriyası' : 'Outpost telemetry'}>
-        <div className="mission-clock">
-          <span>{tr(currentDecision.phase.label)}</span>
-          <strong>
-            {fmt(activeRecord?.endHour ?? activeRun.elapsedHours)}
-            <small> / 216 h</small>
-          </strong>
-        </div>
-
-        {/* Power Reserve */}
-        <div className="hud-resource hud-resource--power">
-          <div className="resource-caption">
-            <Zap size={13} />
-            <span>{t('power')}</span>
+      {/* Slim Contextual Status & NASA Reserves Sub-Strip */}
+      <section
+        className="mc-substrip"
+        aria-label={tr({ en: 'Mission guide and surface conditions', az: 'Missiya bələdçisi və səth şəraiti' })}
+      >
+        {!guideDismissed && !demoStage ? (
+          <div className="flex min-w-0 flex-1 items-center gap-2 text-[11px] text-[#d9eed0]">
+            <Sparkles size={12} className="shrink-0 text-[#c0e6aa]" />
+            <strong className="shrink-0 font-mono text-[10px] uppercase text-[#c0e6aa]">
+              {t('guideTitle')} {runA.complete ? 3 : completedPhases > 0 ? 2 : 1}/3:
+            </strong>
+            <span className="truncate text-slate-100" role="status">
+              {t(
+                runA.complete
+                  ? 'guideReplay'
+                  : completedPhases > 0
+                    ? 'guideAfterChoice'
+                    : atActiveStation
+                      ? 'guideAtSolar'
+                      : 'guideStart',
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setGuideDismissed(true)}
+              className="shrink-0 rounded border border-white/15 px-1.5 py-0.5 text-[10px] text-slate-300 hover:bg-white/10"
+            >
+              {t('dismissGuide')}
+            </button>
           </div>
-          <div className="resource-reading">
-            <strong>{fmt(currentMetrics.powerKwh)}</strong>
-            <small>{t('unitKwh')}</small>
-            {compareMetrics !== undefined && (
-              <small className="ml-1 font-mono text-[10px] text-[#c0e6aa]">
-                ({signed(Math.round((currentMetrics.powerKwh - compareMetrics.powerKwh) * 10) / 10)})
-              </small>
-            )}
-          </div>
-          <div className="resource-track">
-            <span style={{ width: `${Math.min(100, Math.max(0, currentMetrics.powerKwh))}%` }} />
-          </div>
-        </div>
-
-        {/* Life Support */}
-        <div className="hud-resource hud-resource--lifesupport">
-          <div className="resource-caption">
-            <HeartPulse size={13} />
-            <span>{t('lifeSupport')}</span>
-          </div>
-          <div className="resource-reading">
-            <strong>{fmt(currentMetrics.lifeSupportPct)}</strong>
-            <small>{t('unitPct')}</small>
-            {compareMetrics !== undefined && (
-              <small className="ml-1 font-mono text-[10px] text-[#87cebd]">
-                (
-                {signed(
-                  Math.round((currentMetrics.lifeSupportPct - compareMetrics.lifeSupportPct) * 10) /
-                    10,
-                )}
-                )
-              </small>
-            )}
-          </div>
-          <div className="resource-track">
-            <span
-              style={{ width: `${Math.min(100, Math.max(0, currentMetrics.lifeSupportPct))}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Cumulative Radiation Dose */}
-        <div
-          className={`hud-resource hud-resource--radiation ${
-            currentMetrics.radiationMsv >= RADIATION_LIMITS.missionWarningMsv
-              ? 'hud-resource--radiation-warn'
-              : ''
-          }`}
-        >
-          <div className="resource-caption">
-            <ShieldAlert size={13} />
-            <span>{t('radiation')}</span>
-          </div>
-          <div className="resource-reading">
-            <strong>{fmt(currentMetrics.radiationMsv)}</strong>
-            <small>
-              {t('unitMsv')} / {RADIATION_LIMITS.missionWarningMsv}
-            </small>
-          </div>
-          <div className="resource-track">
-            <span
-              style={{
-                width: `${Math.min(
-                  100,
-                  Math.max(0, (currentMetrics.radiationMsv / 80) * 100),
-                )}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Science Progress */}
-        <div className="hud-resource hud-resource--science">
-          <div className="resource-caption">
-            <FlaskConical size={13} />
-            <span>{t('science')}</span>
-            {bonusScience > 0 && (
-              <span className="font-mono text-[10px] text-amber-300">
-                (+{bonusScience} {lang === 'az' ? 'sahə' : 'field'})
-              </span>
-            )}
-          </div>
-          <div className="resource-reading">
-            <strong>{fmt(effectiveSciencePoints)}</strong>
-            <small>{t('unitPts')}</small>
-          </div>
-          <div className="resource-track">
-            <span
-              style={{ width: `${Math.min(100, Math.max(0, effectiveSciencePoints))}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Run A / Run B Outcome & Rewind Trigger */}
-        <div className="hud-resource">
-          <div className="resource-caption">
-            <GitBranch size={13} />
-            <span>{hasBranch ? `${t('runB')} (${t('rewound')})` : t('runA')}</span>
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <OutcomeBadge result={activeRun} label={hasBranch ? t('runB') : t('runA')} />
-          </div>
-          <button
-            type="button"
-            onClick={() => setTelemetryDrawerOpen(true)}
-            className="mt-1.5 text-left font-mono text-[10px] text-[#c0e6aa] hover:underline"
-          >
-            {hasBranch
-              ? lang === 'az'
-                ? 'Müqayisə Qrafiklərini Aç →'
-                : 'Inspect Run A vs B →'
-              : `${completedPhases}/${DECISION_COUNT} ${
-                  lang === 'az' ? 'qərar' : 'decisions'
-                } · [R]`}
-          </button>
-        </div>
-      </section>
-
-      <section className="nasa-physics-strip" aria-label={tr({ en: 'Scenario conditions and reserves', az: 'Ssenari şəraiti və ehtiyatlar' })}>
-        <div className="nasa-physics-item">
-          <Orbit size={13} className="text-amber-300" />
-          <span>
-            {tr({ en: 'Modeled sunlight', az: 'Modeldə günəş işığı' })}{' '}
-            <strong>{Math.round(availableSunlight * 100)}%</strong>
-          </span>
-        </div>
-        <div className="nasa-physics-item">
-          <Snowflake size={13} className="text-sky-300" />
-          <span>
-            {tr({ en: 'Modeled surface', az: 'Modeldə səth' })}{' '}
-            <strong>{fmt(surfaceTemperature)} K</strong>
-          </span>
-        </div>
-        {viewStep === 5 && (
-          <div className="nasa-physics-item">
-            <Zap size={13} className="text-rose-400" />
-            <span>{tr({ en: 'Scripted storm peak', az: 'Ssenaridə fırtına piki' })} <strong>{SEP_PEAK_FLUX_PFU} pfu</strong></span>
+        ) : (
+          <div className="flex items-center gap-2 font-mono text-[10px] text-slate-300">
+            <Orbit size={12} className="text-amber-300" />
+            <span>
+              {tr({ en: 'LRO Sun', az: 'LRO Günəş' })} <strong>{Math.round(availableSunlight * 100)}%</strong>
+            </span>
           </div>
         )}
-        <div className="nasa-physics-item">
-          <HeartPulse size={13} className="text-teal-300" />
-          <span>{tr({ en: 'Crew reserves', az: 'Ekipaj ehtiyatı' })}{' '}
+
+        <div className="hidden items-center gap-3 font-mono text-[10px] text-slate-300 lg:flex">
+          <span className="inline-flex items-center gap-1">
+            <Snowflake size={11} className="text-sky-300" />
+            <strong>{fmt(surfaceTemperature)} K</strong>
+          </span>
+          {(viewStep === 5 || stormPeakPfu !== SEP_PEAK_FLUX_PFU) && (
+            <span className="inline-flex items-center gap-1 text-rose-200">
+              <Zap size={11} className="text-rose-400" />
+              <strong>{stormPeakPfu} pfu</strong>
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1">
+            <HeartPulse size={11} className="text-teal-300" />
             <strong>
-              {fmt(displayedResources.oxygenKg)} {tr({ en: 'kg', az: 'kq' })} O₂ ·{' '}
-              {fmt(displayedResources.waterKg)} {tr({ en: 'kg', az: 'kq' })} H₂O ·{' '}
-              {fmt(displayedResources.foodKg)} {tr({ en: 'kg food', az: 'kq qida' })}
+              {fmt(displayedResources.oxygenKg)} O₂ · {fmt(displayedResources.waterKg)} H₂O ·{' '}
+              {fmt(displayedResources.foodKg)} {lang === 'az' ? 'qida' : 'food'}
             </strong>
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setSensorDeckOpen(true)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-0.5 font-mono text-[10px] text-cyan-200 hover:bg-cyan-500/20"
-        >
-          <Activity size={12} className="text-cyan-300" />
-          <span>{t('sensorDeckButton')} →</span>
-        </button>
       </section>
-
-      {!guideDismissed && !demoStage && (
-        <aside className="guide-banner" aria-label={t('guideTitle')}>
-          <strong className="flex items-center gap-1.5 text-[#c0e6aa]">
-            <Sparkles size={13} aria-hidden="true" />
-            {t('guideTitle')} · {runA.complete ? 3 : completedPhases > 0 ? 2 : 1}/3
-          </strong>
-          <span className="flex-1 text-slate-100" role="status">
-            {t(runA.complete ? 'guideReplay' : completedPhases > 0 ? 'guideAfterChoice' : atActiveStation ? 'guideAtSolar' : 'guideStart')}
-          </span>
-          <button
-            type="button"
-            onClick={() => setGuideDismissed(true)}
-            className="rounded border border-white/15 px-2 py-0.5 text-[11px] text-slate-200 hover:bg-white/10"
-          >
-            {t('dismissGuide')}
-          </button>
-        </aside>
-      )}
 
       {activeRun.outcome === 'abort' && !demoStage && (
         <aside className="causal-rescue-banner" role="status">
@@ -1210,7 +1447,11 @@ export default function App() {
           ref={world}
           snapshot={worldSnapshot}
           paused={anyOverlayOpen}
-          label={lang === 'az' ? 'Şeklton bazasının 2.5D interaktiv mühiti' : 'Shackleton Outpost 2.5D Interactive World'}
+          label={
+            lang === 'az'
+              ? 'Şeklton bazasının 2.5D interaktiv mühiti'
+              : 'Shackleton Outpost 2.5D Interactive World'
+          }
           onReady={() => setReady(true)}
           onError={setError}
           onNearby={setNearbyStation}
@@ -1233,244 +1474,277 @@ export default function App() {
           />
         )}
 
-        {!demoStage && <aside className="objective-card">
-          <div className="eyebrow accent">
-            <Radio size={13} />
-            <span>{tr(activeStation.code)}</span>
-            <span className="chapter-count">
-              0{viewStep} / 0{DECISION_COUNT}
-            </span>
-          </div>
-
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <span
-              className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[9px] font-semibold ${tierMeta.tone}`}
-            >
-              {tierMeta[lang]}
-            </span>
-            {controllingRover && (
-              <span className="inline-flex items-center gap-1 rounded border border-sky-400/40 bg-sky-400/15 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-sky-200">
-                <Truck size={10} />
-                {lang === 'az' ? 'AY MAŞINI AKTİV' : 'DRIVING CAR'}
+        {!demoStage && (
+          <aside className="objective-card">
+            <div className="eyebrow accent">
+              <Radio size={13} />
+              <span>{tr(activeStation.code)}</span>
+              <span className="chapter-count">
+                0{viewStep} / 0{DECISION_COUNT}
               </span>
-            )}
-          </div>
-
-          <h1>
-            {runA.complete && !hasBranch
-              ? t(`outcome.${runA.outcome}`)
-              : viewStep === 1 && completedPhases === 0
-                ? lang === 'az' ? 'Günəş enerjisini qur' : 'Set up solar power'
-                : tr(activeStation.objectiveTitle)}
-          </h1>
-          <p>
-            {runA.complete && !hasBranch
-              ? t('timelineHintComplete')
-              : viewStep === 1 && completedPhases === 0
-                ? lang === 'az'
-                  ? 'Günəş panelləri qızdırıcıları və həyat təminatını işlədən batareyanı doldurur. Kölgəyə hazırlaşmaq üçün panel quruluşunu seç.'
-                  : 'Solar panels charge the battery that runs heaters and life support. Choose a setup before the shadow arrives.'
-                : tr(activeStation.objectiveBody)}
-          </p>
-
-          {viewStep === 1 && completedPhases === 0 && !atActiveStation && !guideDismissed && (
-            <div className="objective-controls-note">
-              <kbd>WASD</kbd> {lang === 'az' ? 'ilə və ya xəritəyə klikləyərək hərəkət edin.' : 'or click the ground to move.'}
             </div>
-          )}
 
-          <div
-            role="status"
-            className={`mt-2 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs ${
-              worldSnapshot.powerLow
-                ? 'border-amber-300/40 bg-amber-950/70 text-amber-100'
-                : 'border-emerald-300/25 bg-emerald-950/30 text-emerald-100'
-            }`}
-          >
-            <Zap size={12} aria-hidden="true" />
-            {worldSnapshot.powerLow
-              ? lang === 'az' ? 'Aşağı enerji ehtiyatı' : 'Low battery reserve'
-              : lang === 'az' ? 'Normal enerji ehtiyatı' : 'Normal battery reserve'}
-            {worldSnapshot.powerLow && (
-              <span className="font-mono">
-                {fmt(currentMetrics.powerKwh)} {t('unitKwh')}
-              </span>
-            )}
-          </div>
-
-          {worldSnapshot.lifeSupportLow && (
-            <div role="status" className="mt-1.5 text-xs font-semibold text-rose-200">
-              {lang === 'az' ? 'Həyat təminatı ehtiyatı azdır' : 'Life support reserve low'}
-            </div>
-          )}
-          {cropStatus !== 'idle' && (
-            <div role="status" className="mt-1.5 text-xs text-emerald-200">
-              {lang === 'az' ? 'İstixana' : 'Greenhouse'} · {
-                tr({
-                  ready: { en: 'ready to grow', az: 'böyüməyə hazırdır' },
-                  growing: { en: 'growing', az: 'böyüyür' },
-                  paused: { en: 'growth paused', az: 'böyümə dayanıb' },
-                  harvested: { en: 'harvested', az: 'məhsul yığılıb' },
-                }[cropStatus])
-              } · {harvestedFoodKg > 0 ? `${fmt(harvestedFoodKg)} ${lang === 'az' ? 'kq' : 'kg'}` : `${Math.round(cropProgress * 100)}%`}
-            </div>
-          )}
-          {viewStep <= 3 && solarOutputPct !== null && (
-            <div className="mt-1.5 text-xs text-amber-100">
-              {lang === 'az' ? `Panellər · nominal gücün ${solarOutputPct}%-i` : `Solar array · ${solarOutputPct}% of nominal output`}
-            </div>
-          )}
-          {iceWaterKg !== null && (
-            <div className="mt-1.5 text-xs text-sky-100">
-              {lang === 'az' ? `Emaldan alınan su · ${fmt(iceWaterKg, 2)} kq` : `Water recovered · ${fmt(iceWaterKg, 2)} kg`}
-            </div>
-          )}
-
-          {/* Quick Action Navigation & Direct Console Trigger Buttons */}
-          {runA.complete ? (
-            <button
-              type="button"
-              onClick={() => setTelemetryDrawerOpen(true)}
-              className="mt-2.5 inline-flex items-center gap-2 rounded-md border border-sky-300/35 bg-sky-950/65 px-2.5 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-900/65"
-            >
-              <GitBranch size={13} aria-hidden="true" />
-              {t('compareTitle')}
-            </button>
-          ) : (
-            <div className="objective-actions">
-              {!atActiveStation && (
-                <button
-                  type="button"
-                  onClick={followStationRoute}
-                  className="objective-action objective-action--primary"
-                >
-                  <Compass size={14} aria-hidden="true" />
-                  <span>{t('jumpToActive')}<small>{distanceMeters} m</small></span>
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => handleWorldInteract(activeStation)}
-                className={`objective-action ${atActiveStation ? 'objective-action--primary' : ''}`}
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <span
+                className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[9px] font-semibold ${tierMeta.tone}`}
               >
-                <Wrench size={14} aria-hidden="true" />
-                <span>{t('openConsole')}{atActiveStation && <small>[E]</small>}</span>
-              </button>
+                {tierMeta[lang]}
+              </span>
+              {controllingRover && (
+                <span className="inline-flex items-center gap-1 rounded border border-sky-400/40 bg-sky-400/15 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-sky-200">
+                  <Truck size={10} />
+                  {lang === 'az' ? 'AY MAŞINI AKTİV' : 'DRIVING CAR'}
+                </span>
+              )}
             </div>
-          )}
 
-          {/* Crisis Alert Pill (Step 3 Lights Out / Step 5 Solar Storm) */}
-          {isShadowCrisis && (
-            <div className="mt-2.5 rounded-lg border border-amber-400/40 bg-amber-950/45 px-2.5 py-1.5 text-[11px] text-amber-200">
-              <strong>
-                {lang === 'az' ? '72 SAATLIQ SSENARİ KÖLGƏSİ' : '72-HOUR TRAINING SHADOW'}
-              </strong>{' '}
-              {lang === 'az'
-                ? 'Günəş panellərinin hasilatı azalır. D3-də enerji planını seçin.'
-                : 'Solar output falls. Choose how to manage power at D3.'}
-            </div>
-          )}
+            <h1>
+              {runA.complete && !hasBranch
+                ? t(`outcome.${runA.outcome}`)
+                : isCadet && currentDecision.cadetTitle
+                  ? tr(currentDecision.cadetTitle)
+                  : viewStep === 1 && completedPhases === 0
+                    ? lang === 'az'
+                      ? 'Günəş enerjisini qur'
+                      : 'Set up solar power'
+                    : tr(activeStation.objectiveTitle)}
+            </h1>
+            <p>
+              {runA.complete && !hasBranch
+                ? t('timelineHintComplete')
+                : isCadet && currentDecision.cadetContext
+                  ? tr(currentDecision.cadetContext)
+                  : viewStep === 1 && completedPhases === 0
+                    ? lang === 'az'
+                      ? 'Günəş panelləri qızdırıcıları və həyat təminatını işlədən batareyanı doldurur. Kölgəyə hazırlaşmaq üçün panel quruluşunu seç.'
+                      : 'Solar panels charge the battery that runs heaters and life support. Choose a setup before the shadow arrives.'
+                    : tr(activeStation.objectiveBody)}
+            </p>
 
-          {isStormCrisis && (
+            {viewStep === 1 && completedPhases === 0 && !atActiveStation && !guideDismissed && (
+              <div className="objective-controls-note">
+                <kbd>WASD</kbd>{' '}
+                {lang === 'az' ? 'ilə və ya xəritəyə klikləyərək hərəkət edin.' : 'or click the ground to move.'}
+              </div>
+            )}
+
             <div
-              className={`mt-2.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${
-                nearShelterAccess
-                  ? 'border-cyan-400/45 bg-cyan-950/45 text-cyan-100'
-                  : 'border-rose-400/55 bg-rose-950/55 text-rose-100'
+              role="status"
+              className={`mt-2 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs ${
+                worldSnapshot.powerLow
+                  ? 'border-amber-300/40 bg-amber-950/70 text-amber-100'
+                  : 'border-emerald-300/25 bg-emerald-950/30 text-emerald-100'
               }`}
             >
-              <strong>
-                {nearShelterAccess
-                  ? lang === 'az'
-                    ? '🛡 SIĞINACAQ GİRİŞİ'
-                    : '🛡 SHELTER ACCESS'
-                  : lang === 'az'
-                    ? '🚨 SSENARİDƏ PROTON FIRTINASI'
-                    : '🚨 SCENARIO PROTON STORM'}
-              </strong>{' '}
-              {nearShelterAccess
+              <Zap size={12} aria-hidden="true" />
+              {worldSnapshot.powerLow
                 ? lang === 'az'
-                  ? 'D5 konsolunda qorunma variantını seçin.'
-                  : 'Choose a shielding strategy at the D5 console.'
+                  ? 'Aşağı enerji ehtiyatı'
+                  : 'Low battery reserve'
                 : lang === 'az'
-                  ? 'D5 sığınacağına gedib məruzqalmanı müəyyən edən variantı seçin.'
-                  : 'Visit the D5 shelter. Your console choice sets the modeled exposure.'}
+                  ? 'Normal enerji ehtiyatı'
+                  : 'Normal battery reserve'}
+              {worldSnapshot.powerLow && (
+                <span className="font-mono">
+                  {fmt(currentMetrics.powerKwh)} {t('unitKwh')}
+                </span>
+              )}
             </div>
-          )}
 
-          {trackedSample !== null && <section className="mt-3 rounded-lg border border-amber-200/30 bg-amber-950/20 p-2.5 text-xs text-amber-100">
-            <strong>{lang === 'az' ? 'Silsilə araşdırması' : 'Ridge investigation'}</strong>
-            <p className="mt-1">{lang === 'az' ? 'Qızılı nişanın yanında E basın.' : 'Press E beside the gold marker to log it.'}</p>
-            <button type="button" className="mt-1 underline" onClick={() => { world.current?.walkTo(FIELD_SAMPLES[trackedSample]); world.current?.focus(); }}>
-              {lang === 'az' ? 'Marşrutu davam etdir' : 'Resume sample route'}
-            </button>
-          </section>}
-          {lastDebrief && <DecisionDebrief key={lastDebrief.choiceId} step={lastDebrief} onDismiss={() => setLastDebrief(null)} />}
+            {worldSnapshot.lifeSupportLow && (
+              <div role="status" className="mt-1.5 text-xs font-semibold text-rose-200">
+                {lang === 'az' ? 'Həyat təminatı ehtiyatı azdır' : 'Life support reserve low'}
+              </div>
+            )}
+            {cropStatus !== 'idle' && (
+              <div role="status" className="mt-1.5 text-xs text-emerald-200">
+                {lang === 'az' ? 'İstixana' : 'Greenhouse'} ·{' '}
+                {tr(
+                  {
+                    ready: { en: 'ready to grow', az: 'böyüməyə hazırdır' },
+                    growing: { en: 'growing', az: 'böyüyür' },
+                    paused: { en: 'growth paused', az: 'böyümə dayanıb' },
+                    harvested: { en: 'harvested', az: 'məhsul yığılıb' },
+                  }[cropStatus],
+                )}{' '}
+                ·{' '}
+                {harvestedFoodKg > 0
+                  ? `${fmt(harvestedFoodKg)} ${lang === 'az' ? 'kq' : 'kg'}`
+                  : `${Math.round(cropProgress * 100)}%`}
+              </div>
+            )}
+            {viewStep <= 3 && solarOutputPct !== null && (
+              <div className="mt-1.5 text-xs text-amber-100">
+                {lang === 'az'
+                  ? `Panellər · nominal gücün ${solarOutputPct}%-i`
+                  : `Solar array · ${solarOutputPct}% of nominal output`}
+              </div>
+            )}
+            {iceWaterKg !== null && (
+              <div className="mt-1.5 text-xs text-sky-100">
+                {lang === 'az'
+                  ? `Emaldan alınan su · ${fmt(iceWaterKg, 2)} kq`
+                  : `Water recovered · ${fmt(iceWaterKg, 2)} kg`}
+              </div>
+            )}
 
-          {nearbyCrewSpeech && (
-            <details className="mt-2.5 rounded-lg border border-white/10 bg-black/25 px-2.5 py-2 text-xs">
-              <summary className="cursor-pointer font-semibold" style={{ color: nearbyCrewSpeech.color }}>
-                {nearbyCrewSpeech.speaker} · {lang === 'az' ? 'Ekipajın məsləhəti' : 'Crew advisory'}
-              </summary>
-              <p className="mt-1">{nearbyCrewSpeech.text}</p>
-            </details>
-          )}
-
-          {/* 6-Step Progress Nodes (Click to inspect / rewind!) */}
-          <div className="objective-path" role="group" aria-label={t('timeline')}>
-            {MISSION_DECISIONS.map((d, idx) => {
-              const stepNum = d.id;
-              const isLocked = stepNum <= completedPhases;
-              const isCurrent = stepNum === viewStep;
-              const isChanged =
-                hasBranch &&
-                rewoundChoices !== null &&
-                baselineChoices[idx] !== rewoundChoices[idx];
-              const clickable = stepNum <= lastAvailableStep;
-
-              return (
-                <div key={stepNum} className="contents">
+            {/* Quick Action Navigation & Direct Console Trigger Buttons */}
+            {runA.complete ? (
+              <button
+                type="button"
+                onClick={() => setTelemetryDrawerOpen(true)}
+                className="mt-2.5 inline-flex items-center gap-2 rounded-md border border-sky-300/35 bg-sky-950/65 px-2.5 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-900/65"
+              >
+                <GitBranch size={13} aria-hidden="true" />
+                {t('compareTitle')}
+              </button>
+            ) : (
+              <div className="objective-actions">
+                {!atActiveStation && (
                   <button
                     type="button"
-                    disabled={!clickable}
-                    onClick={() => {
-                      handleSelectStep(stepNum);
-                      const st = STATIONS[stepNum - 1];
-                      if (st) world.current?.walkTo({ x: st.x, y: st.y });
-                    }}
-                    title={`D${stepNum}: ${tr(d.title)}`}
-                    aria-label={`D${stepNum} · ${tr(d.title)}`}
-                    aria-current={isCurrent ? 'step' : undefined}
-                    className={`objective-dot ${
-                      isChanged
-                        ? 'changed'
-                        : isLocked
-                          ? 'complete'
-                          : isCurrent
-                            ? 'current'
-                            : ''
-                    }`}
+                    onClick={followStationRoute}
+                    className="objective-action objective-action--primary"
                   >
-                    {isLocked && !isChanged ? <Check size={10} /> : stepNum}
+                    <Compass size={14} aria-hidden="true" />
+                    <span>
+                      {t('jumpToActive')}
+                      <small>{distanceMeters} m</small>
+                    </span>
                   </button>
-                  {idx < DECISION_COUNT - 1 && <i />}
-                </div>
-              );
-            })}
-          </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleWorldInteract(activeStation)}
+                  className={`objective-action ${atActiveStation ? 'objective-action--primary' : ''}`}
+                >
+                  <Wrench size={14} aria-hidden="true" />
+                  <span>
+                    {t('openConsole')}
+                    {atActiveStation && <small>[E]</small>}
+                  </span>
+                </button>
+              </div>
+            )}
 
-          {/* Field Bonus Counters */}
-          <div className="mt-2.5 flex items-center justify-between border-t border-white/10 pt-2 font-mono text-[9.5px] text-slate-400">
-            <span className="inline-flex items-center gap-1">
-              <Wrench size={11} className="text-[#c0e6aa]" />
-              {lang === 'az' ? 'Kalibr:' : 'Tasks:'} {calibratedCount}/6
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Snowflake size={11} className="text-sky-300" />
-              {lang === 'az' ? '90K Buz:' : 'Ice Cores:'} {minedCount}/5
-            </span>
-          </div>
-        </aside>}
+            {/* Crisis Alert Pill (Step 3 Lights Out / Step 5 Solar Storm) */}
+            {isShadowCrisis && (
+              <div className="mt-2.5 rounded-lg border border-amber-400/40 bg-amber-950/45 px-2.5 py-1.5 text-[11px] text-amber-200">
+                <strong>
+                  {lang === 'az' ? '72 SAATLIQ SSENARİ KÖLGƏSİ' : '72-HOUR TRAINING SHADOW'}
+                </strong>{' '}
+                {lang === 'az'
+                  ? 'Günəş panellərinin hasilatı azalır. D3-də enerji planını seçin.'
+                  : 'Solar output falls. Choose how to manage power at D3.'}
+              </div>
+            )}
+
+            {isStormCrisis && (
+              <div
+                className={`mt-2.5 rounded-lg border px-2.5 py-1.5 text-[11px] ${
+                  nearShelterAccess
+                    ? 'border-cyan-400/45 bg-cyan-950/45 text-cyan-100'
+                    : 'border-rose-400/55 bg-rose-950/55 text-rose-100'
+                }`}
+              >
+                <strong>
+                  {nearShelterAccess
+                    ? lang === 'az'
+                      ? '🛡 SIĞINACAQ GİRİŞİ'
+                      : '🛡 SHELTER ACCESS'
+                    : lang === 'az'
+                      ? '🚨 SSENARİDƏ PROTON FIRTINASI'
+                      : '🚨 SCENARIO PROTON STORM'}
+                </strong>{' '}
+                {nearShelterAccess
+                  ? lang === 'az'
+                    ? 'D5 konsolunda qorunma variantını seçin.'
+                    : 'Choose a shielding strategy at the D5 console.'
+                  : lang === 'az'
+                    ? 'D5 sığınacağına gedib məruzqalmanı müəyyən edən variantı seçin.'
+                    : 'Visit the D5 shelter. Your console choice sets the modeled exposure.'}
+              </div>
+            )}
+
+            {trackedSample !== null && (
+              <section className="mt-3 rounded-lg border border-amber-200/30 bg-amber-950/20 p-2.5 text-xs text-amber-100">
+                <strong>{lang === 'az' ? 'Silsilə araşdırması' : 'Ridge investigation'}</strong>
+                <p className="mt-1">
+                  {lang === 'az' ? 'Qızılı nişanın yanında E basın.' : 'Press E beside the gold marker to log it.'}
+                </p>
+                <button
+                  type="button"
+                  className="mt-1 underline"
+                  onClick={() => {
+                    world.current?.walkTo(FIELD_SAMPLES[trackedSample]);
+                    world.current?.focus();
+                  }}
+                >
+                  {lang === 'az' ? 'Marşrutu davam etdir' : 'Resume sample route'}
+                </button>
+              </section>
+            )}
+            {lastDebrief && (
+              <DecisionDebrief key={lastDebrief.choiceId} step={lastDebrief} onDismiss={() => setLastDebrief(null)} />
+            )}
+
+            {nearbyCrewSpeech && (
+              <details className="mt-2.5 rounded-lg border border-white/10 bg-black/25 px-2.5 py-2 text-xs">
+                <summary className="cursor-pointer font-semibold" style={{ color: nearbyCrewSpeech.color }}>
+                  {nearbyCrewSpeech.speaker} · {lang === 'az' ? 'Ekipajın məsləhəti' : 'Crew advisory'}
+                </summary>
+                <p className="mt-1">{nearbyCrewSpeech.text}</p>
+              </details>
+            )}
+
+            {/* 6-Step Progress Nodes (Click to inspect / rewind!) */}
+            <div className="objective-path" role="group" aria-label={t('timeline')}>
+              {MISSION_DECISIONS.map((d, idx) => {
+                const stepNum = d.id;
+                const isLocked = stepNum <= completedPhases;
+                const isCurrent = stepNum === viewStep;
+                const isChanged =
+                  hasBranch && rewoundChoices !== null && baselineChoices[idx] !== rewoundChoices[idx];
+                const clickable = stepNum <= lastAvailableStep;
+
+                return (
+                  <div key={stepNum} className="contents">
+                    <button
+                      type="button"
+                      disabled={!clickable}
+                      onClick={() => {
+                        handleSelectStep(stepNum);
+                        const st = STATIONS[stepNum - 1];
+                        if (st) world.current?.walkTo({ x: st.x, y: st.y });
+                      }}
+                      title={`D${stepNum}: ${tr(d.title)}`}
+                      aria-label={`D${stepNum} · ${tr(d.title)}`}
+                      aria-current={isCurrent ? 'step' : undefined}
+                      className={`objective-dot ${
+                        isChanged ? 'changed' : isLocked ? 'complete' : isCurrent ? 'current' : ''
+                      }`}
+                    >
+                      {isLocked && !isChanged ? <Check size={10} /> : stepNum}
+                    </button>
+                    {idx < DECISION_COUNT - 1 && <i />}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Field Bonus Counters */}
+            <div className="mt-2.5 flex items-center justify-between border-t border-white/10 pt-2 font-mono text-[9.5px] text-slate-400">
+              <span className="inline-flex items-center gap-1">
+                <Wrench size={11} className="text-[#c0e6aa]" />
+                {lang === 'az' ? 'Kalibr:' : 'Tasks:'} {calibratedCount}/6
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Snowflake size={11} className="text-sky-300" />
+                {lang === 'az' ? '90K Buz:' : 'Ice Cores:'} {minedCount}/5
+              </span>
+            </div>
+          </aside>
+        )}
 
         {/* TOP-RIGHT: Live Tactical Base Radar + [M] Full Schematic Modal */}
         <BaseMap
@@ -1549,14 +1823,21 @@ export default function App() {
                 </button>
                 <div className="w-36">
                   <div className="flex justify-between font-mono text-[9.5px] text-sky-200">
-                    <span>{lang === 'az' ? 'Nümunə' : 'Core'} {drillProgressPct}%</span>
+                    <span>
+                      {lang === 'az' ? 'Nümunə' : 'Core'} {drillProgressPct}%
+                    </span>
                     <span className={drillTempPct > 80 ? 'text-rose-300' : 'text-slate-300'}>
                       {lang === 'az' ? 'Qızma' : 'Heat'} {drillTempPct}%
                     </span>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/40" role="progressbar"
+                  <div
+                    className="mt-1 h-2 overflow-hidden rounded-full bg-black/40"
+                    role="progressbar"
                     aria-label={lang === 'az' ? 'Nümunənin götürülməsi' : 'Core collection'}
-                    aria-valuemin={0} aria-valuemax={100} aria-valuenow={drillProgressPct}>
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={drillProgressPct}
+                  >
                     <div
                       className="h-full bg-sky-400 transition-all"
                       style={{ width: `${drillProgressPct}%` }}
@@ -1573,11 +1854,12 @@ export default function App() {
                 <kbd className="border-amber-300/40 bg-amber-400/20 text-amber-200">E</kbd>
                 <span>
                   <small className="font-mono text-amber-300">
-                    {FIELD_SAMPLES[nearSampleIdx]?.icon} {FIELD_SAMPLES[nearSampleIdx]?.elevation.toUpperCase().replace('_', ' ')}
+                    {FIELD_SAMPLES[nearSampleIdx]?.icon}{' '}
+                    {FIELD_SAMPLES[nearSampleIdx]?.elevation.toUpperCase().replace('_', ' ')}
                   </small>
                   {lang === 'az'
-                    ? `Kəşf et: ${FIELD_SAMPLES[nearSampleIdx]?.name[lang]} (+4 Xal)`
-                    : `Discover: ${FIELD_SAMPLES[nearSampleIdx]?.name[lang]} (+4 Science)`}
+                    ? `Kəşf et: ${FIELD_SAMPLES[nearSampleIdx]?.name[lang]} (+2 Xal)`
+                    : `Discover: ${FIELD_SAMPLES[nearSampleIdx]?.name[lang]} (+2 Science)`}
                 </span>
                 <ChevronRight size={19} className="text-amber-300" />
               </button>
@@ -1612,20 +1894,14 @@ export default function App() {
                   style={{ transform: `rotate(${bearingDeg}deg)` }}
                   className="text-[#c0e6aa]"
                 />
-                <span>
-                  {lang === 'az'
-                    ? `D${viewStep} istiqaməti`
-                    : `Route to D${viewStep}`}
-                </span>
-                <small className="ml-1 font-mono text-[10px] text-[#9fb4b5]">
-                  {distanceMeters} m
-                </small>
+                <span>{lang === 'az' ? `D${viewStep} istiqaməti` : `Route to D${viewStep}`}</span>
+                <small className="ml-1 font-mono text-[10px] text-[#9fb4b5]">{distanceMeters} m</small>
               </button>
             )}
           </div>
         )}
 
-        {/* BOTTOM-RIGHT: Iconic Among-Us Style Action Buttons (USE [E], CAR [V], MAP [M]) + Touch D-Pad */}
+        {/* BOTTOM-RIGHT: Iconic Action Buttons (USE [E], CAR [V], MAP [M]) + Touch D-Pad */}
         <div className="action-dock">
           <div className="among-actions">
             <button
@@ -1649,11 +1925,7 @@ export default function App() {
                 requestAnimationFrame(() => world.current?.focus());
               }}
               className={`among-btn ${
-                controllingRover
-                  ? 'among-btn--car-active'
-                  : nearCar
-                    ? 'among-btn--ready'
-                    : ''
+                controllingRover ? 'among-btn--car-active' : nearCar ? 'among-btn--ready' : ''
               }`}
               title={
                 lang === 'az'
@@ -1662,7 +1934,9 @@ export default function App() {
               }
             >
               <Truck size={20} />
-              <span>{controllingRover ? (lang === 'az' ? 'DÜŞ' : 'EXIT') : lang === 'az' ? 'MAŞIN' : 'CAR'}</span>
+              <span>
+                {controllingRover ? (lang === 'az' ? 'DÜŞ' : 'EXIT') : lang === 'az' ? 'MAŞIN' : 'CAR'}
+              </span>
               <kbd>[V]</kbd>
             </button>
 
@@ -1682,7 +1956,11 @@ export default function App() {
             </button>
           </div>
 
-          <div className="touch-controls" role="group" aria-label={lang === 'az' ? 'Hərəkət düymələri' : 'Movement controls'}>
+          <div
+            className="touch-controls"
+            role="group"
+            aria-label={lang === 'az' ? 'Hərəkət düymələri' : 'Movement controls'}
+          >
             {(
               [
                 { key: 'up', x: 0, y: -1, Icon: ArrowUp, label: { en: 'Move north', az: 'Şimala get' } },
@@ -1750,6 +2028,34 @@ export default function App() {
       </main>
 
       {/* =====================================================================
+       * SHACKLETON TOUCHDOWN LAUNCH SCREEN
+       * =================================================================== */}
+      {launchScreenOpen && (
+        <MissionLaunchScreen
+          callsign={commanderCallsign}
+          onChangeCallsign={setCommanderCallsign}
+          trainingMode={trainingMode}
+          onChangeTrainingMode={setTrainingMode}
+          onLaunchMission={() => {
+            soundFX.startAmbient();
+            setLaunchScreenOpen(false);
+            requestAnimationFrame(() => world.current?.focus());
+          }}
+          onStartJudgeTour={handleStartTour}
+          onOpenMarsBonus={() => {
+            soundFX.startAmbient();
+            setLaunchScreenOpen(false);
+            setMarsModalOpen(true);
+          }}
+          onOpen3DNasaDeck={() => {
+            soundFX.startAmbient();
+            setLaunchScreenOpen(false);
+            setSensorDeckOpen(true);
+          }}
+        />
+      )}
+
+      {/* =====================================================================
        * STATION CONSOLE MODAL ([E] — Hands-On Mini-Game + NASA DecisionCard)
        * =================================================================== */}
       {decisionModalOpen && (
@@ -1762,7 +2068,7 @@ export default function App() {
             if (e.target === e.currentTarget) returnToWorld();
           }}
         >
-          <div className="relative flex max-h-[92dvh] w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border border-[#b6cec3]/30 bg-[#14222b] p-4 shadow-2xl sm:p-5">
+          <div className="relative flex max-h-[92dvh] w-full max-w-[880px] flex-col overflow-hidden rounded-2xl border border-[#b6cec3]/30 bg-[#14222b] p-4 shadow-2xl sm:p-5">
             <div className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-[#c0e6aa]">
                 <Sparkles size={14} />
@@ -1782,6 +2088,10 @@ export default function App() {
               key={viewStep}
               step={viewStep}
               mode={hasBranch ? 'branch' : 'baseline'}
+              trainingMode={trainingMode}
+              onToggleTrainingMode={() =>
+                setTrainingMode((m) => (m === 'cadet' ? 'engineer' : 'cadet'))
+              }
               choiceA={baselineChoices[viewStep - 1]}
               choiceB={rewoundChoices?.[viewStep - 1]}
               record={activeRecord}
@@ -1789,6 +2099,8 @@ export default function App() {
               priorChoices={activeChoices}
               taskSettings={activeTasks}
               taskAvailable={calibratedTasks[viewStep - 1]}
+              minedCount={minedCount}
+              collectedSamplesCount={collectedCount}
               taskExercise={stationExercise}
               canChoose={canChoose}
               shadowPrediction={shadowPrediction}
@@ -1808,7 +2120,7 @@ export default function App() {
       )}
 
       {/* =====================================================================
-       * TIME-REWIND & NASA TELEMETRY DRAWER ([R] — Run A vs Run B + Recharts)
+       * TIME-REWIND & NASA TELEMETRY DRAWER ([R] — Run A vs Run B + 216h Charts)
        * =================================================================== */}
       {telemetryDrawerOpen && (
         <div
@@ -1876,7 +2188,11 @@ export default function App() {
             </div>
 
             {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
-            {runB && <div className="mb-4"><DeltaSummary a={runA} b={runB} /></div>}
+            {runB && (
+              <div className="mb-4">
+                <DeltaSummary a={runA} b={runB} />
+              </div>
+            )}
 
             <div className="mb-4 rounded-xl border border-white/10 bg-[#0e1a22] p-4">
               <h3 className="mb-1 text-sm font-semibold text-slate-100">
@@ -1892,9 +2208,7 @@ export default function App() {
                 </span>
                 {divergedStep !== null && (
                   <span className="rounded border border-purple-400/35 bg-purple-500/15 px-2 py-0.5 font-mono text-[10px] text-purple-200">
-                    {lang === 'az'
-                      ? 'Xəritədə A gedişinin izi'
-                      : 'Run A trail on the map'}
+                    {lang === 'az' ? 'Xəritədə A gedişinin izi' : 'Run A trail on the map'}
                   </span>
                 )}
               </div>
@@ -1930,14 +2244,22 @@ export default function App() {
                       }`}
                     >
                       <span className="font-mono text-[10px] text-[#9eb6b5]">D{stepNum}</span>
-                      <strong className="mt-0.5 line-clamp-2 font-medium">{tr(d.title)}</strong>
+                      <strong className="mt-0.5 line-clamp-2 font-medium">
+                        {isCadet && d.cadetTitle ? tr(d.cadetTitle) : tr(d.title)}
+                      </strong>
                       <span className="mt-1.5 font-mono text-[10px] text-[#c0e6aa]">
                         {cA !== undefined ? `A: ${CHOICE_LETTERS[cA]}` : '—'}
                         {cB !== undefined ? ` → B: ${CHOICE_LETTERS[cB]}` : ''}
                         {changed && taskChanged && (
-                          <span className="block">{stepNum === 1
-                            ? lang === 'az' ? 'Kalibrləmə dəyişdi' : 'Calibration changed'
-                            : lang === 'az' ? 'Emal hazırlığı dəyişdi' : 'Extractor preparation changed'}</span>
+                          <span className="block">
+                            {stepNum === 1
+                              ? lang === 'az'
+                                ? 'Kalibrləmə dəyişdi'
+                                : 'Calibration changed'
+                              : lang === 'az'
+                                ? 'Emal hazırlığı dəyişdi'
+                                : 'Extractor preparation changed'}
+                          </span>
                         )}
                       </span>
                     </button>
@@ -1952,9 +2274,13 @@ export default function App() {
                   <summary className="cursor-pointer text-sm font-semibold text-slate-100">
                     {lang === 'az' ? 'Missiyanın ehtiyatları və müddəti' : 'Mission reserves and timing'}
                   </summary>
-                  <div className="mt-3"><MissionResults a={runA} b={runB} /></div>
+                  <div className="mt-3">
+                    <MissionResults a={runA} b={runB} />
+                  </div>
                 </details>
-              ) : <MissionResults a={runA} b={null} />}
+              ) : (
+                <MissionResults a={runA} b={null} />
+              )}
               <CompareCharts a={runA} b={runB} comparisonStep={divergedStep} />
               <EvidencePanel />
             </div>
@@ -1981,9 +2307,7 @@ export default function App() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[#c0e6aa]">
                   {tr(TRAINING_SITE.name)}
                 </span>
-                <h2 className="mt-1 text-xl font-semibold text-[#e5eae4]">
-                  {t('briefingTitle')}
-                </h2>
+                <h2 className="mt-1 text-xl font-semibold text-[#e5eae4]">{t('briefingTitle')}</h2>
               </div>
               <button
                 type="button"
@@ -2000,23 +2324,23 @@ export default function App() {
               <p>{t('briefingBody3')}</p>
               <div className="rounded-lg border border-white/10 bg-[#0d1a22] p-3 text-xs text-slate-300">
                 <strong className="text-[#c0e6aa]">
-                  {lang === 'az' ? 'Yeni 2.5D Oyun İmkanları:' : '2.5D Outpost Features:'}
+                  {lang === 'az' ? 'Yeni 2.5D + 3D Missiya İmkanları:' : '2.5D Outpost + 3D NASA Features:'}
                 </strong>
                 <ul className="mt-1.5 list-disc space-y-1 pl-4">
                   <li>
                     {lang === 'az'
-                      ? 'Ay Maşını [V]: Hər yerdən çağırın, fənərlərlə 90 K Buz Hövzəsinə sürün və [Space] ilə su-buz kristalları qazın.'
-                      : 'Driveable Lunar Car [V]: Board anywhere, drive into the 90 K Cold-Trap Basin with headlights, and mine ice cores with [Space].'}
+                      ? 'Ay Maşını [V]: Hər yerdən çağırın, fənərlərlə 90 K Buz Hövzəsinə sürün və [Space] ilə su-buz kristalları qazın (+3 kq buz xammalı).'
+                      : 'Driveable Lunar Car [V]: Board anywhere, drive into the 90 K Cold-Trap Basin with headlights, and mine ice cores with [Space] (+3 kg icy regolith feedstock each).'}
                   </li>
                   <li>
                     {lang === 'az'
-                      ? 'Canlı AI Ekipaj Üzvləri (Müh. Leyla, Dr. Rəşad və SPARK-9 Dronu): Bazada patrul çəkir, məsləhət verir və Günəş fırtınasında D5 sığınacağına qaçırlar!'
-                      : 'Autonomous AI Crewmates (Eng. Leyla, Dr. Rashad & SPARK-9 Drone): Patrol sectors, share live engineering tips, and sprint to D5 Bunker during solar storms!'}
+                      ? '3D Şeklton Krateri LOLA Xoloqramı və Canlı NASA DONKI Kosmik Hava: 3D işıqlanma xəritəsini fırladın və real günəş fırtınalarını sınayın.'
+                      : '3D Shackleton LOLA Hologram & Live NASA DONKI Space Weather: Orbit the 3D polar rim DEM and test historical or live solar proton storms.'}
                   </li>
                   <li>
                     {lang === 'az'
-                      ? 'İnteraktiv Stansiya Tapşırıqları [E] və Taktiki Xəritə [M]: Naqilləri birləşdirin, klapanları tənzimləyin və otaqlar arası sürətli keçid edin.'
-                      : 'Hands-On Station Tasks [E] & Tactical Map [M]: Patch HVDC wires, align solar masts, seal storm clamps, and fast-deploy between sectors.'}
+                      ? 'Bonus Missiya 2 — Mars Jezero Toz Fırtınası: τ = 4.2 optik dərinlik və 14 dəqiqəlik radio gecikməsi ilə 3 Sol sağqalma sınağı.'
+                      : 'Bonus Mission 2 — Mars Jezero Global Dust Storm: Survive 3 Sols under τ = 4.2 dust attenuation and a 14-minute Earth comms delay.'}
                   </li>
                 </ul>
               </div>
@@ -2040,19 +2364,36 @@ export default function App() {
       )}
 
       {/* =====================================================================
-       * NASA SENSOR DECK & RAW TELEMETRY MODAL
+       * NASA SENSOR DECK & 3D LOLA HOLOGRAM MODAL
        * =================================================================== */}
       {sensorDeckOpen && (
-        <NasaSensorDeckModal onClose={() => setSensorDeckOpen(false)} />
+        <NasaSensorDeckModal
+          onClose={() => setSensorDeckOpen(false)}
+          activeStormPeakPfu={stormPeakPfu}
+          onSelectStormPeakPfu={(pfu) => handleSelectStormPeakPfu(pfu)}
+        />
       )}
 
       {/* =====================================================================
-       * ARTEMIS FLIGHT READINESS CERTIFICATE & AUDIT DOSSIER MODAL
+       * BONUS MISSION 2: MARS JEZERO GLOBAL DUST STORM MODAL
+       * =================================================================== */}
+      {marsModalOpen && (
+        <MarsBonusModal
+          trainingMode={trainingMode}
+          onCompleteSuccess={() => awardAchievement('mars_pioneer')}
+          onClose={() => setMarsModalOpen(false)}
+        />
+      )}
+
+      {/* =====================================================================
+       * FLIGHT READINESS CERTIFICATE, PNG PATCH & SHAREABLE REPLAY URL MODAL
        * =================================================================== */}
       {certificateOpen && (
         <FlightCertificateModal
           run={hasBranch && runB ? runB : runA}
           runLabel={hasBranch ? t('runB') : t('runA')}
+          defaultCallsign={commanderCallsign}
+          shareUrl={shareUrl}
           onClose={() => setCertificateOpen(false)}
         />
       )}
@@ -2082,7 +2423,10 @@ export default function App() {
             world.current?.walkTo(FIELD_SAMPLES[idx]);
             requestAnimationFrame(() => world.current?.focus());
           }}
-          onOpenScience={() => { setSampleModalOpen(false); setSensorDeckOpen(true); }}
+          onOpenScience={() => {
+            setSampleModalOpen(false);
+            setSensorDeckOpen(true);
+          }}
         />
       )}
 

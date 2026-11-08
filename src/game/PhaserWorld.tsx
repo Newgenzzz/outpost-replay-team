@@ -117,9 +117,9 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
     let game: Phaser.Game;
     try {
       game = new Phaser.Game({
-        type: Phaser.CANVAS,
+        type: Phaser.AUTO,
         parent: host.current,
-        backgroundColor: '#2a3740',
+        backgroundColor: '#0c1824',
         transparent: false,
         scale: {
           mode: Phaser.Scale.RESIZE,

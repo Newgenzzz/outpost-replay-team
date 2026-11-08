@@ -67,6 +67,12 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
             ? lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etdi.' : 'D4 · Run B used the prepared ice extractor.'
             : lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etmədi.' : 'D4 · Run B omitted extractor preparation.',
         };
+      case 'stationTaskChanged':
+        return {
+          Icon: Sparkles,
+          cls: 'text-emerald-200',
+          text: tr(r.label),
+        };
       case 'choiceChanged': {
         const d = MISSION_DECISIONS[r.step - 1];
         return {

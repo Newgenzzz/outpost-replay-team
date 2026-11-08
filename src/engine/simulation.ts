@@ -7,16 +7,44 @@
  *
  * The power and supply ledgers advance one hour at a time through the same scripted environment.
  */
-import type { AbortCause, Bilingual, Choice, FlagId, MetricDelta, MetricKey, MetricState, ResourceState } from '../types';
+import type {
+  AbortCause,
+  Bilingual,
+  Choice,
+  FlagId,
+  HourlyTelemetryPoint,
+  MetricDelta,
+  MetricKey,
+  MetricState,
+  MissionTaskSettings,
+  ResourceState,
+} from '../types';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import {
   GAME_CONSTANTS as K,
   integrateSepDoseMsv,
+  MAY_2024_PROTON_EVENT,
   RADIATION_LIMITS,
   SHIELDING,
 } from '../data/nasaTelemetry';
-import { advancePower, CALIBRATED_INCIDENCE_LIMIT_DEG, newEnvironmentDetail, phasePowerPlan, summarizeEnvironment, type EnvironmentDetail } from './power';
-import { advanceResources, crewReservePct, CROP_TRIAL, depletionCause, emptyResourceFlows, INITIAL_RESOURCES, type ResourceFlows } from './resources';
+import {
+  advancePower,
+  CALIBRATED_INCIDENCE_LIMIT_DEG,
+  environmentAtHour,
+  newEnvironmentDetail,
+  phasePowerPlan,
+  summarizeEnvironment,
+  type EnvironmentDetail,
+} from './power';
+import {
+  advanceResources,
+  crewReservePct,
+  CROP_TRIAL,
+  depletionCause,
+  emptyResourceFlows,
+  INITIAL_RESOURCES,
+  type ResourceFlows,
+} from './resources';
 
 export type { EnvironmentDetail } from './power';
 
@@ -59,8 +87,17 @@ export interface SimulationResult {
   choices: number[];
   solarCalibrated: boolean;
   icePrepared: boolean;
+  eclssSealed: boolean;
+  busPatched: boolean;
+  extraIceCores: number;
+  stormClamped: boolean;
+  dishAligned: boolean;
+  fieldSamplesCount: number;
+  stormPeakPfu: number;
   /** history[0] = initial state, history[k] = state after decision k. */
   history: MetricState[];
+  /** High-resolution 1-hour snapshots from hour 0 through elapsedHours. */
+  hourlyHistory: HourlyTelemetryPoint[];
   steps: StepRecord[];
   final: MetricState;
   resourceHistory: ResourceState[];
@@ -80,6 +117,7 @@ export interface SimulationResult {
 /* ------------------------------------------------------------------ */
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
+const r2 = (x: number) => Math.round(x * 100) / 100;
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 const zero = (): MetricState => ({ powerKwh: 0, lifeSupportPct: 0, radiationMsv: 0, sciencePoints: 0 });
 
@@ -116,14 +154,21 @@ export const RULE_LABELS: Record<RuleId, Bilingual> = {
 /* Core: runSimulation                                                */
 /* ------------------------------------------------------------------ */
 
-function hourlyStormDose(protection: Choice['stormProtection'], hour: number, flags: ReadonlySet<FlagId>): number {
+function hourlyStormDose(
+  protection: Choice['stormProtection'],
+  hour: number,
+  flags: ReadonlySet<FlagId>,
+  stormScale: number,
+  stormClamped: boolean,
+): number {
   if (!protection) return 0;
-  const transmission = protection === 'finishEva' && hour < 24
+  const baseTransmission = protection === 'finishEva' && hour < 24
     ? SHIELDING.evaSuit
     : protection === 'shelter'
       ? flags.has('regolithBerm') ? SHIELDING.regolithBerm : SHIELDING.waterWall
       : SHIELDING.habitat;
-  return integrateSepDoseMsv(hour, hour + 1) * transmission;
+  const bulkheadFactor = stormClamped && !(protection === 'finishEva' && hour < 24) ? 0.85 : 1;
+  return integrateSepDoseMsv(hour, hour + 1) * stormScale * baseTransmission * bulkheadFactor;
 }
 
 function roundedResources(resources: ResourceState): ResourceState {
@@ -136,14 +181,31 @@ function roundedResources(resources: ResourceState): ResourceState {
 
 export function runSimulation(
   choiceIndices: readonly number[],
-  { solarCalibrated = false, icePrepared = false }: { solarCalibrated?: boolean; icePrepared?: boolean } = {},
+  options: Partial<MissionTaskSettings> = {},
 ): SimulationResult {
+  const {
+    solarCalibrated = false,
+    icePrepared = false,
+    eclssSealed = false,
+    busPatched = false,
+    extraIceCores = 0,
+    stormClamped = false,
+    dishAligned = false,
+    fieldSamplesCount = 0,
+    stormPeakPfu = MAY_2024_PROTON_EVENT.peakPfu,
+  } = options;
+
   const choices = choiceIndices.slice(0, MISSION_DECISIONS.length);
   for (const [i, choiceIndex] of choices.entries()) {
     if (!Number.isInteger(choiceIndex) || choiceIndex < 0 || choiceIndex > 2) {
       throw new RangeError(`runSimulation: invalid choice index ${choiceIndex} at decision ${i + 1}`);
     }
   }
+
+  const normalizedExtraCores = Math.min(4, Math.max(0, Math.floor(extraIceCores)));
+  const normalizedSamples = Math.min(6, Math.max(0, Math.floor(fieldSamplesCount)));
+  const normalizedStormPeak = Math.max(0, stormPeakPfu);
+  const stormScale = normalizedStormPeak / MAY_2024_PROTON_EVENT.peakPfu;
 
   const history = [{ ...K.initialState }];
   const resources = { ...INITIAL_RESOURCES };
@@ -158,12 +220,68 @@ export function runSimulation(
   let doseWarningStep: number | null = null;
   let abortCause: AbortCause | null = null;
   let appliedIcePreparation = false;
+  let appliedEclssSeal = false;
+  let appliedBusPatch = false;
+  let appliedExtraCores = 0;
+  let appliedStormClamp = false;
+  let appliedDishAlign = false;
+  let appliedSamples = 0;
+
+  const initialEnv = environmentAtHour(0, flags, 1);
+  const hourlyHistory: HourlyTelemetryPoint[] = [
+    {
+      hour: 0,
+      powerKwh: r1(batteryKwh),
+      lifeSupportPct: r1(K.initialState.lifeSupportPct),
+      radiationMsv: r1(doseMsv),
+      sciencePoints: r1(sciencePoints),
+      oxygenKg: r2(resources.oxygenKg),
+      waterKg: r2(resources.waterKg),
+      foodKg: r2(resources.foodKg),
+      surfaceTempK: initialEnv.surfaceTempK,
+      sunlightPct: Math.round(initialEnv.arrayOutputFactor * 100),
+      lowPower: false,
+      outage: false,
+    },
+  ];
 
   for (const [i, choiceIndex] of choices.entries()) {
     const decision = MISSION_DECISIONS[i];
-    const choice = decision.choices[choiceIndex];
-    const usePreparedExtractor = icePrepared && choice.id === 'D4-A';
+    const baseChoice = decision.choices[choiceIndex];
+    const usePreparedExtractor = icePrepared && baseChoice.id === 'D4-A';
     appliedIcePreparation ||= usePreparedExtractor;
+
+    const useEclssSeal = eclssSealed && i === 1;
+    appliedEclssSeal ||= useEclssSeal;
+
+    const useBusPatch = busPatched && i === 2;
+    appliedBusPatch ||= useBusPatch;
+
+    const stepExtraCores = baseChoice.id === 'D4-A' ? normalizedExtraCores : 0;
+    if (stepExtraCores > 0) appliedExtraCores = stepExtraCores;
+
+    const useStormClamp = stormClamped && i === 4;
+    appliedStormClamp ||= useStormClamp;
+
+    const useDishAlign = dishAligned && i === 5;
+    appliedDishAlign ||= useDishAlign;
+
+    const stepSamples = i === 0 ? normalizedSamples : 0;
+    if (stepSamples > 0) appliedSamples = stepSamples;
+
+    const choice: Choice =
+      useEclssSeal || stepExtraCores > 0
+        ? {
+            ...baseChoice,
+            ...(useEclssSeal
+              ? { waterRecoveryBonusPct: (baseChoice.waterRecoveryBonusPct ?? 0) + 4 }
+              : {}),
+            ...(stepExtraCores > 0
+              ? { iceProcessingKg: (baseChoice.iceProcessingKg ?? 0) + stepExtraCores * 3 }
+              : {}),
+          }
+        : baseChoice;
+
     const { startHour, endHour } = decision.phase;
     const phaseHours = endHour - startHour;
     const before = history[i];
@@ -186,11 +304,17 @@ export function runSimulation(
     }
 
     const power = newEnvironmentDetail(orientationFactor);
-    const powerPlan = phasePowerPlan(choice, activeConditionals, phaseHours);
+    const basePlan = phasePowerPlan(choice, activeConditionals, phaseHours);
+    const busPatchSavingsKwh = useBusPatch ? 1.8 : 0;
+    const powerPlan = useBusPatch
+      ? { ...basePlan, loadReductionKwh: basePlan.loadReductionKwh + busPatchSavingsKwh / phaseHours }
+      : basePlan;
+
     const resourceFlows = emptyResourceFlows();
     let stormDoseMsv = 0;
 
     for (let hour = startHour; hour < endHour; hour++) {
+      const envNow = environmentAtHour(hour, flags, orientationFactor);
       const frame = advancePower(power, powerPlan, hour, flags, resources, batteryKwh);
       batteryKwh = frame.batteryKwh;
       const healthDelta = combinedEffects.lifeSupportPct / phaseHours -
@@ -200,13 +324,35 @@ export function runSimulation(
       advanceResources(resources, resourceFlows, choice, phaseHours, healthDelta,
         frame.lowPower, frame.outage, frame.cropPowered, frame.taskPowerFraction, usePreparedExtractor);
 
-      const stormHourDose = hourlyStormDose(choice.stormProtection, hour - startHour, flags);
+      const stormHourDose = hourlyStormDose(choice.stormProtection, hour - startHour, flags, stormScale, useStormClamp);
       stormDoseMsv += stormHourDose;
       doseMsv += K.gcrMsvPerDay / 24 + combinedEffects.radiationMsv / phaseHours + stormHourDose;
       if (doseWarningStep === null && doseMsv >= RADIATION_LIMITS.missionWarningMsv) doseWarningStep = i + 1;
 
       elapsedHours = hour + 1;
       abortCause = depletionCause(resources);
+
+      const estProgress = (hour - startHour + 1) / phaseHours;
+      const estScience = clamp(
+        sciencePoints + (abortCause ? 0 : combinedEffects.sciencePoints * estProgress),
+        0,
+        100,
+      );
+      hourlyHistory.push({
+        hour: elapsedHours,
+        powerKwh: r1(batteryKwh),
+        lifeSupportPct: r1(abortCause ? 0 : crewReservePct(resources)),
+        radiationMsv: r1(doseMsv),
+        sciencePoints: r1(estScience),
+        oxygenKg: r2(resources.oxygenKg),
+        waterKg: r2(resources.waterKg),
+        foodKg: r2(resources.foodKg),
+        surfaceTempK: envNow.surfaceTempK,
+        sunlightPct: Math.round(envNow.arrayOutputFactor * 100),
+        lowPower: frame.lowPower,
+        outage: frame.outage,
+      });
+
       if (abortCause) break;
     }
 
@@ -218,9 +364,11 @@ export function runSimulation(
     const fractionElapsed = power.simulatedHours / phaseHours;
     const durationDays = power.simulatedHours / 24;
     const taskFraction = power.taskLoadKwh === 0 ? 1 : (power.taskLoadKwh - power.unservedTaskKwh) / power.taskLoadKwh;
+    const dishBonusPts = !abortCause && useDishAlign ? 4 * taskFraction : 0;
+    const sampleBonusPts = !abortCause && stepSamples > 0 ? stepSamples * 2 : 0;
     const phaseScience = abortCause ? 0 : combinedEffects.sciencePoints * taskFraction;
     const cropScience = resources.harvestedFoodKg > resourcesBefore.harvestedFoodKg ? CROP_TRIAL.sciencePoints : 0;
-    let phaseScienceEarned = phaseScience + cropScience;
+    let phaseScienceEarned = phaseScience + cropScience + dishBonusPts + sampleBonusPts;
     const rulesTriggered: RuleId[] = [];
     const env = summarizeEnvironment(power);
     const contributions: Contribution[] = [
@@ -247,6 +395,39 @@ export function runSimulation(
         },
       },
     ];
+
+    if (useBusPatch) {
+      contributions.push({
+        source: 'choice',
+        label: {
+          en: 'D3 HVDC bus patch: reduced line losses during 72 h shadow',
+          az: 'D3 HVDC şin kalibrləməsi: 72 saatlıq kölgədə xətt itkisi azaldıldı',
+        },
+        delta: { powerKwh: r1(busPatchSavingsKwh * fractionElapsed) },
+      });
+    }
+
+    if (dishBonusPts > 0) {
+      contributions.push({
+        source: 'choice',
+        label: {
+          en: 'D6 Ka-Band Earth dish alignment: high-gain science telemetry',
+          az: 'D6 Ka-Zolaq antena tənzimləməsi: yüksək ötürməli elmi telemetriya',
+        },
+        delta: { sciencePoints: r1(dishBonusPts) },
+      });
+    }
+
+    if (sampleBonusPts > 0) {
+      contributions.push({
+        source: 'choice',
+        label: {
+          en: `Field geology dossier (${stepSamples} lunar specimens logged)`,
+          az: `Sahə geologiyası qovluğu (${stepSamples} Ay nümunəsi qeydə alındı)`,
+        },
+        delta: { sciencePoints: r1(sampleBonusPts) },
+      });
+    }
 
     for (const conditional of activeConditionals) {
       contributions.push({
@@ -308,6 +489,12 @@ export function runSimulation(
       radiationMsv: r1(doseMsv),
       sciencePoints: r1(sciencePoints),
     };
+    // Sync exact step endpoint sciencePoints on the corresponding hourly snapshot.
+    const lastHourly = hourlyHistory[hourlyHistory.length - 1];
+    if (lastHourly && lastHourly.hour === elapsedHours) {
+      lastHourly.sciencePoints = after.sciencePoints;
+    }
+
     const delta = metricDifference(before, after);
     const listed = zero();
     for (const contribution of contributions) addInto(listed, contribution.delta);
@@ -317,8 +504,8 @@ export function runSimulation(
         source: 'rule',
         delta: balanceAdjustment,
         label: {
-          en: 'Ledger adjustment: storage limits, unserved load, limiting supply and rounding',
-          az: 'Balans düzəlişi: saxlama hədləri, qarşılanmayan yük, məhdudlaşdırıcı ehtiyat və yuvarlaqlaşdırma',
+          en: 'System capacity limits & reserve rounding',
+          az: 'Sistem tutumu hədləri və ehtiyat yuvarlaqlaşdırması',
         },
       });
     }
@@ -364,7 +551,15 @@ export function runSimulation(
     choices,
     solarCalibrated: choices.length > 0 && solarCalibrated,
     icePrepared: appliedIcePreparation,
+    eclssSealed: appliedEclssSeal,
+    busPatched: appliedBusPatch,
+    extraIceCores: appliedExtraCores,
+    stormClamped: appliedStormClamp,
+    dishAligned: appliedDishAlign,
+    fieldSamplesCount: appliedSamples,
+    stormPeakPfu: normalizedStormPeak,
     history,
+    hourlyHistory,
     steps,
     final,
     resourceHistory,
@@ -402,6 +597,7 @@ export function missionScore(s: MetricState, outcome: Exclude<Outcome, 'in-progr
 export type ComparisonReason =
   | { kind: 'solarCalibrationChanged'; from: boolean; to: boolean }
   | { kind: 'icePreparationChanged'; from: boolean; to: boolean }
+  | { kind: 'stationTaskChanged'; step: number; label: Bilingual }
   | { kind: 'choiceChanged'; step: number; fromIndex: number; toIndex: number }
   | { kind: 'ruleAvoided'; step: number; rule: RuleId }
   | { kind: 'ruleTriggered'; step: number; rule: RuleId }
@@ -432,7 +628,15 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
     const sa = a.steps[i];
     const sb = b.steps[i];
     const preparationChanged = i === 3 && icePreparationChanged;
-    if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged) || preparationChanged) {
+    const otherTaskChanged =
+      (i === 0 && a.fieldSamplesCount !== b.fieldSamplesCount) ||
+      (i === 1 && a.eclssSealed !== b.eclssSealed) ||
+      (i === 2 && a.busPatched !== b.busPatched) ||
+      (i === 3 && a.extraIceCores !== b.extraIceCores) ||
+      (i === 4 && (a.stormClamped !== b.stormClamped || a.stormPeakPfu !== b.stormPeakPfu)) ||
+      (i === 5 && a.dishAligned !== b.dishAligned);
+
+    if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged) || preparationChanged || otherTaskChanged) {
       changedSteps.push(i + 1);
     }
     if (sa.choiceIndex !== sb.choiceIndex) {
@@ -440,6 +644,16 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
     }
     if (preparationChanged) {
       reasons.push({ kind: 'icePreparationChanged', from: a.icePrepared, to: b.icePrepared });
+    }
+    if (otherTaskChanged) {
+      reasons.push({
+        kind: 'stationTaskChanged',
+        step: i + 1,
+        label: {
+          en: `Station D${i + 1} field/console settings changed`,
+          az: `D${i + 1} stansiya və ya sahə parametrləri dəyişdirildi`,
+        },
+      });
     }
   }
   for (let i = 0; i < n; i++) {

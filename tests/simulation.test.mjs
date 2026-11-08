@@ -13,11 +13,14 @@ const bundle = await build({
     resolveId: (id) => id === testEntry ? `\0${id}` : null,
     load: (id) => id === `\0${testEntry}` ? `
       export * from '/src/engine/simulation.ts';
+      export * from '/src/engine/marsMission.ts';
       export * from '/src/engine/resources.ts';
       export * from '/src/engine/power.ts';
       export * from '/src/engine/sitePowerPlanning.ts';
       export * from '/src/engine/shadowPrediction.ts';
       export * from '/src/data/lunarSiteIntelligence.ts';
+      export * from '/src/data/shackletonDem.ts';
+      export * from '/src/data/nasaSpaceWeather.ts';
       export * from '/src/data/missionDecisions.ts';
       export * from '/src/data/nasaTelemetry.ts';
     ` : null,
@@ -30,8 +33,10 @@ const bundle = await build({
 });
 const [{ code }] = bundle.output;
 const {
-  advancePower, compareRuns, CROP_TRIAL, ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS,
-  estimateSitePower, evaluateShadowPrediction, LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan, runSimulation, SHIELDING,
+  advancePower, buildStormProfileForPeak, compareRuns, computeRimIllumination, CRATER_DEPTH_KM, CROP_TRIAL,
+  ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS, estimateSitePower, evaluateShadowPrediction,
+  LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan,
+  runMarsSimulation, runSimulation, sampleShackletonElevationKm, SHIELDING,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const phases = [24, 48, 120, 144, 192, 216];
@@ -282,4 +287,74 @@ test('solar calibration changes only the modeled pointing and is recorded as a D
   assert.deepEqual(comparison.reasons[0], { kind: 'solarCalibrationChanged', from: false, to: true });
   assert.deepEqual(runSimulation([1], { solarCalibrated: true }).history, runSimulation([1]).history);
   assert.equal(runSimulation([], { solarCalibrated: true }).solarCalibrated, false);
+});
+
+test('records 217 hourly telemetry points (hours 0..216) matching final state and truncates on abort', () => {
+  const full = runSimulation(MISSION_DEMO.branch);
+  assert.equal(full.hourlyHistory.length, 217);
+  assert.equal(full.hourlyHistory[0].hour, 0);
+  assert.equal(full.hourlyHistory.at(-1).hour, 216);
+  near(full.hourlyHistory.at(-1).powerKwh, full.final.powerKwh, 0.05);
+  near(full.hourlyHistory.at(-1).lifeSupportPct, full.final.lifeSupportPct, 0.05);
+  near(full.hourlyHistory.at(-1).radiationMsv, full.final.radiationMsv, 0.05);
+
+  const aborted = runSimulation([2, 1, 2, 0, 2, 0]);
+  assert.equal(aborted.outcome, 'abort');
+  assert.equal(aborted.hourlyHistory.at(-1).hour, aborted.elapsedHours);
+});
+
+test('wires hands-on station tasks, 90K ice cores, field samples, and storm peak scaling deterministically', () => {
+  const choices = [0, 0, 1, 0, 2, 1];
+  const base = runSimulation(choices);
+  const upgraded = runSimulation(choices, {
+    eclssSealed: true,
+    busPatched: true,
+    extraIceCores: 3,
+    stormClamped: true,
+    dishAligned: true,
+    fieldSamplesCount: 2,
+  });
+
+  assert.ok(upgraded.steps[1].resourcesAfter.waterKg > base.steps[1].resourcesAfter.waterKg);
+  assert.ok(upgraded.steps[2].after.powerKwh > base.steps[2].after.powerKwh);
+  near(
+    upgraded.steps[3].resourceFlows.waterExtractedKg - base.steps[3].resourceFlows.waterExtractedKg,
+    3 * 3 * LCROSS_CABEUS.waterIceMassFraction * 0.60,
+    0.005,
+  );
+  assert.ok(upgraded.steps[4].delta.radiationMsv < base.steps[4].delta.radiationMsv);
+  near(upgraded.final.sciencePoints - base.final.sciencePoints, 4 + 2 * 2, 0.01);
+
+  const diff = compareRuns(base, upgraded);
+  assert.ok(diff.reasons.some((r) => r.kind === 'stationTaskChanged'));
+
+  const mildStorm = runSimulation(choices, { stormPeakPfu: 18 });
+  const extremeStorm = runSimulation(choices, { stormPeakPfu: 840 });
+  assert.ok(extremeStorm.final.radiationMsv > base.final.radiationMsv);
+  assert.ok(base.final.radiationMsv > mildStorm.final.radiationMsv);
+  assert.equal(buildStormProfileForPeak(840)[5].protonFluxPfu, 840);
+});
+
+test('computes Shackleton LOLA DEM rim illumination with 10 m mast outperforming 2 m low deck in shadow azimuths', () => {
+  assert.equal(CRATER_DEPTH_KM, 4.2);
+  assert.ok(sampleShackletonElevationKm(0, 0) < -3.0);
+  let mastWins = 0;
+  for (let az = 0; az < 360; az += 15) {
+    const low = computeRimIllumination(az, 2);
+    const tall = computeRimIllumination(az, 10);
+    assert.ok(tall.illuminatedPct >= low.illuminatedPct);
+    if (tall.illuminatedPct > low.illuminatedPct) mastWins++;
+  }
+  assert.ok(mastWins > 0);
+});
+
+test('simulates Bonus Mission 2 (Mars Jezero Global Dust Storm) deterministically across survival and abort routes', () => {
+  const safe = runMarsSimulation([0, 0, 0]);
+  assert.equal(safe.outcome, 'success');
+  assert.equal(safe.steps.length, 3);
+  assert.ok(safe.powerKwh > 15);
+  assert.deepEqual(runMarsSimulation([0, 0, 0]), safe);
+
+  const reckless = runMarsSimulation([1, 1, 0]);
+  assert.ok(reckless.powerKwh < safe.powerKwh || reckless.outcome !== 'success');
 });

@@ -81,6 +81,181 @@ button:disabled {
   color: var(--ink);
 }
 
+.mc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-height: 60px;
+  padding: 6px 18px;
+  background: #0c171e;
+  border-bottom: 1px solid rgba(179, 204, 194, 0.16);
+  z-index: 15;
+}
+
+.mc-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(192, 230, 170, 0.16);
+  background: rgba(20, 33, 42, 0.85);
+}
+
+.mc-gauge {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 68px;
+  padding-right: 10px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mc-gauge:last-of-type {
+  border-right: 0;
+  padding-right: 4px;
+}
+
+.mc-gauge-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #96aeb2;
+  font-size: 9.5px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.mc-gauge-val {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: #e5eae4;
+  white-space: nowrap;
+}
+
+.mc-gauge-val > small {
+  font-size: 9.5px;
+  font-weight: 400;
+  color: #87a0a6;
+}
+
+.mc-delta {
+  margin-left: 2px;
+  font-style: normal;
+  font-size: 9.5px;
+  color: #c0e6aa;
+}
+
+.mc-bar {
+  display: block;
+  height: 2.5px;
+  margin-top: 3px;
+  border-radius: 999px;
+  background: rgba(4, 21, 28, 0.65);
+  overflow: hidden;
+}
+
+.mc-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 360ms ease;
+  background: #87cebd;
+}
+
+.mc-gauge--power .mc-gauge-val {
+  color: #e6dca8;
+}
+.mc-gauge--power .mc-bar > span {
+  background: #d7c28b;
+}
+
+.mc-gauge--rad .mc-bar > span {
+  background: #b0cd9e;
+}
+.mc-gauge--warn .mc-gauge-val {
+  color: #fca5a5;
+}
+.mc-gauge--warn .mc-bar > span {
+  background: #f43f5e;
+}
+
+.mc-gauge--sci .mc-bar > span {
+  background: #c084fc;
+}
+
+.mc-outcome-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.mc-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mc-substrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  padding: 4px 18px;
+  background: linear-gradient(90deg, rgba(22, 46, 40, 0.92), rgba(13, 25, 33, 0.95));
+  border-bottom: 1px solid rgba(192, 230, 170, 0.2);
+  z-index: 6;
+}
+
+.dossier-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 248px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(192, 230, 170, 0.28);
+  background: rgba(13, 25, 34, 0.98);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+}
+
+.dossier-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #dce6e2;
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.dossier-menu > button:hover {
+  background: rgba(192, 230, 170, 0.14);
+  color: #ffffff;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -282,6 +457,58 @@ button:disabled {
   color: #ffffff;
   background: rgba(234, 179, 8, 0.24);
   border-color: rgba(250, 204, 21, 0.75);
+}
+
+.text-button--cadet {
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  font-weight: 600;
+}
+
+.text-button--cadet:hover {
+  color: #ffffff;
+  background: rgba(245, 158, 11, 0.28);
+  border-color: rgba(251, 191, 36, 0.8);
+}
+
+.text-button--engineer {
+  color: #bae6fd;
+  background: rgba(14, 165, 233, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-weight: 600;
+}
+
+.text-button--engineer:hover {
+  color: #ffffff;
+  background: rgba(14, 165, 233, 0.28);
+  border-color: rgba(56, 189, 248, 0.8);
+}
+
+.text-button--rewind {
+  color: #d8f3dc;
+  background: rgba(192, 230, 170, 0.14);
+  border: 1px solid rgba(192, 230, 170, 0.45);
+  font-weight: 600;
+}
+
+.text-button--rewind:hover {
+  color: #ffffff;
+  background: rgba(192, 230, 170, 0.26);
+  border-color: rgba(192, 230, 170, 0.8);
+}
+
+.text-button--mars {
+  color: #fed7aa;
+  background: rgba(234, 88, 12, 0.15);
+  border: 1px solid rgba(251, 146, 60, 0.48);
+  font-weight: 600;
+}
+
+.text-button--mars:hover {
+  color: #ffffff;
+  background: rgba(234, 88, 12, 0.28);
+  border-color: rgba(251, 146, 60, 0.85);
 }
 
 .icon-button {
@@ -970,6 +1197,12 @@ button:disabled {
   gap: 4px;
 }
 
+@media (pointer: fine) {
+  .touch-controls {
+    display: none;
+  }
+}
+
 .direction {
   display: grid;
   place-items: center;
@@ -1066,24 +1299,22 @@ button:disabled {
   text-align: right;
 }
 
-@media (max-width: 1100px) {
-  .crew-taskbar {
-    display: none;
-  }
-  .resource-hud {
-    gap: 14px;
-    padding: 10px 18px;
-    grid-template-columns: 115px repeat(5, minmax(0, 1fr));
+@media (max-width: 1180px) {
+  .mc-telemetry {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
   }
 }
 
 @media (max-width: 768px) {
-  .topbar {
-    padding: 0 14px;
+  .mc-header {
+    padding: 8px 12px;
+    gap: 8px;
   }
-  .resource-hud {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+  .mc-substrip {
+    padding: 5px 12px;
   }
   .base-map-radar {
     display: none;
@@ -1099,9 +1330,6 @@ button:disabled {
     transform: none;
     bottom: 56px;
     max-width: calc(100% - 210px);
-  }
-  .touch-controls {
-    display: none;
   }
 }
 
@@ -1122,6 +1350,8 @@ button:disabled {
     padding: 10mm;
   }
 
+  .mc-header,
+  .mc-substrip,
   .topbar,
   .resource-hud,
   .nasa-physics-strip,
@@ -1177,16 +1407,18 @@ button:disabled {
   }
 }
 
-@media (max-width: 1750px) {
-  .topbar-long { display: none; }
-}
-
 @media (max-width: 680px) {
-  .topbar { height: auto; min-height: 62px; flex-wrap: wrap; gap: 5px; padding: 8px 12px; }
-  .topbar-actions { width: 100%; flex-wrap: wrap; gap: 3px; }
-  .topbar-actions .text-button { padding-inline: 7px; }
-  .topbar-tour-label { display: none; }
-  .app-shell { min-height: 760px; }
+  .mc-actions {
+    width: 100%;
+    gap: 4px;
+  }
+  .mc-actions .text-button {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+  .app-shell {
+    min-height: 760px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
