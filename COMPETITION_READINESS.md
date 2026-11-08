@@ -1,6 +1,6 @@
 # Release readiness · verified 9 November 2026
 
-Current gameplay baseline: `1157be6`, including M0–M6, M5 and visual polish. Final QA continues on `codex/final-release-qa`. No public release, push or merge is authorized by this document. Earlier milestone audit notes below are historical; current checks appear at the end.
+Current gameplay/science baseline: `deca79a`, including M0–M6, visual polish, final QA and the independent scientific audit. Handoff documentation continues on `codex/final-science-audit`; see CLAUDE_HANDOFF.md. No public release, push or merge is authorized by this document. Earlier milestone audit notes below are historical; current checks appear at the end.
 
 ## Release gates
 
