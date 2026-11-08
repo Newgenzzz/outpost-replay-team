@@ -82,3 +82,7 @@ Open **Science & Sources** in the game to see how the published values relate to
 ## M3 engineering accounting clarification
 
 The five collectible cores each add an assumed 3 kg of icy regolith to D4-A (up to 35 kg total feed), not 3 kg of pure ice. At full task power, five cores yield 1.176 kg of treated water at 60% recovery or 1.47 kg at 75%; lower delivered power reduces yield. All five now participate in the calculation. Mission scoring remains a classroom weighting with an explicit 0–100 bound, and hourly science charts show committed phase awards rather than provisional points. No NASA physical parameter or radiation assumption was changed for M3.
+
+## M6 release wording review
+
+The hourly comparison caption now calls D3/D5 scripted and fictional events rather than LRO/GOES events. D4 Cadet text in EN/AZ describes icy soil at a fictional training site; it does not assert an observed ice deposit or age at the fictional base. Mazarico’s NTRS abstract was rechecked during M6; the Gläser record timed out, with the existing M1-verified Table 2 transcription retained. No physical constants, measurements or simulation equations changed.

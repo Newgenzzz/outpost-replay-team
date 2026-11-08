@@ -13,6 +13,7 @@ const bundle = await build({
       export * from '/src/data/nasaTelemetry.ts';
       export * from '/src/data/shackletonDem.ts';
       export * from '/src/data/lunarSiteIntelligence.ts';
+      export * from '/src/data/missionDecisions.ts';
     ` : null,
   }],
   build: { write: false, minify: false, rollupOptions: { input: entry, output: { format: 'es' }, preserveEntrySignatures: 'strict' } },
@@ -22,6 +23,14 @@ const science = await import(`data:text/javascript;base64,${Buffer.from(code).to
 const { buildStormProfileForPeak, DOSE_COEFF_MSV_PER_HR_PER_PFU, fetchLiveDonkiSpaceWeather,
   HISTORICAL_STORM_PRESETS, integrateSepDoseMsv, LUNAR_PLANNING_SITES, parseDonkiFlares,
   SEP_PROFILE, SHACKLETON_MARKERS, SHIELDING, TERRAIN_PROVENANCE } = science;
+
+test('Cadet extraction describes a fictional training site in both languages', () => {
+  const extraction = science.MISSION_DECISIONS[3];
+  assert.match(extraction.cadetContext.en, /fictional training site/);
+  assert.match(extraction.cadetContext.az, /Uydurma təlim/);
+  assert.doesNotMatch(extraction.cadetContext.en, /billion-year-old|holding real frozen water/);
+  assert.doesNotMatch(extraction.choices[0].cadetLabel.en, /real Moon ice/);
+});
 
 test('separates the procedural illustration from published 2 m study-point results', () => {
   assert.equal(TERRAIN_PROVENANCE.kind, 'educational-procedural');

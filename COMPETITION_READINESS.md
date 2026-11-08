@@ -1,67 +1,82 @@
-# Competition readiness audit · 7 November 2026
+# M6 competition readiness · 8 November 2026
 
-Baseline: clean local checkpoint `d5d6608`. Gameplay and artwork remain unchanged. This is an audit, not a declaration of submission eligibility or redistribution clearance.
+Baseline: `c3a849c`, containing M0–M4. M6 continues on `codex/m6-competition-readiness`. No public release, push or merge is authorized by this document. M5 is not started. Earlier audit versions remain in Git history.
 
-## Scientific review
+## Release gates
 
-| Judge claim | Evidence and interpretation | Finding |
-| --- | --- | --- |
-| Lunar illumination | [Mazarico/LOLA record](https://ntrs.nasa.gov/citations/20120010094) confirms terrain-derived illumination modeling, including the particularly well-lit rim location. | The UI correctly calls this research, with a separate scripted 72-hour reduced-light scenario. No fictional base coordinates are assigned. |
-| Site comparison | [Gläser accepted manuscript record](https://ntrs.nasa.gov/citations/20170007365) confirms LOLA terrain, hourly 2017–2037 modeling and 2 m panel height. | Existing Table 2 extract remains 85.5%/66 h and 88%/112 h. The PDF timed out during this audit; exact rows rely on the earlier documented transcription, not a fresh PDF check. |
-| Battery planning | `sitePowerPlanning.ts`: constant 10 kWh/day × shadow hours / 24. | At 35 kWh: 27.5 kWh demand leaves 7.5; 46.666… kWh demand leaves −11.666… (displayed −11.7). No heat/storage losses in this planning exercise. |
-| Mission solar power | `power.ts`: 12 kWh/day × scripted terrain factor × cosine pointing factor; hourly allocation and finite 100 kWh storage. | Equipment capacity, 15%/40% shadow output, 20 kWh threshold and calibration cap are training assumptions. They are not site-validated engineering predictions. Conservation tests pass. |
-| Crew resources | [NASA BVAD](https://ntrs.nasa.gov/api/citations/20180001338/downloads/20180001338.pdf), Table 3-22, with [NASA carbon-dioxide brief](https://www.nasa.gov/ochmo-tb-004-carbon-dioxide-2/) corroborating 0.82 kg oxygen and 1.04 kg CO₂ per reference crew-day. | Two-crew oxygen ledger uses 1.64 kg/day. Water/rations, recycling stress and crop effects remain assumptions; CO₂ is explanatory context. BVAD PDF retrieval timed out; indexed NASA text and the NASA brief corroborate these values. |
-| Radiation | [NOAA PRF 2541](https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf), [NASA DONKI](https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1), [NASA-STD-3001 Vol. 1](https://standards.nasa.gov/standard/NASA/NASA-STD-3001_VOL_1). | Near-Earth GOES amplitude is separated from the fictional lunar storm. Dose coefficient 0.015, shielding transmission and background are assumptions, not radiation transport. Rev C is still listed active; its career reference is separate from the scenario warning. DONKI could not be freshly retrieved. |
-| Rewind result | Existing engine regression plus fresh Chromium Guided Demo. | D3 drilling 19.9 versus backup 43.9 kWh at hour 120; 97 versus 0 low-reserve hours; backup costs 14 science points. Both demo runs end at 216 h. Prediction regression retains unequal-duration safeguards. |
+- **Organizer confirmation required:** this project was developed before the event. Obtain written confirmation from the appropriate organizers about reuse, eligibility and disclosure of prior code, including the Antigravity and Codex work. A previous log reports approval for practice-code reuse; the written approval and its scope were not available for verification. Do not treat that report as global judging clearance. Keep commit history and identify work completed during the event.
+- **Team rights approval required:** Apache-2.0 remains a candidate, not an active project license. Rights holders must confirm authorship, scope and copyright names before adding a root LICENSE. Procedural/code-generated artwork still needs team provenance confirmation; being generated in source does not establish ownership of inherited code or reference inputs. Do not restore the removed unverified SVG assets.
+- **Publication approval required:** select the reviewed commit/artifact, approve publication, then verify a public HTTPS demo and any required source access. A private team repository alone does not establish open-source submission compliance.
+- **Real laptop and final guide checks required:** rehearse on the actual integrated-GPU laptop and public connection. Verify the final 2026 submission/video requirements and local pitch rules with the selected Local Lead.
 
-No demonstrated mathematical error required a change. See [NASA_SCIENCE.md](NASA_SCIENCE.md) for the complete source/assumption ledger. Published measurements, derived research and the fictional exercise remain distinct. A linked citation does not imply that the full underlying archive is ingested or that static values are live telemetry.
+## Official requirements and verification limits
 
-## Rights and attribution
+[Official 2026 event page](https://www.spaceappschallenge.org/2026/) indexed content retrieved 8 November lists November 14–15, teams up to six, and submission through the team's Project tab, closing November 15 at 23:59 local time. Confirm which event/time zone applies to the team. Registration and project submission are separate actions.
 
-Reviewed the [official 2026 participant terms](https://www.spaceappschallenge.org/legal/) (updated 7 August 2026). They require source and applicable third-party license documentation and sufficient redistribution rights. They specify an Apache-2.0 distribution default when no qualifying license is specified. No team license was selected or granted in this audit.
+[Official challenge](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/) asks for an interactive lunar or Martian outpost game balancing life support, shielding, power and food. OUTPOST REPLAY addresses these through six engineering decisions and reproducible comparison, with a separate Mars bonus. Do not imply NASA endorsement or validation of this educational model.
 
-- **Release blocker:** rights holders must approve a license and its scope; the existing candidate Apache text remains a proposal. Add the approved root LICENSE and correct copyright holders only after approval.
-- **Resolved asset cleanup:** all nine unverified inherited SVGs formerly in `public/assets/` and unused legacy prototype files were removed and replaced with original code-generated inline SVGs (`src/components/DecisionCard.tsx`, `src/components/MissionLaunchScreen.tsx`), procedural Phaser canvas textures (`src/game/art.ts`, `src/game/landscape.ts`), and parameterized 3D LOLA elevation geometry (`src/data/shackletonDem.ts`). No external raster, embedded remote image, agency logo, audio recording or font file is shipped in `public/`.
-- Regenerate `public/THIRD_PARTY_NOTICES.txt` from the production module graph via `node scripts/prepare-notices.mjs` (now including active `three`, `@react-three/fiber`, and `@react-three/drei` runtime notices alongside Phaser, React, Recharts, and transitive packages), then rebuild `dist/`. Review embedded upstream components before release; this collection is not a blanket rights certification.
-- [ATTRIBUTION.md](ATTRIBUTION.md) covers direct development dependencies too. Do not redistribute node_modules; a source/dependency distribution has a broader notice scope than dist/. Scientific citations and artwork credit remain separate from software notices. NASA-hosted research is not automatically all NASA-owned; retain authors, DOI and record-specific permissions. No NASA endorsement is claimed.
-- Disclose AI assistance used for code, documentation and any art/reference inputs accurately. Verify the final 2026 guide's disclosure/branding requirements. Do not infer permission for inherited artwork from this assistant's involvement.
+[2026 participant terms](https://www.spaceappschallenge.org/legal/) indexed text identifies the August 7 update and source-credit obligations. Direct retrieval returned HTTP 502 during M6; the complete licensing clauses were not freshly reverified. The previous audit's OSI-license/Apache-default interpretation in ATTRIBUTION.md needs final rights-holder review against the current full terms. Source citations and applicable third-party notices must accompany the submission. No current global video duration/slide limit was verified; local-event and older/staging rules must not be presented as global requirements. Check consent/media and AI-disclosure rules before recording or submitting.
 
-## Production reliability and performance
+## Scientific evidence and claims
 
-Fresh local production preview at port 5207 rendered the scene and accepted held astronaut/rover input, boarding/dismount, console opening and applying D1. Rover map position changed from (1055,635) to (1223,635). Guided Demo completed the real two-run comparison above. Azerbaijani science labels rendered correctly. Captured preview warning/error log was empty.
+| Topic | Release interpretation |
+| --- | --- |
+| Terrain and illumination | The hologram is procedural, exaggerated teaching terrain, not a LOLA DEM. Mazarico's [NASA NTRS abstract](https://ntrs.nasa.gov/citations/20120010094) was reopened and confirms a location-specific 240-day sunlit interval and approximately 1.5-day maximum total darkness. These do not describe the game's entire rim or its 72-hour shadow. |
+| S/C1 planning | 85.5%/66 h and 88%/112 h are published modeled results transcribed from Gläser Table 2, documented and verified during M1. The [NTRS record](https://ntrs.nasa.gov/citations/20170007365) timed out in M6; no new transcription or measurement was made. |
+| Solar/battery | 12 kWh/day full light, 10 kWh/day base load, 100 kWh capacity and 15%/40% shadow output are training assumptions. Hourly allocation, curtailment and unserved demand are tested. Site planning excludes heater/storage losses. |
+| Crew/crops/extraction | BVAD oxygen is a reference parameter; water stress, rations, five remaining powered crop days, harvest and extraction efficiency are assumptions. LCROSS Cabeus's 5.6% estimate is a fictional-batch analog, not a Shackleton measurement. All five cores now contribute feedstock. |
+| Radiation | GOES 207 pfu is a near-Earth observed peak. DONKI FLR supplies flare metadata only. The lunar storm, 0.015 coefficient, shielding and background are assumptions. Estimates are not operational astronaut doses; NASA's career reference is distinct from the game's warning. |
+| Replay | Run A/B record complete scenario and phase settings. One-change demonstrations isolate D3. Confounded setups are labeled; unequal final durations suppress final inventory deltas. |
 
-The browser tool exposes DOM, screenshots and console logs, but not usable Performance/heap/FPS/GPU profiling (Performance access was unavailable). Thus no initial-load milliseconds, FPS, memory-leak or integrated-GPU benchmark is claimed. The older preview tab failed to reload; a new preview process of the current dist/ worked. Localhost results do not measure classroom-network download time.
+[NASA_SCIENCE.md](NASA_SCIENCE.md) is the source/methodology ledger; it contains the agency/paper links and provenance limits. M6 corrects a residual English hourly-chart caption that called scripted events LRO/GOES events and D4 Cadet wording that asserted real ice at the fictional site. Equations, datasets and outcomes are unchanged. Mars bonus parameters remain educational scenario values; this pass does not claim a new exhaustive Mars scientific validation.
 
-Measured build sizes: Phaser 1,684.94 kB minified / 381.36 kB gzip; charts 560.85 / 159.00 kB; application 383.52 / 122.36 kB; CSS 101.37 / 17.33 kB (Vite decimal kB). Phaser is imported by the active world and isolated as its own chunk. Three/react-three packages are installed for retained prototypes but absent from the active runtime module graph. The warning is real bundle size, not evidence of low frame rate. No optimization or dependency removal was justified by the functional observations. Test a real integrated-GPU laptop and a cold public connection before the demo.
+## Attribution and release contents
 
-## Static deployment plan · approval required before publishing
+`public/` contains only THIRD_PARTY_NOTICES.txt. Active visuals and audio are implemented in project code; there are no shipped external image, font or audio files. Agency/paper links are references, not redistributed terrain or radiation archives. [ATTRIBUTION.md](ATTRIBUTION.md) inventories sources, dependencies and unresolved team rights.
 
-Recommend **Cloudflare Pages Direct Upload** of prebuilt dist/: [official instructions](https://developers.cloudflare.com/pages/get-started/direct-upload/). It avoids publishing the repository or installing a CLI. Direct Upload projects cannot later switch in place to Git integration; create a separate project if automation is wanted later.
+Regenerated notices from the current production module graph: **40 runtime package versions**, including Three/Fiber/Drei and embedded Victory notices. Preserve those notices and the source citations. The collector now keys packages by name and version, retaining both bundled scheduler versions instead of silently overwriting one. The collector fails if a package has no license file; this is a useful check, not a legal audit of every embedded component. Development-package distribution has a broader notice scope than dist/. Ship neither node_modules nor private configuration.
 
-1. Resolve release blockers above. With existing dependencies: `node scripts/prepare-notices.mjs`, `npm run typecheck`, `npm test`, `npm run build`.
-2. Inspect dist/. Only upload its contents, never the workspace, .git, node_modules or temporary QA files. `base: './'` already supports relative static assets; no backend, API key, server function or routing rule is required for this single-page game.
-3. After approval, use the provider dashboard's Direct Upload with dist/. No deployment was performed here.
-4. Open the resulting HTTPS address in an unauthenticated browser, hard-refresh, check all asset responses, EN/AZ, controls and Guided Demo. Record the tested URL in the project submission. This public-host check is still pending.
-5. Keep a local copy of the same dist/ and use `npm run preview -- --host 127.0.0.1` as a backup on the demonstration laptop. Serve over HTTP; do not rely on double-clicking index.html.
+## Static deployment runbook · execute publication only after approval
 
-The build has no source maps by default. Inspected tracked files/public assets for common private-key and token signatures and env files; no matches were found. This is a bounded scan, not a guarantee. Added env ignore rules. Only public/ is copied wholesale by Vite, so review every future addition there. All client-side code and bundled values are public by design. Never place credentials in VITE variables.
+Recommend [Cloudflare Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/) of the built `dist/` folder using the dashboard. Official documentation was reopened in M6. No CLI installation or public repository is needed. A Direct Upload project cannot later switch to Git integration in place.
 
-Final artifact verification: all 15 files in dist/ returned HTTP 200 with byte-for-byte matching content from the local production preview, including THIRD_PARTY_NOTICES.txt. No .env files, source maps, Git metadata or node_modules were present in dist/. Final TypeScript, all 13 tests, production build and whitespace checks passed. The application, CSS, chart and Phaser output hashes remain identical to the baseline; the notice asset is the only added production file.
+1. Resolve the release gates. From the approved source commit with existing dependencies, run:
+   ```sh
+   node scripts/prepare-notices.mjs
+   npm test
+   npm run typecheck
+   npm run build
+   npm run preview -- --host 127.0.0.1 --port 5218 --strictPort
+   ```
+   On a fresh machine, use the lockfile with `npm ci` first (Node 22+). Rebuild after notices change. Record the source commit and retain the exact dist/ folder and its file hashes.
+2. Inspect **every** dist/ file. Upload only dist/ contents, never the workspace, Git metadata, environment files, credentials, node_modules or QA artifacts. `base: './'` supports relative assets; there is no backend, private API key or server function. Replay uses query parameters, not server routes. Do not put secrets into VITE variables.
+3. After explicit approval, create the provider project and upload that folder. No deployment was performed in M6.
+4. Verify the public HTTPS URL without login: cold load/hard refresh, all assets and notices, both modes/languages, WASD/click movement, rover, all six Apply actions, Science/3D close/resume, Guided Demo, and a copied replay URL opened in a fresh tab. Recheck 1366×768 and 1600×900. Test live DONKI failure without substituting invented data. Enter the actual tested URL in the submission.
+5. For updates, retain the previous artifact and publish a complete replacement; do not mix old HTML and new hashed chunks. Roll back by redeploying the retained verified artifact. A final public-host test remains mandatory after any change.
+
+### Backup demonstration
+
+Keep the same dist/ and dependencies on the presentation laptop; run local preview and serve over HTTP rather than double-clicking index.html. The mission and scripted scenarios do not require live NASA data. External reference links and optional DONKI still require internet. No service-worker/offline-install capability is claimed. Keep a prerecorded walkthrough and screenshots as a secondary backup, with consent and source credits.
+
+## Judge walkthrough · internal 2–3 minute rehearsal
+
+1. **Problem (20 s):** “Young astronauts must balance competing engineering needs. Our bilingual trainer lets them test a decision, then rewind it while preserving the rest of the experiment.” Show Cadet language, then Engineer units.
+2. **Evidence (25 s):** open Science/3D. Say “This crater is a procedural teaching illustration. Published NASA-derived illumination studies are separate; mission lighting and dose factors are educational assumptions.” Close the deck.
+3. **Experiment (50 s):** start Guided Demo, apply the starting plan, choose Keep drilling, then Rewind D3 and compare. Drilling leaves 19.9 kWh at hour 120; backup leaves 43.9 kWh. Both end at hour 216. Scores are 54/66; low-reserve exposure is 97/0 hours; backup sacrifices 14 science points.
+4. **Learning (25 s):** ask “Why does protecting battery power also protect water recovery?” Show the resource graph and preserved input settings. Distinguish a controlled experiment from a scientifically validated lunar forecast.
+5. **Close (15 s):** show EN/AZ and explain optional calibration, crops, extraction and prediction in manual play. State that the model is an educational prototype; do not claim student learning gains without a study.
+
+This rehearsal duration is not an official video allowance. Submission synopsis: “OUTPOST REPLAY turns outpost engineering into reproducible experiments: students operate a lunar base, predict a resource consequence, rewind one choice, and compare matched-time outcomes while inspecting the distinction between observed data, research models, and classroom assumptions.”
 
 ## Submission checklist
 
-Verified global sources: [2026 event page](https://www.spaceappschallenge.org/2026/), [challenge statement](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/), [participant terms](https://www.spaceappschallenge.org/legal/). The event page lists November 14–15, registration, a maximum of six team members, and submission via the team's Project tab, closing November 15 at 23:59 local time. Confirm the applicable event/time-zone rule in the final guide.
+- [ ] Written prior-work/eligibility clarification retained; team registered with the correct event and membership.
+- [ ] Full current terms, deadline/time zone, required project fields, video/slide limits and AI disclosure checked. Local pitch language/duration confirmed separately.
+- [ ] Team license and asset authorship approved; source access and third-party notices suitable for submission.
+- [ ] NASA/NOAA/paper references and scientific limitations transferred into the project form.
+- [ ] Public demo approved, published and verified without login; final URL and source commit recorded.
+- [ ] Video recorded under confirmed rules with rights/consents, credits and accurate claims.
+- [ ] Actual laptop/network, keyboard navigation, EN/AZ and both modes rehearsed; backup recording/local preview ready.
+- [ ] Final tests/build pass for the exact released commit; all required fields submitted and submission status confirmed on the official site.
 
-The resources/FAQ pages failed retrieval and no current 2026 submission/judging guide was verified. Search returned older 2025 and staging/2023 material; their video/slide limits are **not** treated as 2026 requirements. The 2–3 minute live walkthrough in README is an internal presentation plan, not an official video allowance.
-
-- [ ] **Official submission:** register the team/event, confirm membership and eligibility, complete every required project field and submit before the applicable deadline. Confirm whether this pre-event practice work may be submitted and how it must be disclosed; preserve the development history.
-- [x] **Challenge relevance:** outpost decisions connect power, life support, radiation protection and crops to outcomes; use the official challenge title in the submission.
-- [ ] **NASA references:** transfer the actual source list and methodology into the project form, distinguishing NASA research, NOAA observations and assumptions. Reopen the timed-out documents before final submission.
-- [ ] **Open-source licensing:** approve the team's license, establish artwork rights, review bundled notices and include all applicable credits.
-- [ ] **Public playable demo:** approve deployment, publish only the reviewed artifact and test its unauthenticated HTTPS URL. No public URL has been verified in this audit.
-- [ ] **Demonstration video:** check the final 2026 format/time/size rules, record the real engine, credit resources and AI assistance, and confirm required media permissions. A live-demo duration is not a video requirement.
-- [x] **Scientific methodology:** source/assumption ledger and deterministic tests exist; explain that dose and resource estimates are educational rather than operational forecasts.
-- [ ] **Judge presentation:** rehearse README's starting plan → shadow choice → consequence → rewind → lesson on the actual laptop; explain the science-point cost.
-- [ ] **Backup:** rehearse local preview plus saved screenshots and a prerecorded demonstration; verify offline availability of local game assets (external reference links still need internet).
-- [ ] **Final testing:** current 13 tests, TypeScript and build pass; after approved deployment run public URL, cold-load, real integrated-GPU laptop and requested desktop layout checks again.
-- [ ] **Local event:** ask the chosen Local Lead about pitch slots, language, local deadlines and presentation rules. No local event was identified; these are not global requirements. Check final global rules for AI disclosure and media/branding; do not reuse older limits.
+See IMPLEMENTATION_LOG.md for actual M6 checks and limitations. Technical local readiness does not clear the external release gates above.

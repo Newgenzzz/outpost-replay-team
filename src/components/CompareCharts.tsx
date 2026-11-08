@@ -221,7 +221,7 @@ export default function CompareCharts({
       <p className="col-span-full text-xs text-slate-400">
         {az
           ? '216 saatlıq rejim hər saatın enerji balansını, 72 saatlıq kölgəni (D3) və 48 saatlıq proton fırtınasını (D5) dəqiq əks etdirir.'
-          : '216h Hourly mode traces every simulated hour across the 72h LRO horizon shadow (D3) and 48h GOES particle storm (D5).'}
+          : '216h Hourly mode traces every simulated hour across the scripted 72h terrain shadow (D3) and fictional 48h particle storm (D5).'}
       </p>
 
       <details className="col-span-full rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">

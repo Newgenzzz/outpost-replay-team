@@ -387,8 +387,8 @@ export const MISSION_DECISIONS: Decision[] = [
       az: 'Günəş yenidən silsilənin üstünə çıxır və panellər bərpa olunur. Krater kənarı 140 K-dən yenidən 200 K-ə doğru isinir. Missiya İdarəetmə Mərkəzi soruşur: bugünkü prioritet nədir?',
     },
     cadetContext: {
-      en: 'Golden sunlight shines over Shackleton Rim again! Nearby lies a billion-year-old dark crater holding real frozen water. Should you drive the Lunar Rover down, fix up the base, or send a little robot?',
-      az: 'Şeklton kənarına yenidən qızılı günəş doğdu! Yaxınlıqda milyard illik qaranlıq kraterdə əsl su buzu gizlənir. Ay Maşınını özünüz sürəcəksiniz, bazanı təmir edəcəksiniz, yoxsa kiçik robot göndərəcəksiniz?',
+      en: 'Sunlight returns! In our fictional training site, a nearby cold trap contains icy soil. Real lunar ice research informs this exercise, but no ice measurement for this outpost is loaded. Drive the rover, repair the base, or send a robot?',
+      az: 'Günəş işığı qayıdır! Uydurma təlim məkanımızdakı yaxın soyuq tələdə buzlu qrunt var. Məşq real Ay buzu tədqiqatına əsaslanır, lakin bu baza üçün buz ölçməsi yüklənməyib. Maşını sürəcəksiniz, bazanı təmir edəcəksiniz, yoxsa robot göndərəcəksiniz?',
     },
     phase: { startHour: 120, endHour: 144, label: { en: 'Hours 120–144 · Sunrise', az: 'Saat 120–144 · Gün çıxışı' } },
     nasaDataTrigger: null,
@@ -400,8 +400,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Daimi kölgəli kraterin kənarına ekipajlı rover səfəri',
         },
         cadetLabel: {
-          en: 'Drive the Lunar Rover to scoop & melt real Moon ice!',
-          az: 'Əsl Ay buzunu qazıb əritmək üçün Ay Maşınını sürün!',
+          en: 'Drive the rover to process the training site’s icy soil!',
+          az: 'Təlim məkanının buzlu qruntunu emal etmək üçün maşını sürün!',
         },
         cadetSummary: {
           en: 'Awesome adventure (+22 Science + fresh melted drinking water!), using rover battery and suit air.',

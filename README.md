@@ -54,6 +54,6 @@ Allow two to three minutes to talk through the planning exercise and mission com
 
 See [SPEC.md](SPEC.md) for implementation details, [NASA_SCIENCE.md](NASA_SCIENCE.md) for source provenance, and [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for completed work and verification.
 
-See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the audit, static deployment instructions, release blockers and submission checklist. Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. Public deployment requires team approval.
+See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the M6 release gates, static deployment/rollback instructions, judge rehearsal and submission checklist. Prior-work eligibility and the team license require documented approval before submission. Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. Public deployment requires team approval.
 
 The setting is a fictional outpost near Shackleton’s rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the proposed license awaiting team approval.
