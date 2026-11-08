@@ -110,12 +110,12 @@ const STATION_BONUS_META: Record<
       az: 'Praktiki Stansiya Tapşırığı · Həyat Təminatı Su Dövrü Kipləşdirməsi',
     },
     badge: {
-      en: '+4% H₂O Recovery',
-      az: '+4% H₂O Bərpası',
+      en: '+4 pp H₂O Recovery',
+      az: '+4 faiz b. H₂O Bərpası',
     },
     detail: {
-      en: 'Raises habitat water recycling efficiency from 94% to 98% for the rest of the expedition.',
-      az: 'Ekspedisiyanın qalan hissəsində suyun təkrar emal səmərəliliyini 94%-dən 98%-ə qaldırır.',
+      en: 'Adds 4 percentage points to water recovery during D2, except during an outage. This is a classroom bonus, separate from NASA’s 98% ISS demonstration.',
+      az: 'Enerji kəsintisi olmadıqda D2-də su bərpasını 4 faiz bəndi artırır. Bu təlim bonusu NASA-nın BKS-dəki 98% nümayişindən ayrıdır.',
     },
   },
   3: {
@@ -156,8 +156,8 @@ const STATION_BONUS_META: Record<
       az: '−15% Fırtına Dozası',
     },
     detail: {
-      en: 'Seals the shelter bulkhead gap before the solar proton peak, cutting crew radiation exposure by 15%.',
-      az: 'Günəş proton pikindən əvvəl sığınacaq qapısını kipləşdirərək ekipajın radiasiya dozasını 15% azaldır.',
+      en: 'Assumes 15% less storm dose while sheltered. It does not reduce outside exposure or background dose; this is not a tested shielding measurement.',
+      az: 'Sığınacaqda fırtına dozasının 15% azalması fərz edilir. Çöldəki və fon dozası azalmır; bu, sınaqdan keçirilmiş qalxan ölçməsi deyil.',
     },
   },
   6: {
@@ -507,7 +507,10 @@ export default function DecisionCard(props: DecisionCardProps) {
                     }`}
                   >
                     {trigger.source === 'LRO_SHADOW' ? <SunDim className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-                    {tr(trigger.headline)}
+                    {trigger.source === 'DONKI_SEP'
+                      ? lang === 'az' ? `Təlim fırtınası · ssenari piki ${runInput.scenario.stormPeakPfu} pfu`
+                        : `Training storm · scenario peak ${runInput.scenario.stormPeakPfu} pfu`
+                      : tr(trigger.headline)}
                   </p>
                   <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-slate-300">
                     <Satellite className="h-3 w-3" /> {t('nasaDataTrigger')}
@@ -709,7 +712,7 @@ export default function DecisionCard(props: DecisionCardProps) {
             </p>
           </div>
 
-          {/* 3D Shackleton Crater LOLA Illumination Hologram on Decision 1 */}
+          {/* Procedural teaching illustration and separate published planner at Decision 1 */}
           {step === 1 && <LunarSiteIntelligence />}
 
           {/* Deterministic Forecast for Selected Option (Auto-open in Engineer Mode) */}

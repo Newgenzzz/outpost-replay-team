@@ -349,8 +349,8 @@ export default function StationTaskMiniGame({
             <strong className="flex items-center gap-1.5 text-[#e5eae4]">
               <ShieldCheck size={14} className="text-rose-300" />
               {lang === 'az'
-                ? 'AR 13664 Fırtına Qalxanı Kilidləri (4/4)'
-                : 'Engage AR 13664 Storm Bulkhead Locks (4/4)'}
+                ? 'Təlim Fırtınası Qalxanı Kilidləri (4/4)'
+                : 'Engage Training Storm Bulkhead Locks (4/4)'}
             </strong>
             <p className="mt-0.5 text-[11px] text-slate-400">
               {lang === 'az'

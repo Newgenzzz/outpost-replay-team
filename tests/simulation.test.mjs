@@ -342,7 +342,7 @@ test('wires hands-on station tasks, 90K ice cores, field samples, and storm peak
   assert.equal(buildStormProfileForPeak(840)[5].protonFluxPfu, 840);
 });
 
-test('computes Shackleton LOLA DEM rim illumination with 10 m mast outperforming 2 m low deck in shadow azimuths', () => {
+test('keeps the exaggerated procedural teaching horizon deterministic with taller-mast visibility', () => {
   assert.equal(CRATER_DEPTH_KM, 4.2);
   assert.ok(sampleShackletonElevationKm(0, 0) < -3.0);
   let mastWins = 0;

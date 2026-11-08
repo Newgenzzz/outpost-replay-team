@@ -8,6 +8,7 @@ import {
   SHACKLETON_MARKERS,
   computeRimIllumination,
   sampleShackletonElevationKm,
+  TERRAIN_PROVENANCE,
 } from '../data/shackletonDem';
 
 class WebGLErrorBoundary extends Component<
@@ -71,9 +72,9 @@ function ShackletonScene({
       const y = elevKm * 0.52;
       pos.setY(i, y);
 
-      // Color by LRO Diviner thermal / LOLA elevation regime
+      // Artistic colors by synthetic elevation; not Diviner temperature or ice measurements.
       if (elevKm < -2.6) {
-        // Deep PSR cold-trap water-ice floor (40-90 K) — cryo cyan/indigo shimmer
+        // Illustrative cold-trap floor.
         color.setRGB(0.11, 0.34, 0.52);
       } else if (elevKm < -0.5) {
         // Steep inner crater walls — dark lunar basalt
@@ -84,7 +85,7 @@ function ShackletonScene({
         const t = (elevKm + 0.5) / 1.25;
         color.setRGB(0.42 + t * 0.22, 0.45 + t * 0.22, 0.49 + t * 0.20);
       } else {
-        // Peaks of Eternal Light (rim crests) — bright sunlit anorthosite regolith
+        // Bright illustrative rim crests; continuous light is not guaranteed.
         color.setRGB(0.84, 0.85, 0.80);
       }
 
@@ -136,7 +137,7 @@ function ShackletonScene({
         <meshBasicMaterial color="#fde047" />
       </mesh>
 
-      {/* LOLA Shackleton Crater Rim Terrain */}
+      {/* Procedural crater teaching terrain */}
       <mesh geometry={geometry} receiveShadow castShadow>
         <meshStandardMaterial
           vertexColors
@@ -165,7 +166,7 @@ function ShackletonScene({
         </mesh>
       </group>
 
-      {/* Key NASA LOLA / Diviner Markers */}
+      {/* Illustrative markers, not mapped NASA study coordinates */}
       {SHACKLETON_MARKERS.map((m) => {
         const mx = m.nx * 6;
         const mz = m.nz * 6;
@@ -189,7 +190,7 @@ function ShackletonScene({
                     : 'border-white/20 bg-slate-950/75 text-slate-200'
                 }`}
               >
-                {m.id === 'PSR' ? (az ? 'Soyuq Tələ · 88 K' : 'PSR Ice Floor · 88 K') : `Site ${m.id}`}
+                {m.id === 'PSR' ? (az ? m.labelAz : m.labelEn) : `Demo ${m.id}`}
               </div>
             </Html>
           </group>
@@ -229,7 +230,7 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
       </p>
       <p className="mt-1 font-mono text-sky-200">
         Azimuth {Math.round(solarAzimuthDeg)}° · {mastHeightMeters} m → {currentIllum.illuminatedPct}%{' '}
-        {az ? 'Günəş diski görünür' : 'Solar Disk Visible'}
+        {az ? 'sxematik görünmə indeksi' : 'illustrative visibility index'}
       </p>
     </div>
   );
@@ -239,12 +240,12 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
       <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-sky-300">
-            NASA LRO LOLA + DIVINER · 3D DEM HOLOGRAM
+            {az ? 'PROSEDUR TƏLİM RELYEFİ · NASA DEM MƏLUMATI DEYİL' : 'PROCEDURAL TEACHING TERRAIN · NOT A NASA DEM'}
           </span>
           <h3 className="text-sm sm:text-base font-bold text-white">
             {az
-              ? 'Şeklton Krateri (21 km · 4,2 km dərinlik) və 1,5° Üfüqi Günəş Kölgəsi'
-              : 'Shackleton Crater (21 km · 4.2 km Deep) & 1.5° Grazing Sun Raycast'}
+              ? 'Şekltondan ilhamlanan 3D kölgə nümayişi'
+              : 'Shackleton-inspired 3D shadow demonstration'}
           </h3>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -272,6 +273,12 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
           </button>
         </div>
       </div>
+
+      <p className="mb-3 text-xs leading-relaxed text-slate-300">
+        {az
+          ? `Relyef, rənglər və markerlər sxematikdir; LOLA hündürlük və ya Diviner temperatur xəritəsi yüklənməyib. Dirəyin hündürlük təsiri ×${TERRAIN_PROVENANCE.mastHeightExaggeration} şişirdilib; səhnə miqyaslı deyil. Faizlər cari azimut üçün görünmə indeksidir, illik işıqlanma və ya enerji proqnozu deyil. S/C1 markerləri tədqiqat koordinatları deyil.`
+          : `Terrain, colors and markers are illustrative; no LOLA elevation or Diviner temperature map is loaded. The mast-height effect is exaggerated ×${TERRAIN_PROVENANCE.mastHeightExaggeration}; the scene is not to scale. Percentages are a visibility index at this azimuth, not annual illumination or a power prediction. S/C1 markers are not mapped study coordinates.`}
+      </p>
 
       {/* 3D WebGL Canvas */}
       <div className={`${compact ? 'h-56' : 'h-72'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-gradient-to-b from-[#02060d] to-[#081826]`}>
@@ -303,7 +310,7 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
             {' · '}
             10 m: <strong className={illum10m.inShadow ? 'text-amber-300' : 'text-emerald-300'}>{illum10m.illuminatedPct}%</strong>
             {' '}
-            {az ? 'işıqlanma' : 'sunlight'}
+            {az ? 'sxematik indeks' : 'illustrative index'}
           </span>
         </div>
       </div>
@@ -314,7 +321,7 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
           <label className="flex items-center justify-between text-xs font-medium text-slate-200">
             <span>
               {az
-                ? 'Üfüq boyunca Günəşi sürüşdürün (0°–360° Cənub Qütbü yayı)'
+                ? 'Nümayiş azimutunu dəyişin (0°–360°; tarix proqnozu deyil)'
                 : 'Drag Sun around 360° Polar Horizon (drag 3D crater to rotate)'}
             </span>
             <span className="font-mono text-sky-300">{Math.round(solarAzimuthDeg)}°</span>
@@ -343,7 +350,7 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
                   : 'border-white/15 bg-white/5 text-slate-300 hover:bg-white/10'
               }`}
             >
-              Site {id}
+              Demo {id}
             </button>
           ))}
         </div>

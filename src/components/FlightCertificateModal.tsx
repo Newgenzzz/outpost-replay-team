@@ -25,7 +25,7 @@ export function FlightCertificateModal({
   const az = lang === 'az';
   const title = az ? 'Outpost Replay Uçuş və Missiya Sertifikatı' : 'Outpost Replay Mission Certificate';
   const commander = az ? 'Komandir' : 'Commander';
-  const location = az ? 'Şeklton kənarı təlim bazası (89.9° C)' : 'Shackleton Rim Outpost (89.9° S)';
+  const location = az ? 'Şeklton kənarı yaxınlığında uydurma təlim bazası' : 'Fictional outpost near Shackleton’s rim';
   const elapsed = az ? 'Keçən missiya saatları' : 'Mission hours elapsed';
   const crewName = az ? 'Gənc Astronavt' : 'Junior Astronaut';
   const [commanderName, setCommanderName] = useState(defaultCallsign);
@@ -136,7 +136,7 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
     // Title & Commander Callsign
     ctx.fillStyle = '#c0e6aa';
     ctx.font = 'bold 16px monospace';
-    ctx.fillText('OUTPOST REPLAY · SHACKLETON SOUTH POLE EXPEDITION (89.9° S)', 330, 105);
+    ctx.fillText('OUTPOST REPLAY · FICTIONAL SHACKLETON RIM EXPEDITION', 330, 105);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 40px sans-serif';
@@ -187,7 +187,7 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
     ctx.fillStyle = '#64748b';
     ctx.font = '14px monospace';
     ctx.fillText(
-      'Modeled with NASA LRO LOLA, Diviner, LCROSS, CCMC DONKI, OSDR RadLab & BVAD · Space Apps 2026',
+      'Educational assumptions with NASA LRO, LCROSS, BVAD and NOAA references · Space Apps 2026',
       75,
       605,
     );
@@ -400,8 +400,8 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
           <div className="mt-6 flex flex-wrap items-center justify-between border-t border-white/15 pt-3 font-mono text-[9px] text-slate-400 print:border-black print:text-gray-700">
             <span>
               {az
-                ? 'Təlim simulyasiyası · NASA LRO, LCROSS, DONKI, OSDR və BVAD mənbələri'
-                : 'Educational simulation · NASA LRO, LCROSS, DONKI, OSDR & BVAD references'}
+                ? 'Təlim fərziyyələri · NASA LRO, LCROSS, BVAD və NOAA mənbələri'
+                : 'Educational assumptions · NASA LRO, LCROSS, BVAD & NOAA references'}
             </span>
             <span>OUTPOST REPLAY · SPACE APPS 2026</span>
           </div>

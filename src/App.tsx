@@ -1110,7 +1110,7 @@ export default function App() {
             <span>{lang === 'az' ? 'Münsif Demo' : 'Judge Demo'}</span>
           </button>
 
-          {/* 3D NASA Sensor Deck (LOLA Hologram + Live DONKI + RadLab) */}
+          {/* Procedural 3D teaching scene, published references and DONKI catalog */}
           <button
             type="button"
             className="text-button text-button--sensor"
@@ -1122,7 +1122,7 @@ export default function App() {
             title={t('sensorDeckButton')}
           >
             <Activity size={13} className="text-cyan-300" />
-            <span>{lang === 'az' ? '3D NASA' : '3D NASA'}</span>
+            <span>{lang === 'az' ? 'Elm / 3D' : 'Science / 3D'}</span>
           </button>
 
           {/* Rewind & Counterfactual Comparison Lab [R] */}
@@ -1319,7 +1319,7 @@ export default function App() {
           <div className="flex items-center gap-2 font-mono text-[10px] text-slate-300">
             <Orbit size={12} className="text-amber-300" />
             <span>
-              {tr({ en: 'LRO Sun', az: 'LRO Günəş' })} <strong>{Math.round(availableSunlight * 100)}%</strong>
+              {tr({ en: 'Scenario sun', az: 'Ssenari işığı' })} <strong>{Math.round(availableSunlight * 100)}%</strong>
             </span>
           </div>
         )}
@@ -2213,7 +2213,7 @@ export default function App() {
                 <MissionResults a={runA} b={null} />
               )}
               <CompareCharts a={runA} b={runB} comparisonStep={divergedStep} />
-              <EvidencePanel />
+              <EvidencePanel stormPeakPfu={activeInput.scenario.stormPeakPfu} />
             </div>
           </div>
         </div>
@@ -2255,7 +2255,7 @@ export default function App() {
               <p>{t('briefingBody3')}</p>
               <div className="rounded-lg border border-white/10 bg-[#0d1a22] p-3 text-xs text-slate-300">
                 <strong className="text-[#c0e6aa]">
-                  {lang === 'az' ? 'Yeni 2.5D + 3D Missiya İmkanları:' : '2.5D Outpost + 3D NASA Features:'}
+                  {lang === 'az' ? '2.5D + 3D təlim imkanları:' : '2.5D Outpost & 3D teaching features:'}
                 </strong>
                 <ul className="mt-1.5 list-disc space-y-1 pl-4">
                   <li>
@@ -2265,8 +2265,8 @@ export default function App() {
                   </li>
                   <li>
                     {lang === 'az'
-                      ? '3D Şeklton Krateri LOLA Xoloqramı və Canlı NASA DONKI Kosmik Hava: 3D işıqlanma xəritəsini fırladın və real günəş fırtınalarını sınayın.'
-                      : '3D Shackleton LOLA Hologram & Live NASA DONKI Space Weather: Orbit the 3D polar rim DEM and test historical or live solar proton storms.'}
+                      ? 'Prosedur 3D Şeklton nümayişi və NASA DONKI alışma kataloqu. Nəşr edilmiş LOLA tədqiqatlarını təlim ssenariləri ilə müqayisə edin.'
+                      : 'Procedural 3D Shackleton demonstration and NASA DONKI flare catalog. Compare published LOLA research with educational scenarios.'}
                   </li>
                   <li>
                     {lang === 'az'

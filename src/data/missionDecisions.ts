@@ -8,7 +8,6 @@
 import type { Decision } from '../types';
 import {
   LRO_SHADOW,
-  SEP_PEAK_FLUX_PFU,
   integrateSepDoseMsv,
   SEP_STORM_DOSE_UNSHIELDED_MSV as D,
   SHIELDING,
@@ -173,8 +172,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Sığınacağın ətrafına qalın Ay torpağı divarı yığın (Fırtına Zirehi)',
         },
         cadetSummary: {
-          en: 'Robot digger piles Moon soil over the bunker — blocks 94% of radiation if a giant solar storm hits on Day 7!',
-          az: 'Robot ekskavator sığınacağın üstünə Ay torpağı yığır — 7-ci gündə Günəş fırtınası olarsa radiasiyanın 94%-ni saxlayır!',
+          en: 'Robot digger piles Moon soil over the bunker — uses an assumed 6% storm-dose transmission in this training model.',
+          az: 'Robot ekskavator sığınacağın üstünə Ay torpağı yığır — təlim modelində fırtına dozasının 6%-ni keçirən fərz edilmiş qalxandır.',
         },
         effects: { powerKwh: -8, radiationMsv: 0.8, sciencePoints: 2 },
         setsFlags: ['regolithBerm'],
@@ -479,8 +478,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Qaranlıq kraterə uzaqdan idarə olunan mini-robot göndərin',
         },
         cadetSummary: {
-          en: 'Safe and smart! Crew stays cozy indoors (0 radiation) while the robot beams back +13 Science.',
-          az: 'Təhlükəsiz və ağıllı! Ekipaj içəridə qorunur (0 radiasiya), robot isə +13 Elm xalı göndərir.',
+          en: 'Safe and smart! Crew avoids additional EVA exposure; modeled background radiation remains while the robot beams back +13 Science.',
+          az: 'Ekipaj əlavə EVA dozasından yayınır; model fon radiasiyası qalır, robot isə +13 Elm xalı göndərir.',
         },
         effects: { powerKwh: -7, sciencePoints: 13 },
         causeAndEffectExplanation: {
@@ -493,8 +492,8 @@ export const MISSION_DECISIONS: Decision[] = [
         },
         riskLevel: 'safe',
         copilotTip: {
-          en: 'Teleoperated robotics: zero crew fatigue or EVA radiation, solid science (+13).',
-          az: 'Uzaqdan idarə olunan robot: sıfır yorğunluq və ya radiasiya, yaxşı elm (+13).'
+          en: 'Teleoperated robotics: no additional EVA exposure, solid science (+13).',
+          az: 'Uzaqdan idarə olunan robot: əlavə EVA dozası yoxdur, yaxşı elm (+13).'
         },
       },
     ],
@@ -505,19 +504,19 @@ export const MISSION_DECISIONS: Decision[] = [
     title: { en: 'Solar Storm Alert', az: 'Günəş Fırtınası Xəbərdarlığı' },
     cadetTitle: { en: 'Days 7–8: Red Alert — Solar Storm Incoming!', az: '7–8-ci Günlər: Qırmızı Həyəcan — Günəş Fırtınası Gəlir!' },
     context: {
-      en: 'A scripted particle storm is approaching. Its peak is anchored to a May 2024 GOES proton observation near Earth. Decide how much time to spend outside and which shelter to use.',
-      az: 'Ssenaridə zərrəcik fırtınası yaxınlaşır. Pik qiymət 2024-cü ilin mayında Yer yaxınlığında GOES peykinin proton ölçməsinə əsaslanır. Açıqda qalma müddətinə və sığınacaq növünə qərar verin.',
+      en: 'A scripted particle storm is approaching. The default 207 pfu peak borrows a NOAA GOES observation near Earth; other peaks are training inputs. Decide how much time to spend outside and which shelter to use.',
+      az: 'Ssenaridə zərrəcik fırtınası yaxınlaşır. Standart 207 pfu pik NOAA GOES-in Yer yaxınlığındakı ölçməsindən götürülüb; digər piklər təlim girişləridir. Açıqda qalma müddətinə və sığınacaq növünə qərar verin.',
     },
     cadetContext: {
-      en: 'RED ALERT! The Sun just blasted an invisible wave of fast space particles toward the Moon (modeled on NASA’s real May 2024 storm!). Unlike Earth, the Moon has no air shield. Where will your astronauts hide?',
-      az: 'QIRMIZI HƏYƏCAN! Günəş indicə Aya doğru sürətli kosmik zərrəciklər dalğası püskürdü (NASA-nın real May 2024 fırtınası əsasında!). Yerdən fərqli olaraq Ayın qoruyucu atmosferi yoxdur. Harada gizlənəcəksiniz?',
+      en: 'RED ALERT! The Sun just blasted an invisible wave of fast space particles toward the Moon (a fictional scenario; the default peak borrows a NOAA GOES measurement near Earth). Unlike Earth, the Moon has no air shield. Where will your astronauts hide?',
+      az: 'QIRMIZI HƏYƏCAN! Günəş indicə Aya doğru sürətli kosmik zərrəciklər dalğası püskürdü (uydurma ssenari; standart pik Yer yaxınlığındakı NOAA GOES ölçməsinə əsaslanır). Yerdən fərqli olaraq Ayın qoruyucu atmosferi yoxdur. Harada gizlənəcəksiniz?',
     },
     phase: { startHour: 144, endHour: 192, label: { en: 'Hours 144–192 · Solar storm', az: 'Saat 144–192 · Günəş fırtınası' } },
     nasaDataTrigger: {
       source: 'DONKI_SEP',
       headline: {
-        en: `Training particle storm · peak ${SEP_PEAK_FLUX_PFU} pfu · ${D} mSv modeled dose without shelter`,
-        az: `Təlim zərrəcik fırtınası · pik ${SEP_PEAK_FLUX_PFU} pfu · sığınacaqsız model dozası ${D} mSv`,
+        en: `Training particle storm · see the active forecast for peak and dose`,
+        az: `Təlim zərrəcik fırtınası · pik və doza üçün cari proqnoza baxın`,
       },
       detail: {
         en: 'The GOES instrument measured particle flux near Earth. The time profile, flux-to-dose conversion and shielding factors are classroom assumptions. The forecast shows the scenario dose, including background exposure.',
@@ -543,8 +542,8 @@ export const MISSION_DECISIONS: Decision[] = [
         effects: { powerKwh: -2, sciencePoints: 18 },
         stormProtection: 'finishEva',
         causeAndEffectExplanation: {
-          en: `The model groups outside operations into the first storm day, then shelters the crew in the habitat. This can return +18 science with about ${STORM_DOSES.finishEva} mSv of modeled storm dose. Check your cumulative dose against the mission warning.`,
-          az: `Model çöldəki işləri fırtınanın ilk gününə toplayır, sonra ekipaj yaşayış moduluna keçir. Bu, təxminən ${STORM_DOSES.finishEva} mSv model fırtına dozası ilə +18 elm xalı verə bilər. Toplam dozanı missiyanın xəbərdarlıq həddi ilə müqayisə edin.`,
+          en: `The model groups outside operations into the first storm day, then shelters the crew in the habitat. This can return +18 science; modeled dose depends on the selected peak and preparation. See the active forecast. Check your cumulative dose against the mission warning.`,
+          az: `Model çöldəki işləri fırtınanın ilk gününə toplayır, sonra ekipaj yaşayış moduluna keçir. Bu, +18 elm xalı verə bilər; model dozası seçilmiş pikdən və hazırlıqdan asılıdır. Cari proqnoza baxın. Toplam dozanı missiyanın xəbərdarlıq həddi ilə müqayisə edin.`,
         },
         nasaSourceCitation: {
           en: 'NASA CCMC DONKI and NOAA SWPC PRF 2541 — May 10, 2024 GOES event near Earth',
@@ -561,14 +560,14 @@ export const MISSION_DECISIONS: Decision[] = [
         label: { en: 'Shelter inside the habitat', az: 'Yaşayış modulunun içində sığının' },
         cadetLabel: { en: 'Go inside the regular Moon habitat rooms', az: 'Adi yaşayış modulunun otaqlarına keçin' },
         cadetSummary: {
-          en: 'Blocks 75% of the storm rays, letting through a medium dose (~46 mSv) while you do indoor lab tests.',
-          az: 'Fırtına şüalarının 75%-ni saxlayır, orta doza (~46 mSv) keçir və içəridə laboratoriya işi davam edir.',
+          en: 'Assumes 25% storm-dose transmission while you work indoors. Check the forecast for this scenario’s dose; this is not a real shielding prediction.',
+          az: 'Daxili işlər üçün fırtına dozasının 25%-nin keçdiyi fərz edilir. Ssenarinin dozasına proqnozda baxın; bu, real qorunma proqnozu deyil.',
         },
         effects: { lifeSupportPct: -2, sciencePoints: 4 },
         stormProtection: 'habitat',
         causeAndEffectExplanation: {
-          en: `The habitat walls pass about ${pct(SHIELDING.habitat)} % of the storm dose (≈ ${STORM_DOSES.habitat} mSv). Two days indoors slightly strain the air and water systems (−2 %), and only lab work continues (+4 science).`,
-          az: `Yaşayış modulunun divarları fırtına dozasının təxminən ${pct(SHIELDING.habitat)} %-ni keçirir (≈ ${STORM_DOSES.habitat} mSv). İki gün içəridə qalmaq hava və su sistemlərinə bir qədər yük salır (−2 %), yalnız laboratoriya işi davam edir (+4 elm).`,
+          en: `The model assumes ${pct(SHIELDING.habitat)} % storm-dose transmission in the habitat. Absolute dose depends on the scenario peak and preparation. Two days indoors slightly strain the air and water systems (−2 %), and only lab work continues (+4 science).`,
+          az: `Model yaşayış modulunda fırtına dozasının ${pct(SHIELDING.habitat)} %-nin keçdiyini fərz edir. Doza ssenari pikindən və hazırlıqdan asılıdır. İki gün içəridə qalmaq hava və su sistemlərinə bir qədər yük salır (−2 %), yalnız laboratoriya işi davam edir (+4 elm).`,
         },
         nasaSourceCitation: {
           en: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; habitat transmission factor 0.25 is a game simplification',
@@ -576,8 +575,8 @@ export const MISSION_DECISIONS: Decision[] = [
         },
         riskLevel: 'moderate',
         copilotTip: {
-          en: `The habitat offers moderate modeled protection (~${STORM_DOSES.habitat} mSv storm dose).`,
-          az: `Yaşayış modulu modeldə orta səviyyəli qorunma verir (~${STORM_DOSES.habitat} mSv fırtına dozası).`,
+          en: `The habitat uses an assumed 25% transmission. See the forecast for the resulting classroom dose.`,
+          az: `Modul üçün 25% keçiricilik fərz edilir. Təlim dozasına proqnozda baxın.`,
         },
       },
       {
@@ -585,8 +584,8 @@ export const MISSION_DECISIONS: Decision[] = [
         label: { en: 'Move into a dedicated storm shelter', az: 'Xüsusi fırtına sığınacağına keçin' },
         cadetLabel: { en: 'Huddle inside the deep Storm Bunker!', az: 'Dərin Fırtına Sığınacağına keçin!' },
         cadetSummary: {
-          en: 'Best shield! Free & blocks 94% of rays if you built Day 2 Moon-dirt armor — otherwise stacks water bags using pump power.',
-          az: 'Ən güclü qalxan! 2-ci gündə Ay-torpağı zirehi qurmusunuzsa 94% qoruyur — yoxsa su çənlərindən divar qurur.',
+          en: 'Best shield! The model assumes 6% transmission if you built Day 2 Moon-dirt armor — otherwise stacks water bags using pump power.',
+          az: 'Ən güclü qalxan! Model 2-ci gündə qurulan Ay-torpağı zirehi üçün 6% keçiricilik fərz edir — yoxsa su çənlərindən divar qurur.',
         },
         effects: { powerKwh: -5, lifeSupportPct: -5, sciencePoints: 2 },
         stormProtection: 'shelter',
@@ -595,14 +594,14 @@ export const MISSION_DECISIONS: Decision[] = [
             ifFlag: 'regolithBerm',
             effects: { powerKwh: 5, lifeSupportPct: 5 },
             note: {
-              en: `Regolith berm already built: the shelter passes only ${pct(SHIELDING.regolithBerm)} % (−${STORM_DOSES.bermBonus} mSv) and no water tanks need re-plumbing`,
-              az: `Reqolit səddi artıq tikilib: sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % keçirir (−${STORM_DOSES.bermBonus} mSv) və su çənlərini yenidən birləşdirməyə ehtiyac yoxdur`,
+              en: `Regolith berm already built: the shelter passes only ${pct(SHIELDING.regolithBerm)} % and no water tanks need re-plumbing`,
+              az: `Reqolit səddi artıq tikilib: sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % keçirir və su çənlərini yenidən birləşdirməyə ehtiyac yoxdur`,
             },
           },
         ],
         causeAndEffectExplanation: {
-          en: `Without a berm, the crew stacks water containers into an improvised wall (${pct(SHIELDING.waterWall)} % transmission ≈ ${STORM_DOSES.waterWall} mSv), which costs pump power (−5 kWh) and disturbs the water system (−5 %). If you built the regolith berm at Decision 2, the shelter lets through only ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) at no extra cost.`,
-          az: `Sədd olmadıqda ekipaj su qablarından müvəqqəti divar düzəldir (${pct(SHIELDING.waterWall)} % keçiricilik ≈ ${STORM_DOSES.waterWall} mSv), bu da nasos enerjisi (−5 kVt·saat) tələb edir və su sistemini pozur (−5 %). 2-ci qərarda reqolit səddini tikmisinizsə, sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) keçirir və əlavə xərc tələb etmir.`,
+          en: `Without a berm, the crew stacks water containers into an improvised wall (${pct(SHIELDING.waterWall)} % assumed transmission), which costs pump power (−5 kWh) and disturbs the water system (−5 %). If you built the regolith berm at Decision 2, the shelter lets through only ${pct(SHIELDING.regolithBerm)} % at no extra cost.`,
+          az: `Sədd olmadıqda ekipaj su qablarından müvəqqəti divar düzəldir (${pct(SHIELDING.waterWall)} % fərz edilən keçiricilik), bu da nasos enerjisi (−5 kVt·saat) tələb edir və su sistemini pozur (−5 %). 2-ci qərarda reqolit səddini tikmisinizsə, sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % keçirir və əlavə xərc tələb etmir.`,
         },
         nasaSourceCitation: {
           en: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; shielding factors are game simplifications',
@@ -610,10 +609,10 @@ export const MISSION_DECISIONS: Decision[] = [
         },
         copilotRecommendation: true,
         riskLevel: 'safe',
-        copilotBadge: { en: 'CapCom Recommended (Safe Bunker)', az: 'CapCom Tövsiyəsi (Təhlükəsiz Sığınacaq)' },
+        copilotBadge: { en: 'CapCom Recommended (Modeled Shelter)', az: 'CapCom Tövsiyəsi (Model Sığınacağı)' },
         copilotTip: {
-          en: `A prepared berm gives the lowest modeled storm dose (~${STORM_DOSES.berm} mSv). Without it, assembling the water wall costs power.`,
-          az: `Hazır sədd modeldə ən az fırtına dozasını verir (~${STORM_DOSES.berm} mSv). Sədd yoxdursa, su divarı qurmaq enerji tələb edir.`,
+          en: `A prepared berm gives the lowest modeled storm dose (assumed 6% transmission). Without it, assembling the water wall costs power.`,
+          az: `Hazır sədd modeldə ən az fırtına dozasını verir (fərz edilən 6% keçiricilik). Sədd yoxdursa, su divarı qurmaq enerji tələb edir.`,
         },
       },
     ],

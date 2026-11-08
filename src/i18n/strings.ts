@@ -188,7 +188,7 @@ export const STRINGS = {
     az: '4 İnteraktiv Nöqtə: Klikləyin [1] Günəş Zirvəsi · [2] Yaşayış Günbəzi · [3] Krater Roveri · [4] Fırtına Sığınacağı',
   },
   howItWorksMoon: { en: 'How It Works on the Moon', az: 'Ayda Necə İşləyir' },
-  realNasaMeasurement: { en: 'Real NASA Physical Measurement', az: 'Real NASA Fiziki Ölçməsi' },
+  realNasaMeasurement: { en: 'Published scientific reference', az: 'Nəşr edilmiş elmi mənbə' },
   whyItMattersSurvival: { en: 'Why It Matters for Astronaut Survival', az: 'Astronavtların Sağ Qalması Üçün Niyə Vacibdir' },
 
   // Badges & Classroom Tour Bar
@@ -217,10 +217,10 @@ export const STRINGS = {
   ruleWarningHazard: { en: 'Flight Rule Hazard Triggered', az: 'Uçuş Qaydası Təhlükəsi Yarandı' },
 
   // Live NASA Surface Physics HUD
-  livePhysicsTitle: { en: 'Live NASA Surface Physics · Shackleton Rim', az: 'Canlı NASA Səth Fizikası · Şeklton Kənarı' },
-  lolaSunLabel: { en: 'LOLA Solar Elevation', az: 'LOLA Günəş Bucağı' },
-  divinerTempLabel: { en: 'Diviner Temp', az: 'Diviner Temperaturu' },
-  donkiFluxLabel: { en: 'DONKI Proton Flux', az: 'DONKI Proton Axını' },
+  livePhysicsTitle: { en: 'Simulated conditions · Shackleton rim', az: 'Model şəraiti · Şeklton kənarı' },
+  lolaSunLabel: { en: 'Scenario sunlight', az: 'Ssenari işıqlanması' },
+  divinerTempLabel: { en: 'Scenario temperature', az: 'Ssenari temperaturu' },
+  donkiFluxLabel: { en: 'Training proton flux', az: 'Təlim proton axını' },
   crewMassBalanceLabel: { en: 'Crew Consumables', az: 'Ekipaj Sərfi' },
 
   // Quick Guided Onboarding

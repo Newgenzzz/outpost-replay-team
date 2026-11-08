@@ -27,8 +27,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: SunDim,
     title: { en: 'Solar Vanguard', az: 'Günəş Qabaqcılı' },
     description: {
-      en: 'Erected the 10 m VSAT Vertical Solar Mast on Shackleton Rim crest to harvest 40% grazing light during polar shadows.',
-      az: 'Qütb kölgəsində 40% üfüqi işıq toplamaq üçün Şeklton kənarında 10 m-lik şaquli günəş dirəyini qurdunuz.',
+      en: 'Selected a 10 m mast; the training scenario assumes 40% nominal output in shadow before pointing losses.',
+      az: '10 m dirək seçdiniz; təlimdə kölgə zamanı istiqamət itkilərindən əvvəl nominal gücün 40%-i fərz edilir.',
     },
     hint: {
       en: 'Deploy the 10 m VSAT solar mast at Decision 1.',
@@ -55,8 +55,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: ShieldCheck,
     title: { en: 'Storm Sentinel', az: 'Fırtına Qalxanı' },
     description: {
-      en: 'Sheltered the crew behind a dense regolith berm during the May 2024 GOES solar particle storm (94% modeled dose blocked).',
-      az: 'May 2024 GOES Günəş zərrəcik fırtınasında reqolit səddi ilə model dozasının 94%-ni dəf etdiniz.',
+      en: 'Used the berm in the fictional lunar storm (assumed 6% storm-dose transmission).',
+      az: 'Uydurma Ay fırtınasında reqolit səddindən istifadə etdiniz (fərz edilən 6% doza keçiriciliyi).',
     },
     hint: {
       en: 'Build the Regolith Berm at Decision 2 and shelter in the bunker at Decision 5.',
@@ -69,8 +69,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: Sparkles,
     title: { en: 'Shackleton Geologist', az: 'Şeklton Geoloqu' },
     description: {
-      en: 'Surveyed the lunar regolith and discovered NASA field science sample nodes across the polar plateau.',
-      az: 'Qütb yaylasında NASA elmi sahə nümunələrini aşkar etdiniz.',
+      en: 'Surveyed the lunar regolith and discovered fictional science sample nodes across the polar plateau.',
+      az: 'Qütb yaylasında uydurma elmi sahə nümunələrini aşkar etdiniz.',
     },
     hint: {
       en: 'Explore the map on foot or by rover to discover lunar rock samples.',

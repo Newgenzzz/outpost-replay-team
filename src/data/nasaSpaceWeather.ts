@@ -1,20 +1,16 @@
 /**
- * Authentic NASA CCMC DONKI, NOAA GOES, and NASA OSDR RadLab space-weather datasets,
- * plus an optional live browser client for `api.nasa.gov/DONKI` with instant offline fallback.
+ * Near-Earth reference values and separate educational storm scenarios.
+ * DONKI FLR is a flare catalog; X-ray class is never converted to proton flux or crew dose.
  */
 import type { Bilingual, StormPresetId } from '../types';
-import { DOSE_COEFF_MSV_PER_HR_PER_PFU, MAY_2024_PROTON_EVENT, SHIELDING } from './nasaTelemetry';
+import { DOSE_COEFF_MSV_PER_HR_PER_PFU, MAY_2024_PROTON_EVENT, SEP_PROFILE, SHIELDING } from './nasaTelemetry';
 
 export interface HistoricalStormPreset {
   id: StormPresetId;
   name: Bilingual;
   badge: Bilingual;
-  activeRegion: string;
-  flareClass: string;
-  onsetUtc: string;
+  provenance: 'observed-peak' | 'training-assumption';
   peakPfu: number;
-  /** Representative ISS OSDR RadLab absorbed dose rate peak (µGy/hr) in LEO for reference comparison. */
-  issRadLabPeakUgyPerHr: number;
   summary: Bilingual;
   sourceUrl: string;
 }
@@ -22,180 +18,106 @@ export interface HistoricalStormPreset {
 export const HISTORICAL_STORM_PRESETS: readonly HistoricalStormPreset[] = [
   {
     id: 'may2024',
-    name: {
-      en: 'May 2024 "Gannon" Superstorm (AR 13664)',
-      az: 'May 2024 "Gannon" Superfırtınası (AR 13664)',
-    },
-    badge: { en: '207 pfu · Default Mission', az: '207 pfu · Əsas Ssenari' },
-    activeRegion: MAY_2024_PROTON_EVENT.activeRegion,
-    flareClass: 'X8.7 / G5',
-    onsetUtc: MAY_2024_PROTON_EVENT.onsetUtc,
+    name: { en: 'May 2024 GOES peak reference', az: 'May 2024 GOES pik göstəricisi' },
+    badge: { en: 'Observed near Earth', az: 'Yer yaxınlığında ölçülüb' },
+    provenance: 'observed-peak',
     peakPfu: MAY_2024_PROTON_EVENT.peakPfu,
-    issRadLabPeakUgyPerHr: 42.8,
     summary: {
-      en: 'Recorded by GOES & NASA DONKI during the historic May 2024 solar storm cluster. Unshielded EVA becomes hazardous; water-wall or regolith shelter keeps crew safe.',
-      az: 'Tarixi May 2024 Günəş fırtınası zamanı GOES və NASA DONKI tərəfindən qeydə alınıb. Açıq səth təhlükəlidir; su divarı və ya reqolit sığınacağı ekipajı qoruyur.',
+      en: 'NOAA reports 207 pfu at geosynchronous Earth orbit on 10 May 2024, associated with an X3.9 flare. Only this peak amplitude is reused; the lunar storm timeline and dose are fictional.',
+      az: 'NOAA 10 may 2024-də Yerətrafı geosinxron orbitdə X3.9 alışması ilə əlaqəli 207 pfu pik bildirir. Yalnız pik qiymət istifadə edilir; Ay fırtınasının vaxtı və dozası təlimə aiddir.',
     },
-    sourceUrl: 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1',
+    sourceUrl: 'https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf',
   },
   {
+    // Preserve the old preset identifier and amplitude for replay compatibility.
     id: 'sept2017',
-    name: {
-      en: 'Sept 2017 Extreme SEP Event (AR 12673)',
-      az: 'Sentyabr 2017 Ekstremal SEP Fırtınası (AR 12673)',
-    },
-    badge: { en: '840 pfu · Extreme Stress Test', az: '840 pfu · Ağır Sınaq' },
-    activeRegion: 'AR 12673',
-    flareClass: 'X8.2 / S3',
-    onsetUtc: '2017-09-10 16:06 UTC',
+    name: { en: 'High-flux stress test', az: 'Yüksək axın sınağı' },
+    badge: { en: 'Assumed scenario', az: 'Ssenari fərziyyəsi' },
+    provenance: 'training-assumption',
     peakPfu: 840,
-    issRadLabPeakUgyPerHr: 118.4,
     summary: {
-      en: 'Modeled on the intense September 2017 X8.2 ground-level enhancement event measured at Earth, Mars (Curiosity RAD), and LRO CRaTER. Only heavy regolith berm + bunker prevents a dose warning!',
-      az: 'Yer, Mars (Curiosity RAD) və Ay orbitində (LRO CRaTER) ölçülmüş güclü Sentyabr 2017 X8.2 hadisəsinə əsaslanır. Yalnız qalın reqolit səddi + sığınacaq doza həddini aşmağın qarşısını alır!',
+      en: '840 pfu is retained as a classroom stress-test input. It is not a verified September 2017 peak. The linked NASA example discusses actual 2017 measurements at Mars, not this scenario.',
+      az: '840 pfu təlim sınağının giriş qiymətidir; sentyabr 2017 üçün təsdiqlənmiş pik deyil. NASA keçidi Marsdakı real 2017 ölçmələrini izah edir, bu ssenarini deyil.',
     },
-    sourceUrl: 'https://ntrs.nasa.gov/citations/20180006319',
+    sourceUrl: 'https://science.nasa.gov/resource/solar-storms-radiation-at-martian-orbit-and-surface/',
   },
   {
     id: 'quiet',
-    name: {
-      en: 'Minor C-Class Solar Window (Nominal)',
-      az: 'Sakit Günəş Pəncərəsi (Nominal)',
-    },
-    badge: { en: '18 pfu · Mild Activity', az: '18 pfu · Zəif Fəallıq' },
-    activeRegion: 'AR 13590',
-    flareClass: 'M1.4 / S1',
-    onsetUtc: '2024-02-22 06:10 UTC',
+    name: { en: 'Lower-flux exercise', az: 'Aşağı axın məşqi' },
+    badge: { en: 'Assumed scenario', az: 'Ssenari fərziyyəsi' },
+    provenance: 'training-assumption',
     peakPfu: 18,
-    issRadLabPeakUgyPerHr: 14.2,
     summary: {
-      en: 'A minor S1 proton threshold crossing. Demonstrates why mission planners check space-weather forecasts before trading shelter preparation for extra science.',
-      az: 'Zəif S1 proton həddi keçidi. Sığınacaq hazırlığı ilə elmi tədqiqat arasında seçim edərkən kosmik hava proqnozunun niyə vacib olduğunu göstərir.',
+      en: '18 pfu is an assumed lower-flux training input, not a dated observation or a flare-class conversion. Even this value exceeds NOAA’s 10 pfu radiation-storm threshold near Earth.',
+      az: '18 pfu aşağı axın üçün təlim fərziyyəsidir; tarixli ölçmə və ya alışma sinfindən çevrilmə deyil. Bu qiymət də NOAA-nın Yer yaxınlığındakı 10 pfu fırtına həddini aşır.',
     },
-    sourceUrl: 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/',
+    sourceUrl: 'https://www.swpc.noaa.gov/phenomena/solar-radiation-storm',
   },
-] as const;
-
-/** Real multi-day ISS OSDR RadLab telemetry trace during May 9–13, 2024 (LEO absorbed dose rate, µGy/hr). */
-export const OSDR_RADLAB_MAY2024_SERIES = [
-  { hour: 0, issDoseUgyHr: 11.4, lunarSurfaceEstUgyHr: 41.2 },
-  { hour: 6, issDoseUgyHr: 12.1, lunarSurfaceEstUgyHr: 43.0 },
-  { hour: 12, issDoseUgyHr: 19.8, lunarSurfaceEstUgyHr: 185.0 },
-  { hour: 18, issDoseUgyHr: 42.8, lunarSurfaceEstUgyHr: 690.0 },
-  { hour: 24, issDoseUgyHr: 35.6, lunarSurfaceEstUgyHr: 520.0 },
-  { hour: 30, issDoseUgyHr: 24.2, lunarSurfaceEstUgyHr: 310.0 },
-  { hour: 36, issDoseUgyHr: 17.9, lunarSurfaceEstUgyHr: 165.0 },
-  { hour: 42, issDoseUgyHr: 14.5, lunarSurfaceEstUgyHr: 88.0 },
-  { hour: 48, issDoseUgyHr: 12.6, lunarSurfaceEstUgyHr: 52.0 },
 ] as const;
 
 export interface LiveDonkiEventSummary {
   id: string;
   eventTime: string;
   flareClass: string;
-  estimatedPeakPfu: number;
-  note: string;
   link: string;
-  liveFetched: boolean;
 }
 
-/**
- * Queries NASA's public CORS-enabled DONKI API (`api.nasa.gov/DONKI/FLR` & `SEP`) for recent solar activity,
- * with a strict 4.5s timeout and graceful fallback to bundled NASA DONKI records if offline or rate-limited.
- */
-export async function fetchLiveDonkiSpaceWeather(): Promise<LiveDonkiEventSummary[]> {
+/** Missing metadata stays missing; no class, timestamp, proton flux or dose is fabricated. */
+export function parseDonkiFlares(data: unknown): LiveDonkiEventSummary[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter((item) => item && typeof item === 'object' &&
+    typeof item.flrID === 'string' && typeof item.classType === 'string' &&
+    /^[ABCMX]\d+(\.\d+)?$/.test(item.classType) &&
+    typeof (item.peakTime ?? item.beginTime) === 'string' &&
+    Number.isFinite(Date.parse(item.peakTime ?? item.beginTime)))
+    .slice(-5).reverse().map((item) => {
+      let link = 'https://ccmc.gsfc.nasa.gov/DONKI/';
+      try {
+        const candidate = new URL(item.link);
+        if (candidate.protocol === 'https:' && ['ccmc.gsfc.nasa.gov', 'kauai.ccmc.gsfc.nasa.gov'].includes(candidate.hostname)) {
+          candidate.hostname = 'ccmc.gsfc.nasa.gov';
+          link = candidate.toString();
+        }
+      } catch { /* Use the official catalog landing page. */ }
+      return { id: item.flrID, eventTime: new Date(item.peakTime ?? item.beginTime).toISOString(), flareClass: item.classType, link };
+    });
+}
+
+export interface DonkiFlareFeed {
+  status: 'live' | 'empty' | 'unavailable';
+  events: LiveDonkiEventSummary[];
+}
+
+/** Optional catalog context only. A failed/empty feed leaves the recorded experiment unchanged. */
+export async function fetchLiveDonkiSpaceWeather(fetcher: typeof fetch = fetch, now = new Date()): Promise<DonkiFlareFeed> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4500);
   try {
-    const end = new Date();
-    const start = new Date(end.getTime() - 30 * 24 * 3600 * 1000);
+    const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
     const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
-    const url = `https://api.nasa.gov/DONKI/FLR?startDate=${fmtDate(start)}&endDate=${fmtDate(end)}&api_key=DEMO_KEY`;
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as Array<{
-      flrID?: string;
-      peakTime?: string;
-      beginTime?: string;
-      classType?: string;
-      sourceLocation?: string;
-      note?: string;
-      link?: string;
-    }>;
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Empty live feed');
-
-    return data
-      .slice(-5)
-      .reverse()
-      .map((item, idx) => {
-        const cls = item.classType ?? 'M2.0';
-        const mag = parseFloat(cls.slice(1)) || 2;
-        const estimatedPeakPfu = cls.startsWith('X')
-          ? Math.min(950, Math.round(65 * mag))
-          : cls.startsWith('M')
-            ? Math.max(12, Math.round(9 * mag))
-            : 10;
-        return {
-          id: item.flrID ?? `live-${idx}`,
-          eventTime: (item.peakTime ?? item.beginTime ?? '').replace('T', ' ').replace('Z', ' UTC'),
-          flareClass: cls,
-          estimatedPeakPfu,
-          note: item.note?.slice(0, 160) || `Active region ${item.sourceLocation ?? 'disk'} solar flare observed by NASA DONKI.`,
-          link: item.link || 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/',
-          liveFetched: true,
-        };
-      });
+    const url = 'https://api.nasa.gov/DONKI/FLR?startDate=' + fmtDate(start) + '&endDate=' + fmtDate(now) + '&api_key=DEMO_KEY';
+    const res = await fetcher(url, { signal: controller.signal });
+    if (!res.ok) throw new Error('DONKI unavailable');
+    const data: unknown = await res.json();
+    if (!Array.isArray(data)) throw new Error('Invalid DONKI response');
+    const events = parseDonkiFlares(data);
+    return { status: events.length ? 'live' : 'empty', events };
   } catch {
+    return { status: 'unavailable', events: [] };
+  } finally {
     clearTimeout(timeout);
-    return [
-      {
-        id: '2024-05-14T16:46:00-FLR-001',
-        eventTime: '2024-05-14 16:51 UTC',
-        flareClass: 'X8.7',
-        estimatedPeakPfu: 207,
-        note: 'Cached NASA DONKI archive (offline/rate-limit fallback): AR 13664 X8.7 flare & May 2024 GOES ≥10 MeV 207 pfu SEP cluster.',
-        link: 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1',
-        liveFetched: false,
-      },
-      {
-        id: '2017-09-10T15:35:00-FLR-001',
-        eventTime: '2017-09-10 16:06 UTC',
-        flareClass: 'X8.2',
-        estimatedPeakPfu: 840,
-        note: 'Cached NASA DONKI archive: AR 12673 extreme western-limb solar energetic particle event detected across Earth, Moon, and Mars.',
-        link: 'https://ntrs.nasa.gov/citations/20180006319',
-        liveFetched: false,
-      },
-    ];
   }
 }
 
+/** Same fictional pulse and classroom dose scale as the mission engine; no live measurements. */
 export function buildStormProfileForPeak(peakPfu: number) {
-  const scale = Math.max(0, peakPfu) / MAY_2024_PROTON_EVENT.peakPfu;
+  if (!Number.isFinite(peakPfu) || peakPfu < 0 || peakPfu > 5000) throw new RangeError('Invalid training storm peak');
+  const scale = peakPfu / MAY_2024_PROTON_EVENT.peakPfu;
   const r3 = (x: number) => Math.round(x * 1000) / 1000;
-  const basePoints: Array<[number, number]> = [
-    [0, 1],
-    [4, 2],
-    [8, 12],
-    [12, 45],
-    [16, 120],
-    [20, MAY_2024_PROTON_EVENT.peakPfu],
-    [24, 160],
-    [28, 95],
-    [32, 60],
-    [36, 38],
-    [40, 22],
-    [44, 14],
-    [48, 9],
-  ];
-  return basePoints.map(([hour, flux]) => {
-    const scaledFlux = r3(flux * scale);
-    return {
-      hour,
-      protonFluxPfu: scaledFlux,
-      unshieldedDoseMsvPerHr: r3(scaledFlux * DOSE_COEFF_MSV_PER_HR_PER_PFU),
-      shieldedDoseMsvPerHr: r3(scaledFlux * DOSE_COEFF_MSV_PER_HR_PER_PFU * SHIELDING.habitat),
-    };
-  });
+  return SEP_PROFILE.map((point) => ({
+    hour: point.hour,
+    protonFluxPfu: r3(point.protonFluxPfu * scale),
+    unshieldedDoseMsvPerHr: r3(point.protonFluxPfu * scale * DOSE_COEFF_MSV_PER_HR_PER_PFU),
+    shieldedDoseMsvPerHr: r3(point.protonFluxPfu * scale * DOSE_COEFF_MSV_PER_HR_PER_PFU * SHIELDING.habitat),
+  }));
 }

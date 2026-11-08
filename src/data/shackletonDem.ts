@@ -1,57 +1,56 @@
 /**
- * NASA LRO LOLA Shackleton Crater Rim Digital Elevation Model (Parameterized Polar Grid)
- *
- * Grounded in published Lunar Reconnaissance Orbiter (LRO) Lunar Orbiter Laser Altimeter (LOLA)
- * and Diviner Lunar Radiometer measurements of Shackleton Crater (89.9° S):
- * - Rim-to-rim diameter: ~21 km, interior depth: ~4.2 km, inner wall slope: ~30.5° (Zuber et al. 2012, Nature 486)
- * - Permanently Shadowed Region (PSR) floor temperature: ~40–90 K (Paige et al. 2010, Science 330)
- * - Rim illumination study points S (-89.69°, 197.2°E) and C1 (-89.44°, 222.8°E) (Gläser et al. 2018; Mazarico et al. 2011)
+ * Procedural teaching terrain inspired by Shackleton's bowl shape, NOT a NASA LOLA DEM.
+ * No elevation raster, geodetic datum, measured temperatures or mapped study coordinates
+ * are used. Peaks, mound, roughness and marker positions are authored approximations.
+ * Real LOLA-derived study values are kept separately in lunarSiteIntelligence.ts.
  */
 
 export interface ShackletonSiteMarker {
   id: 'S' | 'C1' | 'PSR';
   labelEn: string;
   labelAz: string;
-  /** Normalized DEM coordinates in [-1, 1] across a 36 km × 36 km polar patch */
+  /** Arbitrary normalized illustration coordinates; not georeferenced. */
   nx: number;
   nz: number;
-  tempK: number;
 }
 
-/** 36 km × 36 km South Polar patch centered on Shackleton Crater */
+/** Illustration dimensions only. The retained 4.2 km bowl parameter is not a measured DEM. */
 export const PATCH_WIDTH_KM = 36;
 export const CRATER_RADIUS_KM = 10.5;
 export const CRATER_DEPTH_KM = 4.2;
+export const TERRAIN_PROVENANCE = {
+  kind: 'educational-procedural',
+  georeferenced: false,
+  mastHeightExaggeration: 14,
+  fixedSolarElevationDeg: 1.55,
+} as const;
 
 export const SHACKLETON_MARKERS: ShackletonSiteMarker[] = [
   {
     id: 'S',
-    labelEn: 'Outpost Site S (Rim Crest · 86% Sun)',
-    labelAz: 'Baza Nöqtəsi S (Kənar Zirvə · 86% Günəş)',
+    labelEn: 'Demo S · illustrative rim',
+    labelAz: 'Demo S · sxematik kənar',
     nx: -0.295,
     nz: -0.505,
-    tempK: 198,
   },
   {
     id: 'C1',
-    labelEn: 'Connecting Ridge C1 (89.7% Sun)',
-    labelAz: 'Birləşdirici Silsilə C1 (89,7% Günəş)',
+    labelEn: 'Demo C1 · illustrative ridge',
+    labelAz: 'Demo C1 · sxematik silsilə',
     nx: 0.43,
     nz: -0.45,
-    tempK: 204,
   },
   {
     id: 'PSR',
-    labelEn: 'Shackleton Cold-Trap Floor (88 K · Water Ice)',
-    labelAz: 'Şeklton Soyuq Tələ Dibi (88 K · Su Buzu)',
+    labelEn: 'Illustrative cold trap',
+    labelAz: 'Sxematik soyuq tələ',
     nx: 0.0,
     nz: 0.0,
-    tempK: 88,
   },
 ];
 
 /**
- * Computes elevation in kilometers relative to mean south-polar datum at normalized coords (nx, nz) in [-1, 1].
+ * Computes synthetic elevation in illustration kilometers relative to an arbitrary zero.
  */
 export function sampleShackletonElevationKm(nx: number, nz: number): number {
   const xKm = nx * (PATCH_WIDTH_KM * 0.5);
@@ -59,12 +58,12 @@ export function sampleShackletonElevationKm(nx: number, nz: number): number {
   const rKm = Math.hypot(xKm, zKm);
   const theta = Math.atan2(zKm, xKm);
 
-  // Flat-bottomed bowl + steep 30.5 deg inner walls + raised ejecta rim collar
+  // Authored bowl and raised rim, not fitted to measured slopes.
   const floorRadiusKm = 3.6;
   let elevKm = 0;
 
   if (rKm < floorRadiusKm) {
-    // Subtle central mound (~180 m) inside 4.2 km deep cold trap (Zuber et al. 2012)
+    // Authored central mound; not a reconstruction of a measured feature.
     const mound = 0.18 * Math.exp(-((rKm / 1.5) ** 2));
     elevKm = -3.35 + mound;
   } else if (rKm <= CRATER_RADIUS_KM) {
@@ -113,8 +112,8 @@ export function computeRimIllumination(
 ): HorizonIlluminationSample {
   const site = SHACKLETON_MARKERS.find((m) => m.id === siteId) ?? SHACKLETON_MARKERS[0];
   const baseElevKm = sampleShackletonElevationKm(site.nx, site.nz);
-  // Exaggerate local micro-crest relief slightly at meter scale to mirror LOLA 5m DEM horizon masking
-  const effectiveHeightKm = (mastHeightMeters / 1000) * 14;
+  // Deliberate x14 height exaggeration for the teaching contrast, not a real 2 m/10 m prediction.
+  const effectiveHeightKm = (mastHeightMeters / 1000) * TERRAIN_PROVENANCE.mastHeightExaggeration;
   const observerElevKm = baseElevKm + effectiveHeightKm;
 
   const rad = (solarAzimuthDeg * Math.PI) / 180;
@@ -134,8 +133,8 @@ export function computeRimIllumination(
     }
   }
 
-  // Lunar South Pole seasonal summer solar elevation ~1.55 deg, solar disk angular diameter ~0.53 deg
-  const solarElevationDeg = 1.55;
+  // Fixed teaching angle and linear limb-height proxy (not a solar-disk area calculation).
+  const solarElevationDeg = TERRAIN_PROVENANCE.fixedSolarElevationDeg;
   const halfDisk = 0.265;
   const topLimb = solarElevationDeg + halfDisk;
   const bottomLimb = solarElevationDeg - halfDisk;

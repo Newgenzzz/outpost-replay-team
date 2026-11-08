@@ -11,13 +11,12 @@ import {
   TRAINING_SITE,
   MAY_2024_PROTON_EVENT,
   RADIATION_LIMITS,
-  SEP_PEAK_DOSE_RATE_MSV_PER_HR,
   SEP_PEAK_FLUX_PFU,
-  SEP_PROFILE,
   SEP_STORM_DOSE_UNSHIELDED_MSV,
   SHIELDING,
   TALL_MAST_SHADOW_OUTPUT_FACTOR,
 } from '../data/nasaTelemetry';
+import { buildStormProfileForPeak } from '../data/nasaSpaceWeather';
 import type { Bilingual } from '../types';
 
 const tooltipStyle = { background: '#0f172a', border: '1px solid #334155', borderRadius: 8, fontSize: 11 };
@@ -86,8 +85,8 @@ const SIMPLIFIED_ROWS: Array<{ param: Bilingual; value: string; why: Bilingual }
 ];
 
 const EQUATIONS = {
-  en: `Energy balance = solar + backup − equipment loads\nCrew oxygen demand = crew × ${ECLSS_BASELINES.o2KgPerCrewDay} kg/day × days\nIce extraction yield = processed soil × ice mass fraction × recovery efficiency\nTraining dose estimate = ∫ (scripted flux × assumed dose scale × assumed transmission) dt\nFull exposure in the training storm ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv before background`,
-  az: `Enerji balansı = günəş + ehtiyat enerji − avadanlıq sərfi\nEkipajın oksigen tələbi = ekipaj sayı × ${ECLSS_BASELINES.o2KgPerCrewDay} kq/gün × gün sayı\nBuzdan çıxarılan su = emal edilən qrunt × buzun kütlə payı × emal səmərəliliyi\nTəlim dozasının hesablanması = ∫ (ssenari axını × fərz edilən doza əmsalı × fərz edilən keçiricilik) dt\nTəlim fırtınasında tam məruzqalma ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv (fon radiasiyası xaric)`,
+  en: `Energy balance = solar + backup − equipment loads\nCrew oxygen demand = crew × ${ECLSS_BASELINES.o2KgPerCrewDay} kg/day × days\nIce extraction yield = processed soil × ice mass fraction × recovery efficiency\nTraining dose estimate = ∫ (scripted flux × assumed dose scale × assumed transmission) dt\nAt the default 207 pfu only, full storm exposure ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv before background`,
+  az: `Enerji balansı = günəş + ehtiyat enerji − avadanlıq sərfi\nEkipajın oksigen tələbi = ekipaj sayı × ${ECLSS_BASELINES.o2KgPerCrewDay} kq/gün × gün sayı\nBuzdan çıxarılan su = emal edilən qrunt × buzun kütlə payı × emal səmərəliliyi\nTəlim dozasının hesablanması = ∫ (ssenari axını × fərz edilən doza əmsalı × fərz edilən keçiricilik) dt\nYalnız standart 207 pfu üçün tam fırtına dozası ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv (fon radiasiyası xaric)`,
 };
 
 function Tag({ kind }: { kind: 'reference' | 'model' }) {
@@ -104,9 +103,11 @@ function Tag({ kind }: { kind: 'reference' | 'model' }) {
   );
 }
 
-export default function EvidencePanel() {
+export default function EvidencePanel({ stormPeakPfu = SEP_PEAK_FLUX_PFU }: { stormPeakPfu?: number }) {
   const { lang, t, tr } = useI18n();
   const az = lang === 'az';
+  const stormProfile = buildStormProfileForPeak(stormPeakPfu);
+  const peakDoseRate = Math.round(stormPeakPfu * DOSE_COEFF_MSV_PER_HR_PER_PFU * 1000) / 1000;
 
   return (
     <section className="panel space-y-4 p-4">
@@ -157,15 +158,15 @@ export default function EvidencePanel() {
           <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
             <p className="text-sm font-medium text-slate-100">{az ? 'Təlimdə hissəcik fırtınası' : 'Particle storm in training'}</p>
             <p className="mt-1 text-xs text-slate-300">{az
-              ? `Əyrinin vaxtı və forması ssenariyə aiddir. Pik dəyər NOAA-nın Yer orbitində müşahidə etdiyi ${MAY_2024_PROTON_EVENT.peakPfu} pfu göstəricisinə bərabərdir.`
-              : `The curve follows a scripted timeline and shape. Its peak matches NOAA’s observed ${MAY_2024_PROTON_EVENT.peakPfu} pfu in Earth orbit.`}</p>
+              ? `Göstərilən ssenari piki ${stormPeakPfu} pfu-dur. Yalnız standart ${MAY_2024_PROTON_EVENT.peakPfu} pfu NOAA-nın Yer yaxınlığında ölçdüyü pikə uyğundur. Vaxt, forma və doza çevrilməsi təlim fərziyyələridir; real ekipaj doza proqnozu deyil.`
+              : `The displayed scenario peak is ${stormPeakPfu} pfu. Only the default ${MAY_2024_PROTON_EVENT.peakPfu} pfu matches NOAA’s near-Earth observed peak. Timing, shape and dose conversion are classroom assumptions, not real crew-dose predictions.`}</p>
             <div className="mt-2 h-40">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={SEP_PROFILE} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
+                <ComposedChart data={stormProfile} margin={{ top: 4, right: 4, bottom: 0, left: -18 }}>
                   <CartesianGrid stroke="#1e293b" strokeDasharray="2 4" />
                   <XAxis dataKey="hour" type="number" domain={[0, 48]} ticks={[0, 12, 24, 36, 48]} stroke="#64748b" />
-                  <YAxis yAxisId="flux" domain={[0, 250]} stroke="#f43f5e" width={40} />
-                  <YAxis yAxisId="dose" orientation="right" domain={[0, 4]} stroke="#e2e8f0" width={36} />
+                  <YAxis yAxisId="flux" domain={[0, Math.max(250, stormPeakPfu * 1.1)]} stroke="#f43f5e" width={40} />
+                  <YAxis yAxisId="dose" orientation="right" domain={[0, Math.max(4, peakDoseRate * 1.1)]} stroke="#e2e8f0" width={36} />
                   <Tooltip contentStyle={tooltipStyle} labelFormatter={(hour) => `${az ? 'Fırtınanın ssenari saatı' : 'Scripted storm hour'} ${hour}`} />
                   <Area yAxisId="flux" type="linear" dataKey="protonFluxPfu" name={t('protonFlux')} stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.2} isAnimationActive={false} />
                   <Line yAxisId="dose" type="linear" dataKey="unshieldedDoseMsvPerHr" name={t('doseRateSuit')} stroke="#e2e8f0" dot={false} strokeWidth={1.5} isAnimationActive={false} />
@@ -174,7 +175,7 @@ export default function EvidencePanel() {
               </ResponsiveContainer>
             </div>
             <p className="text-[10px] text-slate-500">
-              <span className="text-rose-400">■</span> {t('protonFlux')} ({SEP_PEAK_FLUX_PFU} pfu) · — {t('doseRateSuit')} ({SEP_PEAK_DOSE_RATE_MSV_PER_HR} mSv/h) · - - {t('doseRateHab')}
+              <span className="text-rose-400">■</span> {t('protonFlux')} ({stormPeakPfu} pfu) · — {t('doseRateSuit')} ({peakDoseRate} mSv/h) · - - {t('doseRateHab')}
             </p>
           </div>
 

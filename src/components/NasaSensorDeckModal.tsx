@@ -39,10 +39,9 @@ import {
 } from '../data/nasaTelemetry';
 import {
   HISTORICAL_STORM_PRESETS,
-  OSDR_RADLAB_MAY2024_SERIES,
   buildStormProfileForPeak,
   fetchLiveDonkiSpaceWeather,
-  type LiveDonkiEventSummary,
+  type DonkiFlareFeed,
 } from '../data/nasaSpaceWeather';
 import type { StormPresetId } from '../types';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
@@ -56,10 +55,10 @@ interface NasaSensorDeckModalProps {
 }
 
 const TABS = [
-  { id: 'lola', icon: SunDim, label: { en: '3D LOLA & Sunlight', az: '3D LOLA və İşıq' } },
+  { id: 'lola', icon: SunDim, label: { en: '3D & Sunlight', az: '3D və İşıq' } },
   { id: 'diviner', icon: Snowflake, label: { en: 'Diviner Temp', az: 'Diviner Temp' } },
   { id: 'lcross', icon: Droplet, label: { en: 'LCROSS Ice', az: 'LCROSS Buzu' } },
-  { id: 'donki', icon: Zap, label: { en: 'DONKI & RadLab', az: 'DONKI və RadLab' } },
+  { id: 'donki', icon: Zap, label: { en: 'DONKI & Radiation', az: 'DONKI və Radiasiya' } },
   { id: 'bvad', icon: HeartPulse, label: { en: 'BVAD & ECLSS', az: 'BVAD və ECLSS' } },
 ] as const;
 
@@ -81,26 +80,22 @@ export function NasaSensorDeckModal({
     const match = HISTORICAL_STORM_PRESETS.find((p) => p.peakPfu === activeStormPeakPfu);
     return match ? match.id : 'may2024';
   });
-  const [liveDonki, setLiveDonki] = useState<LiveDonkiEventSummary | null>(null);
+  const [liveDonki, setLiveDonki] = useState<DonkiFlareFeed | null>(null);
   const [fetchingLive, setFetchingLive] = useState(false);
 
   const az = lang === 'az';
-  const title = az ? '3D NASA LOLA Relyefi, DONKI və RadLab Telemetriyası' : '3D NASA LOLA Terrain, DONKI & OSDR RadLab Deck';
+  const title = az ? 'Elm və mənbələr · 3D, DONKI və radiasiya' : 'Science & Sources · 3D, DONKI & Radiation';
   const storm = MAY_2024_PROTON_EVENT;
   const iceConcentration = `${(LCROSS_CABEUS.waterIceMassFraction * 100).toFixed(1)} ± ${(LCROSS_CABEUS.uncertaintyMassFraction * 100).toFixed(1)}%`;
 
   const selectedPreset =
     HISTORICAL_STORM_PRESETS.find((p) => p.id === selectedPresetId) ?? HISTORICAL_STORM_PRESETS[0];
-  const activeDisplayPfu =
-    selectedPresetId === 'live' && liveDonki ? liveDonki.estimatedPeakPfu : selectedPreset.peakPfu;
+  const activeDisplayPfu = selectedPreset.peakPfu;
   const dynamicStormSeries = buildStormProfileForPeak(activeDisplayPfu);
 
   const handleFetchLiveDonki = async () => {
     setFetchingLive(true);
-    const events = await fetchLiveDonkiSpaceWeather();
-    const latest = events[0] ?? null;
-    setLiveDonki(latest);
-    setSelectedPresetId('live');
+    setLiveDonki(await fetchLiveDonkiSpaceWeather());
     setFetchingLive(false);
   };
 
@@ -110,35 +105,35 @@ export function NasaSensorDeckModal({
 
   const references = {
     lola: {
-      title: az ? 'LRO LOLA lazer topoqrafiyası' : 'LRO LOLA Laser Altimetry Topography',
+      title: az ? 'Nəşr edilmiş model · LOLA işıqlanması' : 'Published model · LOLA illumination',
       body: az
-        ? `LRO lazer altimetri ilə qurulan relyef modeli Şeklton kənarı yaxınlığındakı xüsusilə işıqlı bir nöqtədə ildə ${LUNAR_RESEARCH.nearRimContinuousSunlightDays} gün fasiləsiz işıq və ən çox ${LUNAR_RESEARCH.nearRimLongestDarknessDays} gün fasiləsiz tam qaranlıq göstərib. Aşağıdakı 3D holoqramı fırladaraq 10 m-lik dirəyin kölgədən necə çıxdığını yoxlayın.`
-        : `A model built from LRO laser altimetry found ${LUNAR_RESEARCH.nearRimContinuousSunlightDays} days of continuous sunlight each year and up to ${LUNAR_RESEARCH.nearRimLongestDarknessDays} days of continuous darkness near Shackleton’s rim. Rotate the 3D hologram below to see how a 10 m mast clears local ridges.`,
-      sources: [CITATIONS.LOLA_ILLUM],
+        ? `Mazarico və b. (2011) LOLA relyefindən modelləşdirdikləri xüsusi bir nöqtədə ildə ${LUNAR_RESEARCH.nearRimContinuousSunlightDays} gün fasiləsiz işıq və təxminən ${LUNAR_RESEARCH.nearRimLongestDarknessDays} gün ən uzun tam qaranlıq dövrü tapıblar. Bu nəticələr bütün kənara və ya yuxarıdakı prosedur səhnəyə aid deyil. Aşağıdakı S/C1 cədvəli ayrıca nəşr edilmiş modeldir.`
+        : `Mazarico et al. (2011) modeled one particularly well-lit near-rim point with ${LUNAR_RESEARCH.nearRimContinuousSunlightDays} days of continuous sunlight each year and a longest total-darkness interval of about ${LUNAR_RESEARCH.nearRimLongestDarknessDays} days. These are location-specific model results, not measurements for the whole rim or the procedural scene above. The S/C1 table below is a separate published model.`,
+      sources: [CITATIONS.LOLA_ILLUM, CITATIONS.SHACKLETON_SHAPE],
     },
     diviner: {
-      title: az ? 'Diviner termal xəritələməsi' : 'LRO Diviner Thermal Radiometer',
+      title: az ? 'Müşahidədən hesablanmış qiymət · Diviner' : 'Observation-derived estimate · Diviner',
       body: az
-        ? `Tədqiqatçılar Ayın cənub qütb bölgəsində, LCROSS-un Kabeus kraterinə düşdüyü yerdə səthaltı temperaturu təxminən ${LUNAR_RESEARCH.cabeusSubsurfaceTempK} K hesablayıblar. Şekltonun dibi daim ~40–90 K soyuq tələdir.`
-        : `Researchers estimated a subsurface temperature of about ${LUNAR_RESEARCH.cabeusSubsurfaceTempK} K at the LCROSS impact site in Cabeus crater. Shackleton’s floor remains a ~40–90 K cryogenic cold trap.`,
+        ? `Diviner müşahidələrinə əsasən LCROSS-un Kabeus zərbə yerində səthaltı temperatur təxminən ${LUNAR_RESEARCH.cabeusSubsurfaceTempK} K hesablanıb. Bu, Şeklton dibi üçün sabit temperatur deyil. 3D səhnənin rəngləri temperatur ölçməsi deyil.`
+        : `From Diviner observations, researchers estimated a subsurface temperature of about ${LUNAR_RESEARCH.cabeusSubsurfaceTempK} K at the LCROSS impact site in Cabeus. This is not a constant temperature for Shackleton’s floor. The 3D scene’s colors are not temperature measurements.`,
       sources: [CITATIONS.DIVINER_COLDTRAPS],
     },
     lcross: {
-      title: az ? 'LCROSS su buzu spektri' : 'LCROSS Impact Plume Spectroscopy',
+      title: az ? 'Müşahidədən hesablanmış qiymət · LCROSS' : 'Observation-derived estimate · LCROSS',
       body: az
         ? `9 oktyabr 2009-cu ildə LCROSS Kabeus kraterində zərbə ilə qalxan materialın spektrini ölçdü. Tədqiqatçılar həmin nöqtədə su buzunun kütlə payını ${iceConcentration} hesabladılar.`
         : `On October 9, 2009, LCROSS measured spectra of the impact plume at Cabeus crater, estimating a water-ice concentration of ${iceConcentration} by mass.`,
       sources: [CITATIONS.LCROSS],
     },
     donki: {
-      title: az ? 'NASA DONKI + BKS OSDR RadLab Dozimetriyası' : 'NASA DONKI + ISS OSDR RadLab Dosimetry',
+      title: az ? 'GOES müşahidəsi · DONKI kataloqu · təlim dozası' : 'GOES observation · DONKI catalog · training dose',
       body: az
-        ? `NASA DONKI GOES-də >10 MeV proton axınının ${storm.onsetUtc} tarixində ${storm.onsetThresholdPfu} pfu həddini keçdiyini və ${storm.peakPfu} pfu pikə çatdığını qeyd edib. OSDR RadLab BKS-də maqnitosfer qorunmasını, Ayda isə qalxansız səth təhlükəsini müqayisə edir.`
-        : `NASA DONKI recorded GOES >10 MeV proton flux crossing ${storm.onsetThresholdPfu} pfu at ${storm.onsetUtc} with a ${storm.peakPfu} pfu peak. NASA OSDR RadLab compares shielded ISS orbit vs. unshielded Lunar South Pole exposure.`,
-      sources: [CITATIONS.DONKI, CITATIONS.GOES_PROTONS],
+        ? `NOAA GOES-in Yer yaxınlığındakı ≥10 MeV proton axını üçün ${storm.onsetUtc} tarixində ${storm.onsetThresholdPfu} pfu həddi keçidini və ${storm.peakUtc} tarixində ${storm.peakPfu} pfu pik bildirir. NASA DONKI hadisə kataloqudur; alışmanın rentgen sinfi proton axınını və astronavt dozasını müəyyən etmir. 1 pfu = 1 proton·sm⁻²·san⁻¹·sr⁻¹.`
+        : `NOAA reports GOES near-Earth ≥10 MeV proton flux crossing ${storm.onsetThresholdPfu} pfu at ${storm.onsetUtc}, peaking at ${storm.peakPfu} pfu at ${storm.peakUtc}. NASA DONKI is an event catalog; a flare’s X-ray class does not determine proton flux or astronaut dose. 1 pfu = 1 proton·cm⁻²·s⁻¹·sr⁻¹.`,
+      sources: [CITATIONS.GOES_PROTONS, CITATIONS.DONKI_API, CITATIONS.RADIATION_UNITS, CITATIONS.MARS_2017],
     },
     bvad: {
-      title: az ? 'NASA BVAD və BKS ECLSS Göstəriciləri' : 'NASA BVAD & ISS ECLSS Baselines',
+      title: az ? 'NASA mühəndislik mənbələri · BVAD və ECLSS' : 'NASA engineering references · BVAD & ECLSS',
       body: az
         ? 'BVAD qısa missiya üçün ekipaj üzvünün maddələr mübadiləsini modelləşdirir. BKS-də suyun 98%-nin geri qazanılması nümayiş etdirilib və Veggie kahı sınağı 33 gün davam edib.'
         : 'BVAD models reference crew metabolism (0.82 kg O₂/day, 1.04 kg CO₂/day). The ISS demonstrated 98% closed-loop water recovery and 33-day Veggie crop growth.',
@@ -157,8 +152,8 @@ export function NasaSensorDeckModal({
       ? `Kabeus göstəricisi buzlu qrunt nümunəsinə tətbiq edilir: standart qurğuda ${ICE_TREATMENT_RECOVERY.standard * 100}%, hazırlanmış qurğuda ${ICE_TREATMENT_RECOVERY.prepared * 100}% su bərpası.`
       : `Applies the Cabeus 5.6% water-ice mass fraction to harvested regolith: ${ICE_TREATMENT_RECOVERY.standard * 100}% standard recovery vs. ${ICE_TREATMENT_RECOVERY.prepared * 100}% when pre-calibrated.`,
     donki: az
-      ? `48 saatlıq fırtına pik axından (${activeDisplayPfu} pfu) istifadə edir. ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ əmsalı ilə baza (207 pfu) sığınacaqsız ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv verir. Keçiricilik: skafandr ${SHIELDING.evaSuit * 100}%, yaşayış modulu ${SHIELDING.habitat * 100}%, su divarı ${SHIELDING.waterWall * 100}%, reqolit səddi ${SHIELDING.regolithBerm * 100}%.`
-      : `48h storm scales from peak proton flux (${activeDisplayPfu} pfu). At baseline 207 pfu (${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹), unshielded dose is ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv. Transmission: suit ${SHIELDING.evaSuit * 100}%, hab ${SHIELDING.habitat * 100}%, water wall ${SHIELDING.waterWall * 100}%, regolith berm ${SHIELDING.regolithBerm * 100}%.`,
+      ? `48 saatlıq Ay fırtınasının forması uydurmadır. ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ əmsalı və keçiriciliklər (skafandr ${SHIELDING.evaSuit * 100}%, modul ${SHIELDING.habitat * 100}%, su ${SHIELDING.waterWall * 100}%, reqolit ${SHIELDING.regolithBerm * 100}%) təlim fərziyyələridir. 207 pfu bazasında fırtına üçün ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv alınır, fon daxil deyil. Bu, real ekipaj doza proqnozu deyil; spektr, material və radiasiya nəqli hesablanmır.`
+      : `The 48-hour lunar storm shape is fictional. The ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹ coefficient and transmission factors (suit ${SHIELDING.evaSuit * 100}%, habitat ${SHIELDING.habitat * 100}%, water ${SHIELDING.waterWall * 100}%, regolith ${SHIELDING.regolithBerm * 100}%) are classroom assumptions. At the 207 pfu baseline, storm-only exposure is ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv before background. This is not a real crew-dose prediction: spectra, material geometry and radiation transport are not calculated.`,
     bvad: az
       ? `İki nəfərlik ekipaj gündə ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kq O₂ tələb edir. Təlim radiasiya xəbərdarlığı ${RADIATION_LIMITS.missionWarningMsv} mSv, NASA-STD-3001 karyera həddi ${RADIATION_LIMITS.careerLimitMsv} mSv-dir.`
       : `Two crew require ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kg O₂/day. Mission radiation warning triggers at ${RADIATION_LIMITS.missionWarningMsv} mSv (NASA-STD-3001 career limit: ${RADIATION_LIMITS.careerLimitMsv} mSv).`,
@@ -185,7 +180,7 @@ export function NasaSensorDeckModal({
           <div>
             <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#c0e6aa]">
               <Database size={15} aria-hidden="true" />
-              {az ? 'NASA ELMİ MƏNBƏLƏRİ VƏ 3D TELEMETRİYA' : 'NASA SCIENCE DECK & 3D TELEMETRY'}
+              {az ? 'MÜŞAHİDƏ · NƏŞR EDİLMİŞ MODEL · TƏLİM FƏRZİYYƏSİ' : 'OBSERVATION · PUBLISHED MODEL · TRAINING ASSUMPTION'}
             </div>
             <h2 id="science-deck-title" className="mt-1 text-lg sm:text-xl font-semibold text-white">{title}</h2>
           </div>
@@ -216,7 +211,7 @@ export function NasaSensorDeckModal({
           ))}
         </div>
 
-        {/* Interactive 3D Shackleton Crater Hologram at top of LOLA tab */}
+        {/* Procedural teaching scene, separate from the published LOLA study below */}
         {activeTab === 'lola' && (
           <div className="mb-4">
             <Shackleton3DHologram />
@@ -254,19 +249,19 @@ export function NasaSensorDeckModal({
           </div>
         )}
 
-        {/* DONKI Space Weather Preset Switcher + Live NASA API Fetch + OSDR RadLab Chart */}
+        {/* Training presets, separate flare catalog, and explicitly assumed dose chart */}
         {activeTab === 'donki' && (
           <div className="mt-4 space-y-4">
             <section className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-mono text-[10px] uppercase tracking-wider text-rose-300">
-                    NASA CCMC DONKI · SPACE WEATHER SCENARIO LAB
+                    {az ? 'TƏLİM FIRTINASI · AYRI DONKI KATALOQU' : 'TRAINING STORM · SEPARATE DONKI CATALOG'}
                   </span>
                   <h4 className="text-sm font-bold text-white">
                     {az
-                      ? 'Tarixi və Canlı Günəş Fırtınası Müqayisəsi'
-                      : 'Historical & Live NASA DONKI Solar Storm Selector'}
+                      ? 'Nəşr edilmiş pik və fərziyyə ssenariləri'
+                      : 'Published peak & assumed scenarios'}
                   </h4>
                 </div>
                 <button
@@ -278,7 +273,7 @@ export function NasaSensorDeckModal({
                   <Radio size={13} className={fetchingLive ? 'animate-spin' : ''} />
                   {fetchingLive
                     ? az ? 'NASA DONKI sorğulanır...' : 'Querying NASA DONKI...'
-                    : az ? 'Canlı NASA DONKI Yoxla' : 'Fetch Live NASA DONKI'}
+                    : az ? 'Son DONKI alışmalarını yoxla' : 'Fetch recent DONKI flares'}
                 </button>
               </div>
 
@@ -297,15 +292,18 @@ export function NasaSensorDeckModal({
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1 font-mono text-[11px] font-bold text-rose-200">
-                        <span>{p.flareClass}</span>
+                        <span>{tr(p.badge)}</span>
                         <span>{p.peakPfu} pfu</span>
                       </div>
                       <p className="mt-1 font-semibold text-white">{tr(p.name)}</p>
-                      <p className="mt-1 text-[11px] text-slate-300 line-clamp-2">{tr(p.summary)}</p>
+                      <p className="mt-1 text-[11px] text-slate-300">{tr(p.summary)}</p>
                     </button>
                   );
                 })}
               </div>
+              <a href={selectedPreset.sourceUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-sky-200 underline">
+                {az ? 'Seçilmiş ssenarinin mənbəsi / konteksti' : 'Selected scenario source / context'}
+              </a>
 
               {onSelectStormPeakPfu && (
                 <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
@@ -316,7 +314,7 @@ export function NasaSensorDeckModal({
                   </p>
                   <button type="button"
                     disabled={fetchingLive || activeDisplayPfu === activeStormPeakPfu}
-                    onClick={() => onSelectStormPeakPfu(activeDisplayPfu, selectedPresetId === 'live' ? 'DONKI' : tr(selectedPreset.name))}
+                    onClick={() => onSelectStormPeakPfu(activeDisplayPfu, tr(selectedPreset.name))}
                     className="rounded-lg border border-sky-300/50 bg-sky-500/20 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/30 disabled:opacity-50">
                     {az ? 'Seçilmiş fırtına ilə yeni sınağa başla' : 'Start new experiment with selected storm'}
                   </button>
@@ -325,34 +323,43 @@ export function NasaSensorDeckModal({
 
               {liveDonki && (
                 <div className="mt-2.5 rounded-lg border border-sky-300/30 bg-sky-950/40 px-3 py-2 text-xs text-sky-100">
-                  <strong>{liveDonki.liveFetched ? 'LIVE api.nasa.gov/DONKI:' : 'Offline Cached DONKI:'}</strong>{' '}
-                  {liveDonki.note} · Peak {liveDonki.flareClass} ({liveDonki.estimatedPeakPfu} pfu eq.)
+                  <p role="status">{liveDonki.status === 'live'
+                    ? az ? 'NASA DONKI-dən son alışma qeydləri (FLR):' : 'Recent NASA DONKI flare records (FLR):'
+                    : liveDonki.status === 'empty'
+                      ? az ? 'Son 30 gündə etibarlı alışma qeydi qaytarılmadı.' : 'No valid flare records returned for the last 30 days.'
+                      : az ? 'Canlı kataloq əlçatmazdır. Təlim ssenariləri oflayn işləyir.' : 'Live catalog unavailable. Training scenarios still work offline.'}</p>
+                  {liveDonki.events.map((event) => <p className="mt-1" key={event.id}>
+                    <a className="underline" href={event.link} target="_blank" rel="noreferrer">{event.flareClass} · {event.eventTime.replace('T', ' ').replace('.000Z', ' UTC')}</a>
+                  </p>)}
                 </div>
               )}
+              <p className="mt-2 text-xs text-slate-300">{az
+                ? 'FLR rentgen alışmalarını bildirir; pfu və ya ekipaj dozası vermir. Alışma qeydləri yuxarıdakı fırtına qiymətini və A/B gedişlərini dəyişmir.'
+                : 'FLR reports X-ray flares, not pfu or crew dose. Flare records do not change the selected storm peak or A/B runs.'}</p>
             </section>
 
-            {/* NASA OSDR RadLab: ISS Shielded Orbit vs Lunar Surface Unshielded */}
+            {/* Explicit classroom estimates from the same scripted pulse as gameplay. */}
             <figure className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
               <figcaption className="mb-2 flex flex-wrap items-center justify-between gap-2 px-2 text-xs">
                 <span className="flex items-center gap-1.5 font-semibold text-slate-100">
                   <ShieldAlert size={14} className="text-amber-300" />
                   {az
-                    ? 'NASA OSDR RadLab Müqayisəsi: BKS Orbiti vs. Qalxansız Ay Səthi (μGy/saat)'
-                    : 'NASA OSDR RadLab Comparison: ISS Magnetosphere vs. Unshielded Lunar Surface (μGy/h)'}
+                    ? 'Təlim doza sürəti · fərz edilən qalxan (mSv/saat)'
+                    : 'Training dose rate · assumed shielding (mSv/h)'}
                 </span>
-                <span className="font-mono text-[11px] text-amber-200">May 10–12, 2024</span>
+                <span className="font-mono text-[11px] text-amber-200">{az ? 'Ssenari saatı · ölçmə deyil' : 'Scenario hours · not measurements'}</span>
               </figcaption>
               <div className="h-44 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={[...OSDR_RADLAB_MAY2024_SERIES]} margin={{ top: 6, right: 14, bottom: 3, left: 4 }}>
+                  <ComposedChart data={dynamicStormSeries} margin={{ top: 6, right: 14, bottom: 3, left: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#223340" />
                     <XAxis dataKey="hour" unit=" h" stroke="#8da4aa" tick={{ fontSize: 11 }} />
-                    <YAxis stroke="#8da4aa" unit=" μGy/h" tick={{ fontSize: 11 }} />
+                    <YAxis stroke="#8da4aa" unit=" mSv/h" tick={{ fontSize: 11 }} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <Area
-                      type="monotone"
-                      dataKey="lunarSurfaceEstUgyHr"
-                      name={az ? 'Ay səthi (qalxansız)' : 'Lunar Surface (Unshielded)'}
+                      type="linear"
+                      dataKey="unshieldedDoseMsvPerHr"
+                      name={az ? 'Təlim · 100% keçiricilik' : 'Training · 100% transmission'}
                       stroke="#fb7185"
                       fill="#fb7185"
                       fillOpacity={0.2}
@@ -360,9 +367,9 @@ export function NasaSensorDeckModal({
                       isAnimationActive={false}
                     />
                     <Line
-                      type="monotone"
-                      dataKey="issDoseUgyHr"
-                      name={az ? 'BKS RadLab (Maqnitosfer)' : 'ISS RadLab (Magnetosphere)'}
+                      type="linear"
+                      dataKey="shieldedDoseMsvPerHr"
+                      name={az ? 'Təlim modulu · 25% keçiricilik' : 'Training habitat · 25% transmission'}
                       stroke="#38bdf8"
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
@@ -371,6 +378,9 @@ export function NasaSensorDeckModal({
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
+              <p className="mt-2 text-xs text-slate-300">{az
+                ? 'BKS/Ay telemetriyası göstərilmir. Real 2017 Mars ölçmələri başqa cihaz, spektr və atmosferə aiddir. Gy udulmuş enerjini, Sv isə radiasiya təsirinə görə çəkilən dozanı bildirir; onları birbaşa əvəz etmək olmaz. NASA-nın 600 mSv karyera həddi bu oyunun 50 mSv xəbərdarlığından ayrıdır.'
+                : 'No ISS/Moon telemetry is plotted. Actual 2017 Mars measurements involve different instruments, spectra and atmospheric shielding. Gy measures absorbed energy per mass; Sv expresses radiation-weighted dose. They are not interchangeable. NASA’s 600 mSv career limit is separate from this game’s 50 mSv warning.'}</p>
             </figure>
           </div>
         )}
@@ -384,10 +394,10 @@ export function NasaSensorDeckModal({
                   ? az ? '216 saatlıq ssenaridə görünən Günəş diski (%)' : '216-Hour Scenario Visible Solar Disk (%)'
                   : activeTab === 'diviner'
                   ? az ? 'Səth temperaturu (K)' : 'Surface Temperature (K)'
-                  : az ? `Proton axını ≥10 MeV (pik ${activeDisplayPfu} pfu)` : `Proton Flux ≥10 MeV (Peak ${activeDisplayPfu} pfu)`}
+                  : az ? `Uydurma ≥10 MeV axın profili (pik ${activeDisplayPfu} pfu)` : `Fictional ≥10 MeV flux profile (peak ${activeDisplayPfu} pfu)`}
               </span>
               <span className="text-slate-400">
-                {activeTab === 'donki' ? (az ? 'Fırtına saatı (0–48s)' : 'Storm hour (0–48h)') : t('missionHour')}
+                {activeTab === 'donki' ? (az ? 'Fırtına saatı (0–48 saat)' : 'Storm hour (0–48 h)') : t('missionHour')}
               </span>
             </figcaption>
             <div className="h-48 w-full">

@@ -96,7 +96,7 @@ export function MissionLaunchScreen({
           <div className="absolute inset-x-4 top-3.5 flex items-center justify-between">
             <span className="inline-flex items-center gap-2 rounded-full border border-[#c0e6aa]/40 bg-slate-950/75 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#c0e6aa] backdrop-blur-md">
               <Orbit size={13} />
-              {az ? 'AYIN CƏNUB QÜTBÜ · ŞEKLTON KƏNARI (89.9° C)' : 'LUNAR SOUTH POLE · SHACKLETON RIM (89.9° S)'}
+              {az ? 'AYIN CƏNUB QÜTBÜ · UYDURMA ŞEKLTON KƏNARI BAZASI' : 'LUNAR SOUTH POLE · FICTIONAL SHACKLETON RIM OUTPOST'}
             </span>
             <button
               type="button"
@@ -118,14 +118,14 @@ export function MissionLaunchScreen({
               OUTPOST <span className="font-light text-[#c0e6aa]">REPLAY</span>
             </h1>
             <span className="font-mono text-xs text-sky-300">
-              {az ? 'Gənc Astronavt Missiya Trenajoru' : 'Junior Astronaut Mission Trainer · NASA Data Driven'}
+              {az ? 'Gənc Astronavt Missiya Trenajoru' : 'Junior Astronaut Mission Trainer · NASA-informed'}
             </span>
           </div>
 
           <p className="mt-2 text-sm leading-relaxed text-slate-200">
             {az
-              ? 'Şeklton kraterinin kənarında 9 günlük (216 saat) ekspedisiyaya rəhbərlik edin! Burada Günəş üfüqdə 1,5° bucaqla sürüşür, 72 saatlıq dağ kölgəsi bazanı −183 °C şaxtaya salır və Günəş fırtınası yaxınlaşır. İstənilən qərarı Zaman Maşını ilə geri sarıb A və B gedişlərini müqayisə edin!'
-              : 'Command a 9-day (216-hour) expedition on Shackleton Crater Rim! Up here, the Sun skims sideways at 1.5°, a 72-hour mountain shadow plunges the base into −183 °C darkness, and a solar storm is inbound. Explore in 2.5D, then rewind any decision to compare Run A vs. Run B!'}
+              ? 'Şeklton kraterinin kənarında 9 günlük (216 saat) ekspedisiyaya rəhbərlik edin! Bu uydurma təlimdə 72 saatlıq zəif işıq dövrü, −183 °C səth temperaturu və zərrəcik fırtınası var. Bunlar NASA-nın baza üçün ölçmələri deyil. İstənilən qərarı Zaman Maşını ilə geri sarıb A və B gedişlərini müqayisə edin!'
+              : 'Command a 9-day (216-hour) expedition on Shackleton Crater Rim! This fictional training scenario includes 72 hours of reduced light, a −183 °C surface temperature and a particle storm. These are not NASA measurements for this outpost. Explore in 2.5D, then rewind any decision to compare Run A vs. Run B!'}
           </p>
 
           {/* Callsign + Dual-Layer Mode Picker */}
@@ -188,8 +188,8 @@ export function MissionLaunchScreen({
                 </span>
                 <p className="mt-1 text-xs leading-snug text-slate-200">
                   {az
-                    ? 'Tam kVt·s / kq / mSv proqnozlar, BVAD/LRO/DONKI düsturları və mənbələr.'
-                    : 'Full kWh / kg / mSv forecasts, LRO/BVAD/DONKI equations & citations open.'}
+                    ? 'Tam kVt·saat / kq / mSv təlim hesablamaları, NASA mənbələri və model fərziyyələri.'
+                    : 'Full kWh / kg / mSv training forecasts, NASA references and model assumptions.'}
                 </p>
               </button>
             </div>
@@ -230,7 +230,7 @@ export function MissionLaunchScreen({
               onClick={onOpen3DNasaDeck}
               className="inline-flex items-center gap-1.5 font-semibold text-sky-300 hover:text-sky-200"
             >
-              🛰️ {az ? '3D Şeklton Krateri və Canlı NASA DONKI Holoqramı →' : 'Explore 3D LOLA Crater & Live NASA DONKI Deck →'}
+              🛰️ {az ? '3D təlim relyefi və NASA DONKI mənbələri →' : 'Explore 3D teaching terrain & NASA DONKI sources →'}
             </button>
 
             <button
