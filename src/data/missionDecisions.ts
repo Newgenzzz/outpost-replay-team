@@ -200,12 +200,12 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Reqolitdən oksigen alan ISRU (yerli resurslardan istifadə) qurğusunu işə salın',
         },
         cadetLabel: {
-          en: 'Bake Moon rocks to make extra breathing oxygen (+3 kg O₂)',
-          az: 'Əlavə nəfəs oksigeni (+3 kq O₂) almaq üçün Ay daşlarını qızdırın',
+          en: 'Use electricity to extract oxygen bound in Moon rocks (+3 kg O₂)',
+          az: 'Elektriklə Ay daşlarında birləşmiş oksigeni ayırın (+3 kq O₂)',
         },
         cadetSummary: {
-          en: 'Extracts real breathing air right out of Moon dust (+10 Science & +8% Life Support), using extra battery power.',
-          az: 'Ay tozundan nəfəs havası çıxarır (+10 Elm və +8% Həyat Təminatı), lakin əlavə batareya enerjisi sərf edir.',
+          en: 'Uses an electrically powered extraction process to separate oxygen from minerals (+10 Science & +8% Life Support). The yield is assumed.',
+          az: 'Elektriklə işləyən proses minerallardan oksigen ayırır (+10 Elm və +8% Həyat Təminatı). Məhsuldarlıq fərziyyədir.',
         },
         effects: { powerKwh: -10, lifeSupportPct: 8, sciencePoints: 10 },
         resourceEffects: { oxygenKg: 3 },
@@ -235,8 +235,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Təzə kosmik göyərti üçün bənövşəyi bitki işıqlarını yandırın',
         },
         cadetSummary: {
-          en: 'Grows tasty greens in 5 days if the power never cuts out — sips water and electricity every hour.',
-          az: 'İşıq kəsilməsə 5 günə təzə göyərti yetişdirir — hər saat azca su və elektrik işlədir.',
+          en: 'Starts with 25-day-old greens; needs five more powered growing days, water and electricity. Low reserves pause growth.',
+          az: '25 günlük göyərti ilə başlayır; daha beş gün işıqlandırma, su və elektrik tələb edir. Ehtiyat azaldıqda böyümə dayanır.',
         },
         effects: { powerKwh: -3, sciencePoints: 4 },
         setsFlags: ['greenhouse'],
@@ -331,8 +331,8 @@ export const MISSION_DECISIONS: Decision[] = [
         powerStrategy: 'backup',
         setsFlags: ['fuelCellsSpent'],
         causeAndEffectExplanation: {
-          en: 'Fuel cells turn stored hydrogen and oxygen into 18 kWh of electricity, keeping instruments alive (+4 science). But the reactants are now used up — there is no emergency reserve for the final day.',
-          az: 'Yanacaq elementləri saxlanılan hidrogen və oksigeni 18 kVt·saat elektrikə çevirir və cihazları işlək saxlayır (+4 elm). Lakin reagentlər artıq istifadə olunub — son gün üçün qəza ehtiyatı qalmır.',
+          en: 'Fuel cells combine hydrogen and oxygen to produce electricity, water and heat. This exercise assumes a dedicated backup supply worth 18 kWh (+4 science); its gas masses, product water and heat are not tracked. Using it spends the final-day backup.',
+          az: 'Yanacaq elementləri hidrogen və oksigendən elektrik, su və istilik yaradır. Təlimdə ayrıca ehtiyat mənbəyi 18 kVt·saat verir (+4 elm); qaz kütlələri, yaranan su və istilik izlənmir. İstifadə son günün ehtiyatını sərf edir.',
         },
         nasaSourceCitation: {
           en: 'NASA BVAD — power and consumables assumptions; Mazarico et al. 2011 (LRO/LOLA) — shadow duration',

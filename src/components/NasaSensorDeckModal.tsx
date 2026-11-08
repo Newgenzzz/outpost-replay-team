@@ -135,8 +135,8 @@ export function NasaSensorDeckModal({
     bvad: {
       title: az ? 'NASA mühəndislik mənbələri · BVAD və ECLSS' : 'NASA engineering references · BVAD & ECLSS',
       body: az
-        ? 'BVAD qısa missiya üçün ekipaj üzvünün maddələr mübadiləsini modelləşdirir. BKS-də suyun 98%-nin geri qazanılması nümayiş etdirilib və Veggie kahı sınağı 33 gün davam edib.'
-        : 'BVAD models reference crew metabolism (0.82 kg O₂/day, 1.04 kg CO₂/day). The ISS demonstrated 98% closed-loop water recovery and 33-day Veggie crop growth.',
+        ? 'BVAD qısa missiya üçün ekipaj üzvünün maddələr mübadiləsini modelləşdirir. BKS-də toplanmış suyun 98%-nin geri qazanılması nümayiş etdirilib; VEG-01A kahısı 33 gündən sonra yığılıb. Bunlar Ay üçün bu bitki və su modelini təsdiqləmir.'
+        : 'BVAD models reference crew metabolism (0.82 kg O₂/day, 1.04 kg CO₂/day). The ISS demonstrated 98% recovery of collected water; VEG-01A lettuce was harvested after 33 days. Neither value validates this lunar crop or recycling model.',
       sources: [CITATIONS.BVAD, CITATIONS.ISS_ECLSS, CITATIONS.ISS_VEGGIE, CITATIONS.NASA_STD_3001],
     },
   }[activeTab];

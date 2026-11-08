@@ -115,7 +115,7 @@ export interface Citation {
   short: string;
   full: string;
   url: string;
-  agency: 'NASA' | 'NASA/NOAA' | 'Peer-reviewed (NASA mission data)';
+  agency: 'NASA' | 'NOAA' | 'NASA/NOAA' | 'Peer-reviewed (NASA mission data)';
 }
 
 /** Optional engineering preparations and field discoveries recorded as mission inputs. */

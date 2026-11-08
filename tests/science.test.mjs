@@ -96,3 +96,21 @@ test('training chart flux, dose rates and integral use the mission pulse and exp
   }
   for (const invalid of [-1, NaN, Infinity, 5001]) assert.throws(() => buildStormProfileForPeak(invalid));
 });
+
+// Guard scientific teaching boundaries: reference values are not process validation.
+test('retains BVAD reference metabolism and identifies the proton report as NOAA', () => {
+  assert.equal(science.ECLSS_BASELINES.o2KgPerCrewDay, 0.82);
+  assert.equal(science.ECLSS_BASELINES.co2KgPerCrewDay, 1.04);
+  assert.equal(science.CITATIONS.GOES_PROTONS.agency, 'NOAA');
+});
+
+test('Cadet crop and oxygen text and fuel-cell explanation disclose process boundaries', () => {
+  const [, d2, d3] = science.MISSION_DECISIONS;
+  assert.match(d2.choices[1].cadetLabel.en, /electricity.*bound/);
+  assert.doesNotMatch(d2.choices[1].cadetLabel.en, /Bake/);
+  assert.match(d2.choices[2].cadetSummary.en, /25-day-old.*five more/);
+  assert.match(d2.choices[2].cadetSummary.az, /25 günlük.*beş/);
+  assert.match(d3.choices[1].causeAndEffectExplanation.en, /water and heat/);
+  assert.match(d3.choices[1].causeAndEffectExplanation.en, /not tracked/);
+  assert.match(d3.choices[1].causeAndEffectExplanation.az, /su və istilik/);
+});

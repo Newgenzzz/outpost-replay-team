@@ -56,7 +56,7 @@ export const CITATIONS: Record<string, Citation> = {
     short: 'NOAA SWPC · GOES proton event summary (PRF 2541)',
     full: 'NOAA Space Weather Prediction Center, PRF 2541, 13 May 2024, p. 1. The 10 MeV channel at geosynchronous orbit peaked at 207 pfu on May 10 at 17:45 UTC.',
     url: 'https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf',
-    agency: 'NASA/NOAA',
+    agency: 'NOAA',
   },
   DONKI_API: {
     id: 'DONKI_API',
