@@ -237,8 +237,8 @@ export function runExperiment(source: RunInput): SimulationResult {
   for (const [i, choiceIndex] of choices.entries()) {
     const { solarCalibrated, icePrepared, eclssSealed, busPatched, extraIceCores,
       stormClamped, dishAligned, fieldSamplesCount } = input.phases[i].tasks;
-    // Preserve the existing four-extra-core simulation cap until the extraction milestone.
-    const normalizedExtraCores = Math.min(4, extraIceCores);
+    // Input validation accepts all five collectible field cores.
+    const normalizedExtraCores = extraIceCores;
     if (i === 0) appliedSolarCalibration = solarCalibrated;
     const decision = MISSION_DECISIONS[i];
     const baseChoice = decision.choices[choiceIndex];
@@ -326,18 +326,13 @@ export function runExperiment(source: RunInput): SimulationResult {
       elapsedHours = hour + 1;
       abortCause = depletionCause(resources);
 
-      const estProgress = (hour - startHour + 1) / phaseHours;
-      const estScience = clamp(
-        sciencePoints + (abortCause ? 0 : combinedEffects.sciencePoints * estProgress),
-        0,
-        100,
-      );
       hourlyHistory.push({
         hour: elapsedHours,
         powerKwh: r1(batteryKwh),
         lifeSupportPct: r1(abortCause ? 0 : crewReservePct(resources)),
         radiationMsv: r1(doseMsv),
-        sciencePoints: r1(estScience),
+        // Awards are committed at the phase endpoint after power and safety gates.
+        sciencePoints: r1(sciencePoints),
         oxygenKg: r2(resources.oxygenKg),
         waterKg: r2(resources.waterKg),
         foodKg: r2(resources.foodKg),
@@ -445,6 +440,19 @@ export function runExperiment(source: RunInput): SimulationResult {
       });
     }
 
+    const shedLimit = power.loadReductionKwh - powerPlan.loadReductionKwh * power.simulatedHours;
+    if (shedLimit < -1e-9) {
+      contributions.push({ source: 'rule', delta: { powerKwh: r1(shedLimit) },
+        label: { en: 'Load shedding limited to discretionary demand', az: 'Yük azaltması yalnız vacib olmayan tələbə tətbiq edilir' } });
+    }
+    if (power.curtailedKwh > 0) {
+      contributions.push({ source: 'rule', delta: { powerKwh: r1(-power.curtailedKwh) },
+        label: { en: 'Generation curtailed at battery capacity', az: 'Batareya dolduqda istifadə edilməyən enerji' } });
+    }
+    if (power.unservedKwh > 0) {
+      contributions.push({ source: 'rule', delta: { powerKwh: r1(power.unservedKwh) },
+        label: { en: 'Unserved demand: energy unavailable, not drawn from battery', az: 'Ödənilməyən tələb: enerji yoxdur, batareyadan çıxılmır' } });
+    }
     if (power.unservedTaskKwh > 0 && taskFraction < 1) {
       contributions.push({
         source: 'rule',
@@ -498,8 +506,8 @@ export function runExperiment(source: RunInput): SimulationResult {
         source: 'rule',
         delta: balanceAdjustment,
         label: {
-          en: 'System capacity limits & reserve rounding',
-          az: 'Sistem tutumu hədləri və ehtiyat yuvarlaqlaşdırması',
+          en: 'Science limits, crew reserve/health limits and rounding',
+          az: 'Elm hədləri, ekipaj ehtiyatı/sağlamlıq hədləri və yuvarlaqlaşdırma',
         },
       });
     }
@@ -577,12 +585,12 @@ export const OUTCOME_MULTIPLIER: Record<Exclude<Outcome, 'in-progress'>, number>
   abort: 0.4,
 };
 
-/** Mission score = (S + 0.25·LS + 0.15·P − 2·max(0, R − 50)) × safety multiplier. */
+/** Weighted classroom score, rounded and bounded to 0–100 after the safety multiplier. */
 export function missionScore(s: MetricState, outcome: Exclude<Outcome, 'in-progress'>): number {
   const raw =
     s.sciencePoints + 0.25 * s.lifeSupportPct + 0.15 * s.powerKwh -
     2 * Math.max(0, s.radiationMsv - RADIATION_LIMITS.missionWarningMsv);
-  return Math.round(raw * OUTCOME_MULTIPLIER[outcome]);
+  return clamp(Math.round(raw * OUTCOME_MULTIPLIER[outcome]), 0, 100);
 }
 
 /* ------------------------------------------------------------------ */

@@ -437,8 +437,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Batareyaları doldurmaq və su filtrlərini təmir etmək üçün bazada qalın',
         },
         cadetSummary: {
-          en: 'Boosts battery (+10 kWh) and air/water health (+6% Life Support), plus bonus repair parts if you built the O₂ machine!',
-          az: 'Batareyanı (+10 kVt·s) və hava/su sistemini (+6%) gücləndirir; O₂ maşını qurmusunuzsa əlavə bonus verir!',
+          en: 'Sheds up to 6 kWh of non-essential load and services air/water equipment. Check the forecast for net reserves; the O₂ kit adds repair parts.',
+          az: 'Vacib olmayan yükü 6 kVt·saata qədər azaldır və hava/su avadanlığına xidmət edir. Xalis ehtiyatlara proqnozda baxın; O₂ dəsti təmir hissələri verir.',
         },
         effects: { powerKwh: 10, lifeSupportPct: 6, sciencePoints: 3 },
         powerStrategy: 'load-shed',

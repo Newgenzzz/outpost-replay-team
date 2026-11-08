@@ -34,7 +34,7 @@ const bundle = await build({
 });
 const [{ code }] = bundle.output;
 const {
-  advancePower, buildStormProfileForPeak, compareRuns, computeRimIllumination, CRATER_DEPTH_KM, CROP_TRIAL,
+  advancePower, advanceResources, emptyResourceFlows, missionScore, buildStormProfileForPeak, compareRuns, computeRimIllumination, CRATER_DEPTH_KM, CROP_TRIAL,
   applyRunChoice, cloneRunInput, createRunInput, getPhaseContext, getRunTasks, normalizePhaseTasks,
   ECLSS_BASELINES, INITIAL_RESOURCES, integrateSepDoseMsv, LCROSS_CABEUS, estimateSitePower, evaluateShadowPrediction, recordShadowPrediction,
   LUNAR_PLANNING_SITES, MISSION_DECISIONS, MISSION_DEMO, newEnvironmentDetail, phasePowerPlan,
@@ -239,6 +239,7 @@ test('conserves energy and crew stores across all 729 routes for every station s
     const choices = [...(input % routeCount).toString(3).padStart(6, '0')].map(Number);
     const result = runSimulation(choices, equipmentSettings[Math.floor(input / routeCount)]);
     outcomes.add(result.outcome);
+    assert.ok(result.score === null || (result.score >= 0 && result.score <= 100));
     assert.equal(result.history.length, result.steps.length + 1);
     assert.equal(result.resourceHistory.length, result.history.length);
     for (const step of result.steps) {
@@ -457,4 +458,77 @@ test('orders all effective phase input differences chronologically through one c
   const short = runExperiment(createRunInput([0, 0]));
   assert.deepEqual(compareRuns(short, base).changedSteps, []);
   assert.equal(compareRuns(short, base).firstDivergence, null); // No two matching reached records for later phases.
+});
+
+test('scores stay in 0–100 and retain the established judge scores', () => {
+  for (const outcome of ['success', 'warning', 'abort']) {
+    assert.equal(missionScore({ sciencePoints: 100, lifeSupportPct: 100, powerKwh: 100, radiationMsv: 0 }, outcome) <= 100, true);
+    assert.equal(missionScore({ sciencePoints: 0, lifeSupportPct: 0, powerKwh: 0, radiationMsv: 1000 }, outcome), 0);
+  }
+  assert.equal(runSimulation(MISSION_DEMO.baseline).score, 54);
+  assert.equal(runSimulation(MISSION_DEMO.branch).score, 66);
+});
+
+test('all five cores supply feedstock once at D4 and conserve treated water', () => {
+  for (let cores = 0; cores <= 5; cores++) {
+    for (const prepared of [false, true]) {
+      const run = runSimulation([1, 0, 1, 0], { extraIceCores: cores, icePrepared: prepared });
+      assert.equal(run.extraIceCores, cores);
+      near(run.steps[3].resourceFlows.waterExtractedKg, (20 + cores * 3) * 0.056 * (prepared ? 0.75 : 0.6), 0.001);
+      near(run.steps[2].resourceFlows.waterExtractedKg, 0);
+      assert.deepEqual(run, runExperiment(run.input));
+    }
+  }
+});
+
+test('hourly science reports committed awards rather than unearned provisional points', () => {
+  for (const run of [runSimulation(MISSION_DEMO.baseline), runSimulation([2, 1, 2, 0, 2, 0])]) {
+    for (const step of run.steps) {
+      for (const point of run.hourlyHistory.filter(p => p.hour > step.startHour && p.hour < step.endHour)) {
+        assert.equal(point.sciencePoints, step.before.sciencePoints);
+      }
+      assert.equal(run.hourlyHistory[step.endHour].sciencePoints, step.after.sciencePoints);
+    }
+  }
+});
+
+test('partial task power scales oxygen and ice production while crew stores balance at exhaustion', () => {
+  for (const fraction of [0, 0.25, 1]) {
+    const resources = { ...INITIAL_RESOURCES };
+    const flows = emptyResourceFlows();
+    const choice = { ...MISSION_DECISIONS[3].choices[0], resourceEffects: { oxygenKg: 3 }, iceProcessingKg: 35 };
+    advanceResources(resources, flows, choice, 24, 0, false, false, false, fraction, true);
+    near(flows.oxygenAddedKg, 3 / 24 * fraction, 1e-9);
+    near(flows.waterExtractedKg, 35 / 24 * 0.056 * 0.75 * fraction, 1e-9);
+    near(resources.oxygenKg, 18 + flows.oxygenAddedKg - flows.oxygenUsedKg, 1e-9);
+    near(resources.waterKg, 16 + flows.waterAddedKg + flows.waterRecoveredKg - flows.waterUsedKg, 1e-9);
+    near(resources.foodKg, 14 + flows.rationAddedKg - flows.rationUsedKg, 1e-9);
+  }
+  const depleted = { ...INITIAL_RESOURCES, oxygenKg: 0.001, waterKg: 0.001, foodKg: 0.001 };
+  const flows = emptyResourceFlows();
+  advanceResources(depleted, flows, MISSION_DECISIONS[0].choices[0], 24, 0, true, true, false, 0);
+  assert.equal(depleted.oxygenKg, 0);
+  near(depleted.waterKg, 0, 1e-9);
+  assert.equal(depleted.foodKg, 0);
+});
+
+test('battery extremes account explicitly for curtailed supply and unserved demand', () => {
+  for (const battery of [0, 100]) {
+    const env = newEnvironmentDetail(1);
+    const plan = { taskLoadKwh: battery === 0 ? 2 : 0, loadReductionKwh: 0, supplementalGenerationKwh: battery === 0 ? 0 : 10 };
+    const frame = advancePower(env, plan, 96, new Set(), { ...INITIAL_RESOURCES }, battery);
+    near(frame.batteryKwh - battery, env.generationKwh + env.supplementalGenerationKwh - env.loadKwh - env.heaterKwh - env.taskLoadKwh - env.greenhouseLoadKwh - env.curtailedKwh + env.unservedKwh, 1e-9);
+    assert.ok(frame.batteryKwh >= 0 && frame.batteryKwh <= 100);
+    assert.ok(battery === 0 ? env.unservedKwh > 0 : env.curtailedKwh > 0);
+  }
+});
+
+test('maintenance ledger explains its load-shedding cap instead of hiding missing energy in rounding', () => {
+  const step = runSimulation([1, 0, 1, 1]).steps[3];
+  near(step.env.loadReductionKwh, 6, 0.001);
+  const cap = step.contributions.find(c => c.label.en === 'Load shedding limited to discretionary demand');
+  assert.ok(cap);
+  near(cap.delta.powerKwh, -4);
+  const residual = step.contributions.find(c => c.label.en === 'Science limits, crew reserve/health limits and rounding');
+  assert.ok(Math.abs(residual?.delta.powerKwh ?? 0) <= 0.2);
 });

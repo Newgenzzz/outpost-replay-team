@@ -78,3 +78,7 @@ Facility readouts visualize the selected simulation snapshot. The shade layer fo
 The optional ridge investigation reuses the fictional Laser Altimetry Marker and its existing field-point award. Logging it on the map unlocks a question about local terrain, the visible horizon, and illumination. It collects no real altimetry or solar measurement. The explanation links to the existing NASA LOLA reference and the Sunlight planner. The planner's **Trace the evidence** controls distinguish laser return-time measurements from the research illumination models and the exercise's own load, storage, and lighting assumptions.
 
 Open **Science & Sources** in the game to see how the published values relate to the scenario. The end-of-mission Evidence panel lists the training equations and source links. The code separates the power budget, resource ledger, and deterministic mission calculation under `src/engine/`.
+
+## M3 engineering accounting clarification
+
+The five collectible cores each add an assumed 3 kg of icy regolith to D4-A (up to 35 kg total feed), not 3 kg of pure ice. At full task power, five cores yield 1.176 kg of treated water at 60% recovery or 1.47 kg at 75%; lower delivered power reduces yield. All five now participate in the calculation. Mission scoring remains a classroom weighting with an explicit 0–100 bound, and hourly science charts show committed phase awards rather than provisional points. No NASA physical parameter or radiation assumption was changed for M3.

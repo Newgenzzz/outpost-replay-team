@@ -344,6 +344,8 @@ export default function DecisionCard(props: DecisionCardProps) {
   const stationMeta = STATION_BONUS_META[step] ?? STATION_BONUS_META[1];
 
   const inspectedIdx = inspectedChoice ?? activeChoice ?? 0;
+  const earlierSamples = Math.max(0, ...runInput.phases.slice(0, step - 1).map(p => p.tasks.fieldSamplesCount));
+  const newSamples = Math.max(0, (collectedSamplesCount ?? 0) - earlierSamples);
   const forecasts = useMemo(() => {
     const prefix = { ...runInput, phases: runInput.phases.slice(0, step - 1) };
     if (prefix.phases.length !== step - 1) return [];
@@ -359,6 +361,7 @@ export default function DecisionCard(props: DecisionCardProps) {
   }, [decision, runInput, step, effectiveTasks, stepTaskEnabled]);
 
   const forecastStep = forecasts[inspectedIdx];
+  const ledgerRecord = forecastStep ?? record;
   const conditionals = previewChoiceEffects(step, inspectedIdx, flagsBefore).conditionals;
   const kg = lang === 'az' ? 'kq' : 'kg';
   const pp = lang === 'az' ? 'faiz b.' : 'pp';
@@ -545,16 +548,16 @@ export default function DecisionCard(props: DecisionCardProps) {
                   ? 'Model üzrə mərhələnin əvvəlindən sonuna dəyişiklik (əvvəlki qərarlar və stansiya bonusları daxil olmaqla):'
                   : 'Modeled delta from start to end of this phase (including prior flags and active station bonuses):'}
             </p>
-            {((minedCount ?? 0) > 0 || (collectedSamplesCount ?? 0) > 0) && (
+            {((step === 4 && inspectedIdx === 0 && (minedCount ?? 0) > 0) || newSamples > 0) && (
               <span className="inline-flex items-center gap-2 font-mono text-[10.5px] text-emerald-200">
-                {(minedCount ?? 0) > 0 && (
+                {step === 4 && inspectedIdx === 0 && (minedCount ?? 0) > 0 && (
                   <span className="inline-flex items-center gap-1 rounded border border-sky-400/35 bg-sky-500/15 px-1.5 py-0.5">
-                    <Snowflake size={11} className="text-sky-300" /> +{(minedCount ?? 0) * 3} {kg} 90K ice
+                    <Snowflake size={11} className="text-sky-300" /> +{(minedCount ?? 0) * 3} {kg} {lang === 'az' ? 'buzlu reqolit xammalı' : 'icy regolith feedstock'}
                   </span>
                 )}
-                {(collectedSamplesCount ?? 0) > 0 && (
+                {newSamples > 0 && (
                   <span className="inline-flex items-center gap-1 rounded border border-amber-400/35 bg-amber-500/15 px-1.5 py-0.5">
-                    <Sparkles size={11} className="text-amber-300" /> +{(collectedSamplesCount ?? 0) * 2} {t('unitPts')}
+                    <Sparkles size={11} className="text-amber-300" /> {lang === 'az' ? 'Yeni nümunələr: ən çox' : 'New samples: up to'} +{newSamples * 2} {t('unitPts')}
                   </span>
                 )}
               </span>
@@ -934,13 +937,13 @@ export default function DecisionCard(props: DecisionCardProps) {
             </div>
           )}
 
-          {record && (
+          {ledgerRecord && (
             <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
               <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
                 <CheckCircle2 className="h-3.5 w-3.5" /> {t('stepBreakdown')}
               </p>
               <ul className="mt-1.5 space-y-1.5">
-                {record.contributions.map((c, i) => (
+                {ledgerRecord.contributions.map((c, i) => (
                   <li key={i} className="flex flex-col gap-0.5 border-b border-slate-800/80 pb-1.5 last:border-0">
                     <span className="text-[11px] text-slate-400">
                       <span className="mr-1 rounded bg-slate-800 px-1 text-[9px] font-semibold uppercase text-slate-300">
@@ -961,7 +964,7 @@ export default function DecisionCard(props: DecisionCardProps) {
                 ))}
                 <li className="flex flex-col gap-0.5 pt-0.5">
                   <span className="text-[11px] font-semibold text-slate-200">{t('result')}</span>
-                  <DeltaChips delta={record.delta} size="xs" />
+                  <DeltaChips delta={ledgerRecord.delta} size="xs" />
                 </li>
               </ul>
             </div>
