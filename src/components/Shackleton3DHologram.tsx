@@ -1,5 +1,7 @@
-import { Component, type ReactNode, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { renderCounter } from '../utils/renderDiagnostics';
+import { hologramFrameLoop } from '../utils/renderPolicy';
 import { Html, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { Compass, Pause, Play, ArrowUpFromLine, Sun } from 'lucide-react';
@@ -43,9 +45,12 @@ function ShackletonScene({
   az,
 }: TerrainMeshProps) {
   const azimuthRef = useRef(solarAzimuthDeg);
+  const gl = useThree(state => state.gl);
+  const countFrame = useMemo(() => renderCounter(gl.domElement, 'three'), [gl]);
   azimuthRef.current = solarAzimuthDeg;
 
   useFrame((_, delta) => {
+    countFrame();
     if (autoRotateSun) {
       const next = (azimuthRef.current + delta * 18) % 360;
       onTickAzimuth(next);
@@ -98,6 +103,9 @@ function ShackletonScene({
     geo.computeVertexNormals();
     return geo;
   }, []);
+
+  // This geometry is created outside Fiber's declarative resource tree; we own its disposal.
+  useEffect(() => () => geometry.dispose(), [geometry]);
 
   const sunRad = (solarAzimuthDeg * Math.PI) / 180;
   // Grazing polar sun ~4.5 deg visual angle in exaggerated scene coordinates
@@ -208,13 +216,19 @@ function ShackletonScene({
   );
 }
 
-export function Shackleton3DHologram({ compact = false }: { compact?: boolean }) {
+export function Shackleton3DHologram({ compact = false, active = true }: { compact?: boolean; active?: boolean }) {
   const { lang } = useI18n();
   const az = lang === 'az';
   const [solarAzimuthDeg, setSolarAzimuthDeg] = useState(128);
   const [mastHeightMeters, setMastHeightMeters] = useState<2 | 10>(10);
   const [activeSite, setActiveSite] = useState<'S' | 'C1'>('S');
-  const [autoRotateSun, setAutoRotateSun] = useState(true);
+  const [autoRotateSun, setAutoRotateSun] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const changed = () => { if (preference.matches) setAutoRotateSun(false); };
+    preference.addEventListener('change', changed);
+    return () => preference.removeEventListener('change', changed);
+  }, []);
 
   const illum10m = computeRimIllumination(solarAzimuthDeg, 10, activeSite);
   const illum2m = computeRimIllumination(solarAzimuthDeg, 2, activeSite);
@@ -284,9 +298,12 @@ export function Shackleton3DHologram({ compact = false }: { compact?: boolean })
       <div className={`${compact ? 'h-56' : 'h-72'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-gradient-to-b from-[#02060d] to-[#081826]`}>
         <WebGLErrorBoundary fallback={fallback2D}>
           <Canvas
-            shadows
+            shadows={{ type: THREE.PCFShadowMap }}
+            frameloop={hologramFrameLoop(active, autoRotateSun)}
+            dpr={[1, 1.5]}
+            fallback={fallback2D}
             camera={{ position: [0, 6.2, 8.8], fov: 42 }}
-            gl={{ antialias: true, powerPreference: 'high-performance' }}
+            gl={{ antialias: true, powerPreference: 'default' }}
           >
             <ShackletonScene
               solarAzimuthDeg={solarAzimuthDeg}

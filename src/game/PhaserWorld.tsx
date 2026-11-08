@@ -1,6 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { LunarWorld } from './LunarWorld';
+import { renderCounter } from '../utils/renderDiagnostics';
+import { destroyWorldRenderer, updateWorldRendering } from '../utils/renderPolicy';
 import type {
   Point,
   StationNode,
@@ -23,6 +25,8 @@ export interface WorldHandle {
 interface Props {
   snapshot: WorldSnapshot;
   paused: boolean;
+  /** Freeze the obscured world while the science deck owns the GPU. Queued changes apply on wake. */
+  suspendRendering?: boolean;
   label: string;
   onReady: () => void;
   onError: (message: string) => void;
@@ -38,6 +42,7 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
   const host = useRef<HTMLDivElement>(null);
   const bridge = useRef<WorldBridge | null>(null);
   const latest = useRef(props);
+  const instance = useRef<Phaser.Game | null>(null);
 
   useLayoutEffect(() => {
     latest.current = props;
@@ -46,6 +51,10 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       bridge.current.snapshot = props.snapshot;
     }
   }, [props]);
+
+  useEffect(() => {
+    if (instance.current) updateWorldRendering(instance.current, Boolean(props.suspendRendering));
+  }, [props.suspendRendering]);
 
   useImperativeHandle(
     ref,
@@ -139,6 +148,12 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       return;
     }
 
+    instance.current = game;
+    // READY precedes loop.start. Also reapply suspension after a browser visibility resume.
+    game.events.on(Phaser.Core.Events.POST_RENDER, () => updateWorldRendering(game, Boolean(latest.current.suspendRendering)));
+    game.events.once(Phaser.Core.Events.READY, () => {
+      game.events.on(Phaser.Core.Events.POST_RENDER, renderCounter(game.canvas, 'phaser'));
+    });
     const observer = new ResizeObserver(() => {
       const element = host.current;
       if (element && game.isBooted) game.scale.resize(element.clientWidth, element.clientHeight);
@@ -156,7 +171,8 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       observer.disconnect();
       window.removeEventListener('blur', blur);
       bridge.current = null;
-      game.destroy(true);
+      instance.current = null;
+      destroyWorldRenderer(game);
     };
   }, []);
 

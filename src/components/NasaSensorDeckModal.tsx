@@ -46,7 +46,7 @@ import {
 import type { StormPresetId } from '../types';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import LunarSiteIntelligence from './LunarSiteIntelligence';
-import { Shackleton3DHologram } from './Shackleton3DHologram';
+import { Shackleton3DHologram } from './ShackletonHologram';
 
 interface NasaSensorDeckModalProps {
   onClose: () => void;

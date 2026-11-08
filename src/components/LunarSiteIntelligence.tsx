@@ -4,7 +4,7 @@ import { LUNAR_PLANNING_SITES, LUNAR_SITE_SOURCE } from '../data/lunarSiteIntell
 import { GAME_CONSTANTS } from '../data/nasaTelemetry';
 import { estimateSitePower } from '../engine/sitePowerPlanning';
 import { useI18n } from '../i18n/LanguageContext';
-import { Shackleton3DHologram } from './Shackleton3DHologram';
+import { Shackleton3DHologram } from './ShackletonHologram';
 
 export default function LunarSiteIntelligence({ hide3D = false }: { hide3D?: boolean }) {
   const { lang, t, tr } = useI18n();

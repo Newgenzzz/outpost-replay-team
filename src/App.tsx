@@ -1371,6 +1371,7 @@ export default function App() {
           ref={world}
           snapshot={worldSnapshot}
           paused={anyOverlayOpen}
+          suspendRendering={sensorDeckOpen}
           label={
             lang === 'az'
               ? 'Şeklton bazasının 2.5D interaktiv mühiti'
