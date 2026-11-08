@@ -709,8 +709,8 @@ export class LunarWorld extends Phaser.Scene {
         [f.x + dx - f.width / 4, f.y + f.height / 2 + dy],
         [f.x - f.width / 2, f.y + f.height / 2],
       ].map(([x, y]) => new Phaser.Math.Vector2(x, y));
-      g.fillStyle(0x0f2537, 0.26).fillPoints(pts, true);
-      g.fillStyle(0x0e2030, 0.18).fillEllipse(
+      g.fillStyle(0x0a2034, 0.36).fillPoints(pts, true);
+      g.fillStyle(0x0a2034, 0.24).fillEllipse(
         f.x + 5,
         f.y + f.height * 0.4,
         f.width * 1.12,
@@ -861,10 +861,10 @@ export class LunarWorld extends Phaser.Scene {
       ],
     ];
     for (const route of conduits) {
-      g.lineStyle(6, 0x1c2e3f, 0.72).beginPath().moveTo(route[0][0], route[0][1]);
+      g.lineStyle(5, 0x172e3e, 0.46).beginPath().moveTo(route[0][0], route[0][1]);
       for (const [x, y] of route.slice(1)) g.lineTo(x, y);
       g.strokePath();
-      g.lineStyle(2, 0x86a3aa, 0.62).beginPath().moveTo(route[0][0], route[0][1]);
+      g.lineStyle(1.5, 0x99b5bb, 0.35).beginPath().moveTo(route[0][0], route[0][1]);
       for (const [x, y] of route.slice(1)) g.lineTo(x, y);
       g.strokePath();
     }

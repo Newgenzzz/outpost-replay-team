@@ -84,3 +84,7 @@ See IMPLEMENTATION_LOG.md for actual M6 checks and limitations. Technical local 
 ## M5 player-experience follow-up · 8 November 2026
 
 M5 adds endpoint battery/low-reserve/early-stop feedback, explicit Apply-time guidance and complete effective-preparation replay markers. All 47 tests, TypeScript and build passed; focused EN/AZ production Chromium checks at 1366×768 and 1600×900 and Guided Demo retained the documented results. No simulation or scientific parameter changed. The previous M6 artifact hashes refer to M6 only: rebuild and retain the latest approved artifact before publication. All external release gates above still apply; see IMPLEMENTATION_LOG.md for the executed M5 checks and limits.
+
+## Focused visual follow-up · 9 November 2026
+
+Circular procedural relief presentation and baked lunar-world lighting were refined after M5. No NASA terrain was integrated, and model equations/input recording are unchanged. All 49 tests, TypeScript checks and production build passed; before/after EN captures and AZ/control/demo checks were inspected at 1366×768 and 1600×900. Callback measurements preserve demand rendering but do not certify integrated-GPU performance. Previous artifact hashes refer to earlier releases: retain and test the final approved artifact before publishing. All licensing, prior-work, current-guide and publication gates above remain open.

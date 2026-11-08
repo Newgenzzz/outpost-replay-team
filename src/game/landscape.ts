@@ -63,9 +63,9 @@ export function terrain(): SvgAsset {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1120" viewBox="0 0 1840 1120" fill="none">
       <defs>
         <radialGradient id="ground" cx=".34" cy=".26" r=".88">
-          <stop stop-color="#a79d8b"/>
-          <stop offset=".50" stop-color="#777879"/>
-          <stop offset="1" stop-color="#435360"/>
+          <stop stop-color="#afa48e"/>
+          <stop offset=".50" stop-color="#63737c"/>
+          <stop offset="1" stop-color="#2d465c"/>
         </radialGradient>
         <linearGradient id="crater" x1=".1" y1=".1" x2=".7" y2="1">
           <stop stop-color="#142330"/>
@@ -78,19 +78,19 @@ export function terrain(): SvgAsset {
           <stop offset="1" stop-color="#424b54"/>
         </linearGradient>
         <linearGradient id="sunlit-ridge" x1="0" y1="0" x2=".85" y2="1">
-          <stop stop-color="#a89e8a"/>
-          <stop offset=".6" stop-color="#878074"/>
-          <stop offset="1" stop-color="#626569"/>
+          <stop stop-color="#c0b39a"/>
+          <stop offset=".6" stop-color="#8d8c7f"/>
+          <stop offset="1" stop-color="#586570"/>
         </linearGradient>
         <linearGradient id="ridge-cliff" x1="0" y1="0" x2="0" y2="1">
-          <stop stop-color="#4e5861"/>
-          <stop offset=".55" stop-color="#283846"/>
-          <stop offset="1" stop-color="#172634"/>
+          <stop stop-color="#526978"/>
+          <stop offset=".55" stop-color="#253e53"/>
+          <stop offset="1" stop-color="#10253b"/>
         </linearGradient>
         <radialGradient id="cold-trap" cx=".55" cy=".55" r=".62">
-          <stop stop-color="#3b4b57"/>
-          <stop offset=".58" stop-color="#303f4d"/>
-          <stop offset="1" stop-color="#222f3c"/>
+          <stop stop-color="#365268"/>
+          <stop offset=".58" stop-color="#243d52"/>
+          <stop offset="1" stop-color="#172d44"/>
         </radialGradient>
       </defs>
 

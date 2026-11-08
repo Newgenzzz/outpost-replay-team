@@ -8,12 +8,12 @@ const bundle = await build({
   plugins: [{
     name: 'rendering-test-entry',
     resolveId: id => id === entry ? `\0${id}` : null,
-    load: id => id === `\0${entry}` ? `export * from '/src/utils/renderPolicy.ts';` : null,
+    load: id => id === `\0${entry}` ? `export * from '/src/utils/renderPolicy.ts'; export * from '/src/components/hologramGeometry.ts';` : null,
   }],
   build: { write: false, minify: false, rollupOptions: { input: entry, output: { format: 'es' }, preserveEntrySignatures: 'strict' } },
 });
 const [{ code }] = bundle.output;
-const { destroyWorldRenderer, hologramFrameLoop, updateWorldRendering } =
+const { buildHologramRelief, destroyWorldRenderer, hologramFrameLoop, updateWorldRendering } =
   await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 test('hologram draws continuously only when visible and rotating', () => {
@@ -71,4 +71,33 @@ test('running-world disposal keeps its already scheduled cleanup step without an
   const { calls, game } = worldStub();
   destroyWorldRenderer(game);
   assert.deepEqual(calls, [['destroy', true]]);
+});
+
+test('circular relief has finite upward faces, a closed display skirt and a lower triangle budget', () => {
+  const { terrain, skirt } = buildHologramRelief();
+  const positions = terrain.getAttribute('position');
+  const normals = terrain.getAttribute('normal');
+  for (let i = 0; i < positions.count; i++) {
+    assert.ok(Math.hypot(positions.getX(i), positions.getZ(i)) <= 6.000001);
+    assert.ok(Number.isFinite(positions.getY(i)));
+    assert.ok(Number.isFinite(normals.getY(i)) && normals.getY(i) > 0);
+  }
+  for (const mesh of [terrain, skirt]) {
+    assert.ok([...mesh.index.array].every(index => index >= 0 && index < mesh.getAttribute('position').count));
+  }
+  const side = skirt.getAttribute('position');
+  assert.deepEqual([...side.array.slice(0, 6)], [...side.array.slice(-6)]);
+  assert.ok((terrain.index.count + skirt.index.count) / 3 < 84 * 84 * 2);
+  terrain.dispose(); skirt.dispose();
+});
+
+test('relief display geometry is deterministic across recreation', () => {
+  const a = buildHologramRelief();
+  const b = buildHologramRelief();
+  for (const name of ['terrain', 'skirt']) {
+    for (const attribute of ['position', 'normal']) {
+      assert.deepEqual(a[name].getAttribute(attribute).array, b[name].getAttribute(attribute).array);
+    }
+    a[name].dispose(); b[name].dispose();
+  }
 });

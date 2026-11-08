@@ -1,10 +1,11 @@
-import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Component, type ReactNode, type ElementRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { renderCounter } from '../utils/renderDiagnostics';
 import { hologramFrameLoop } from '../utils/renderPolicy';
+import { buildHologramRelief } from './hologramGeometry';
 import { Html, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { Compass, Pause, Play, ArrowUpFromLine, Sun } from 'lucide-react';
+import { Compass, Pause, Play, ArrowUpFromLine, Sun, RotateCcw } from 'lucide-react';
 import { useI18n } from '../i18n/LanguageContext';
 import {
   SHACKLETON_MARKERS,
@@ -33,7 +34,7 @@ interface TerrainMeshProps {
   activeSite: 'S' | 'C1';
   autoRotateSun: boolean;
   onTickAzimuth: (next: number) => void;
-  az: boolean;
+  viewReset: number;
 }
 
 function ShackletonScene({
@@ -42,7 +43,7 @@ function ShackletonScene({
   activeSite,
   autoRotateSun,
   onTickAzimuth,
-  az,
+  viewReset,
 }: TerrainMeshProps) {
   const azimuthRef = useRef(solarAzimuthDeg);
   const gl = useThree(state => state.gl);
@@ -57,58 +58,14 @@ function ShackletonScene({
     }
   });
 
-  const geometry = useMemo(() => {
-    const segs = 84;
-    const size = 12;
-    const geo = new THREE.PlaneGeometry(size, size, segs, segs);
-    geo.rotateX(-Math.PI / 2);
-
-    const pos = geo.attributes.position;
-    const colors = new Float32Array(pos.count * 3);
-    const color = new THREE.Color();
-
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getZ(i);
-      const nx = x / (size * 0.5);
-      const nz = z / (size * 0.5);
-      const elevKm = sampleShackletonElevationKm(nx, nz);
-      // Vertical exaggeration 0.52 world-units per km for crisp 3D relief
-      const y = elevKm * 0.52;
-      pos.setY(i, y);
-
-      // Artistic colors by synthetic elevation; not Diviner temperature or ice measurements.
-      if (elevKm < -2.6) {
-        // Illustrative cold-trap floor.
-        color.setRGB(0.11, 0.34, 0.52);
-      } else if (elevKm < -0.5) {
-        // Steep inner crater walls — dark lunar basalt
-        const t = (elevKm + 2.6) / 2.1;
-        color.setRGB(0.16 + t * 0.22, 0.20 + t * 0.22, 0.28 + t * 0.20);
-      } else if (elevKm < 0.75) {
-        // Regolith plains & ejecta apron
-        const t = (elevKm + 0.5) / 1.25;
-        color.setRGB(0.42 + t * 0.22, 0.45 + t * 0.22, 0.49 + t * 0.20);
-      } else {
-        // Bright illustrative rim crests; continuous light is not guaranteed.
-        color.setRGB(0.84, 0.85, 0.80);
-      }
-
-      colors[i * 3] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
-    }
-
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geo.computeVertexNormals();
-    return geo;
-  }, []);
-
-  // This geometry is created outside Fiber's declarative resource tree; we own its disposal.
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const { terrain: geometry, skirt } = useMemo(buildHologramRelief, []);
+  const controls = useRef<ElementRef<typeof OrbitControls>>(null);
+  useEffect(() => { controls.current?.saveState(); }, []);
+  useEffect(() => { if (viewReset) controls.current?.reset(); }, [viewReset]);
+  useEffect(() => () => { geometry.dispose(); skirt.dispose(); }, [geometry, skirt]);
 
   const sunRad = (solarAzimuthDeg * Math.PI) / 180;
-  // Grazing polar sun ~4.5 deg visual angle in exaggerated scene coordinates
+  // Artistic grazing light in exaggerated scene coordinates, separate from the 1.55° index model.
   const sunDist = 14;
   const sunX = Math.cos(sunRad) * sunDist;
   const sunZ = Math.sin(sunRad) * sunDist;
@@ -122,10 +79,11 @@ function ShackletonScene({
 
   return (
     <>
-      <ambientLight intensity={0.22} color="#6088b8" />
+      <ambientLight intensity={0.65} color="#9eb9d0" />
+      <hemisphereLight intensity={0.7} color="#c0d8eb" groundColor="#253344" />
       <directionalLight
         position={[sunX, sunY, sunZ]}
-        intensity={2.7}
+        intensity={2.4}
         color="#fff0c2"
         castShadow
         shadow-mapSize-width={1024}
@@ -136,29 +94,41 @@ function ShackletonScene({
         shadow-camera-right={7}
         shadow-camera-top={7}
         shadow-camera-bottom={-7}
-        shadow-bias={-0.0015}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.035}
+        shadow-radius={2}
       />
 
       {/* Grazing Polar Sun Orb */}
       <mesh position={[sunX * 0.58, sunY * 0.62, sunZ * 0.58]}>
-        <sphereGeometry args={[0.28, 16, 16]} />
-        <meshBasicMaterial color="#fde047" />
+        <sphereGeometry args={[0.19, 16, 16]} />
+        <meshBasicMaterial color="#fff1bd" />
       </mesh>
 
       {/* Procedural crater teaching terrain */}
       <mesh geometry={geometry} receiveShadow castShadow>
         <meshStandardMaterial
           vertexColors
-          roughness={0.88}
-          metalness={0.08}
+          flatShading
+          roughness={0.96}
+          metalness={0.02}
         />
       </mesh>
 
-      {/* Holographic Polar Coordinate Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.85, 0]}>
-        <ringGeometry args={[5.85, 5.92, 64]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} side={THREE.DoubleSide} />
+      {/* Cutaway display edge and instrument plinth, not geological strata. */}
+      <mesh geometry={skirt}>
+        <meshStandardMaterial color="#45667b" roughness={0.9} side={THREE.DoubleSide} />
       </mesh>
+      <mesh position={[0, -2.34, 0]}>
+        <cylinderGeometry args={[6.12, 6.22, 0.28, 96]} />
+        <meshStandardMaterial color="#152d40" metalness={0.5} roughness={0.55} />
+      </mesh>
+      {[6.18, 6.42].map((radius, index) => (
+        <mesh key={radius} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.18, 0]}>
+          <ringGeometry args={[radius, radius + 0.022, 96]} />
+          <meshBasicMaterial color="#7dd3fc" transparent opacity={index ? 0.18 : 0.75} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
 
       {/* Active Outpost Solar Mast / Deck Array */}
       <group position={[siteWorldX, siteWorldY, siteWorldZ]}>
@@ -188,7 +158,7 @@ function ShackletonScene({
               <sphereGeometry args={[isSelected ? 0.11 : 0.08, 12, 12]} />
               <meshBasicMaterial color={isPsr ? '#22d3ee' : isSelected ? '#fde047' : '#a7f3d0'} />
             </mesh>
-            <Html center distanceFactor={13} style={{ pointerEvents: 'none' }}>
+            {!isPsr && <Html center position={[0, 0.85, 0]} distanceFactor={10} style={{ pointerEvents: 'none' }}>
               <div
                 className={`whitespace-nowrap rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-semibold shadow-lg backdrop-blur-sm ${
                   isPsr
@@ -198,17 +168,21 @@ function ShackletonScene({
                     : 'border-white/20 bg-slate-950/75 text-slate-200'
                 }`}
               >
-                {m.id === 'PSR' ? (az ? m.labelAz : m.labelEn) : `Demo ${m.id}`}
+                {`Demo ${m.id}`}
               </div>
-            </Html>
+            </Html>}
           </group>
         );
       })}
 
       <OrbitControls
+        ref={controls}
+        target={[0, -1.4, 0]}
+        enableDamping
+        dampingFactor={0.09}
         enablePan={false}
-        minDistance={5.5}
-        maxDistance={13.5}
+        minDistance={8}
+        maxDistance={21}
         minPolarAngle={0.28}
         maxPolarAngle={Math.PI / 2.15}
       />
@@ -221,6 +195,7 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
   const az = lang === 'az';
   const [solarAzimuthDeg, setSolarAzimuthDeg] = useState(128);
   const [mastHeightMeters, setMastHeightMeters] = useState<2 | 10>(10);
+  const [viewReset, setViewReset] = useState(0);
   const [activeSite, setActiveSite] = useState<'S' | 'C1'>('S');
   const [autoRotateSun, setAutoRotateSun] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
@@ -288,21 +263,19 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
         </div>
       </div>
 
-      <p className="mb-3 text-xs leading-relaxed text-slate-300">
-        {az
-          ? `Relyef, rənglər və markerlər sxematikdir; LOLA hündürlük və ya Diviner temperatur xəritəsi yüklənməyib. Dirəyin hündürlük təsiri ×${TERRAIN_PROVENANCE.mastHeightExaggeration} şişirdilib; səhnə miqyaslı deyil. Faizlər cari azimut üçün görünmə indeksidir, illik işıqlanma və ya enerji proqnozu deyil. S/C1 markerləri tədqiqat koordinatları deyil.`
-          : `Terrain, colors and markers are illustrative; no LOLA elevation or Diviner temperature map is loaded. The mast-height effect is exaggerated ×${TERRAIN_PROVENANCE.mastHeightExaggeration}; the scene is not to scale. Percentages are a visibility index at this azimuth, not annual illumination or a power prediction. S/C1 markers are not mapped study coordinates.`}
-      </p>
+      <p className="mb-3 text-xs text-slate-300">{az
+        ? 'Sxematik relyef və bədii işıqlandırma. Görünmə indeksi ayrıca 1.55° təlim modeli ilə hesablanır.'
+        : 'Illustrative relief and artistic lighting. The visibility index uses a separate 1.55° training model.'}</p>
 
       {/* 3D WebGL Canvas */}
-      <div className={`${compact ? 'h-56' : 'h-72'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-gradient-to-b from-[#02060d] to-[#081826]`}>
+      <div className={`${compact ? 'h-64' : 'h-80'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-[radial-gradient(ellipse_at_50%_70%,#193b50_0%,#07121f_55%,#02060d_100%)]`}>
         <WebGLErrorBoundary fallback={fallback2D}>
           <Canvas
             shadows={{ type: THREE.PCFShadowMap }}
             frameloop={hologramFrameLoop(active, autoRotateSun)}
             dpr={[1, 1.5]}
             fallback={fallback2D}
-            camera={{ position: [0, 6.2, 8.8], fov: 42 }}
+            camera={{ position: [8.5, 9, 11.5], fov: 38 }}
             gl={{ antialias: true, powerPreference: 'default' }}
           >
             <ShackletonScene
@@ -311,16 +284,24 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
               activeSite={activeSite}
               autoRotateSun={autoRotateSun}
               onTickAzimuth={setSolarAzimuthDeg}
-              az={az}
+              viewReset={viewReset}
             />
           </Canvas>
         </WebGLErrorBoundary>
 
-        {/* Live Telemetry Overlay */}
-        <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-2.5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-slate-950/80 px-3 py-1.5 text-[11px] backdrop-blur-md">
+        <div className="pointer-events-none absolute left-3 top-3 border-l-2 border-sky-300/60 pl-2 font-mono text-[9px] uppercase tracking-widest text-sky-200/75">
+          {az ? 'RELYEF LABORATORİYASI' : 'RELIEF LAB'} · {az ? 'SXEMATİK' : 'ILLUSTRATIVE'}
+        </div>
+        <button type="button" onClick={() => setViewReset(value => value + 1)}
+          className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md border border-sky-300/25 bg-slate-950/80 px-2 py-1 text-[10px] text-sky-100 hover:bg-sky-900 focus-visible:outline-2 focus-visible:outline-sky-300">
+          <RotateCcw size={11} />{az ? 'Görünüşü sıfırla' : 'Reset view'}
+        </button>
+      </div>
+        {/* Teaching index, separate from the artistic light and display geometry. */}
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-slate-950/80 px-3 py-1.5 text-[11px]">
           <span className="flex items-center gap-1.5 font-mono text-amber-200">
             <Sun size={13} className="text-amber-300" />
-            {az ? 'Günəş Azimutu' : 'Sun Azimuth'}: {Math.round(solarAzimuthDeg)}° (1.55° {az ? 'hündürlük' : 'elev'})
+            {az ? 'Günəş Azimutu' : 'Sun Azimuth'}: {Math.round(solarAzimuthDeg)}°
           </span>
           <span className="font-mono font-semibold text-white">
             2 m: <strong className={illum2m.inShadow ? 'text-rose-300' : 'text-emerald-300'}>{illum2m.illuminatedPct}%</strong>
@@ -330,8 +311,9 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
             {az ? 'sxematik indeks' : 'illustrative index'}
           </span>
         </div>
-      </div>
-
+      <p className="mt-2 text-[10px] text-slate-400">{az
+        ? 'Döndərmək üçün sürükləyin, yaxınlaşdırmaq üçün təkəri çevirin. Mavi nöqtə: sxematik soyuq tələ. S/C1 mövqeləri və ölçülər sxematikdir.'
+        : 'Drag to orbit · Scroll to zoom. Blue marker: illustrative cold trap. S/C1 positions and dimensions are illustrative.'}</p>
       {/* Interactive Controls */}
       <div className="mt-3 grid gap-2.5 sm:grid-cols-[1fr_auto] sm:items-center">
         <div>
@@ -345,6 +327,7 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
           </label>
           <input
             type="range"
+            aria-label={az ? 'Təlim Günəş azimutu' : 'Training Sun azimuth'}
             min={0}
             max={360}
             value={Math.round(solarAzimuthDeg)}
@@ -360,6 +343,7 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
             <button
               key={id}
               type="button"
+              aria-pressed={activeSite === id}
               onClick={() => setActiveSite(id)}
               className={`rounded-lg border px-2.5 py-1.5 font-mono text-xs font-semibold ${
                 activeSite === id
@@ -372,6 +356,15 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
           ))}
         </div>
       </div>
+      <details className="mt-3 border-t border-sky-300/15 pt-2">
+        <summary className="cursor-pointer text-xs font-medium text-sky-200">{az ? 'İllüstrasiya məhdudiyyətləri və model qeydləri' : 'Illustration limits & model notes'}</summary>
+      <p className="mt-2 text-xs leading-relaxed text-slate-300">
+        {az
+          ? `Relyef, rənglər və markerlər sxematikdir; LOLA hündürlük və ya Diviner temperatur xəritəsi yüklənməyib. İndeks modelində müşahidəçi hündürlüyü ×${TERRAIN_PROVENANCE.mastHeightExaggeration} şişirdilib; göstərilən dirək və relyef miqyaslı deyil. Baza və kəsik kənarlar təqdimat üçündür. Faizlər cari azimut üçün görünmə indeksidir, illik işıqlanma və ya enerji proqnozu deyil. S/C1 markerləri tədqiqat koordinatları deyil.`
+          : `Terrain, colors and markers are illustrative; no LOLA elevation or Diviner temperature map is loaded. The index model exaggerates observer height ×${TERRAIN_PROVENANCE.mastHeightExaggeration}; the displayed mast and relief are not to scale. The base and cut edges are display geometry. Percentages are a visibility index at this azimuth, not annual illumination or a power prediction. S/C1 markers are not mapped study coordinates.`}
+      </p>
+
+      </details>
     </div>
   );
 }

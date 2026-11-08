@@ -86,3 +86,7 @@ The five collectible cores each add an assumed 3 kg of icy regolith to D4-A (up 
 ## M6 release wording review
 
 The hourly comparison caption now calls D3/D5 scripted and fictional events rather than LRO/GOES events. D4 Cadet text in EN/AZ describes icy soil at a fictional training site; it does not assert an observed ice deposit or age at the fictional base. Mazarico’s NTRS abstract was rechecked during M6; the Gläser record timed out, with the existing M1-verified Table 2 transcription retained. No physical constants, measurements or simulation equations changed.
+
+## Visual relief presentation · 9 November 2026
+
+The circular 3D display crops the existing procedural surface; it loads no NASA terrain. Elevations still come from `sampleShackletonElevationKm`, and all horizon/index calculations and published S/C1 planning values are unchanged. Facets, mineral colors, the display skirt/plinth, rings and lighting are art. The scene's grazing light is not the numerical 1.55° Sun in the index model. Displayed mast/relief dimensions are not to scale; the ×14 observer-height factor belongs to the separate index calculation. These limits remain visible in the introductory label and expandable model notes. The blue marker is an illustrative cold trap, not an ice or temperature measurement. World shading and color grading illustrate the fictional environment and do not add physical effects.
