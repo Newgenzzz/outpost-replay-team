@@ -1,6 +1,6 @@
-# M6 competition readiness · 8 November 2026
+# Release readiness · verified 9 November 2026
 
-Baseline: `c3a849c`, containing M0–M4. M6 continues on `codex/m6-competition-readiness`. No public release, push or merge is authorized by this document. M5 is not started. Earlier audit versions remain in Git history.
+Current gameplay baseline: `1157be6`, including M0–M6, M5 and visual polish. Final QA continues on `codex/final-release-qa`. No public release, push or merge is authorized by this document. Earlier milestone audit notes below are historical; current checks appear at the end.
 
 ## Release gates
 
@@ -88,3 +88,16 @@ M5 adds endpoint battery/low-reserve/early-stop feedback, explicit Apply-time gu
 ## Focused visual follow-up · 9 November 2026
 
 Circular procedural relief presentation and baked lunar-world lighting were refined after M5. No NASA terrain was integrated, and model equations/input recording are unchanged. All 49 tests, TypeScript checks and production build passed; before/after EN captures and AZ/control/demo checks were inspected at 1366×768 and 1600×900. Callback measurements preserve demand rendering but do not certify integrated-GPU performance. Previous artifact hashes refer to earlier releases: retain and test the final approved artifact before publishing. All licensing, prior-work, current-guide and publication gates above remain open.
+
+## Final QA · 9 November 2026
+
+**Local technical status: verified; public submission remains conditional on the release gates.** No critical gameplay or rendering defect was demonstrated, so the game code and visual assets were not changed. See [JUDGE_DEMO.md](JUDGE_DEMO.md) for an exact three-minute rehearsal.
+
+- Fresh 49 tests, TypeScript and production build passed. Full Cadet mission A,C,B,A,B,B reached hour 216, score 69, with 1.5 kg harvest and 0.67 kg extraction. A D4-only maintenance branch retained hour 216, scores 69/55 and +20 kWh final battery. Full Engineer Guided Demo retained 19.9/43.9 kWh, 97/0 low-reserve hours and −14 science points.
+- Production Chromium: EN 1366×768 and AZ 1600×900; preserved circular relief/world shading, walking, rover steering/dismount, pause/reset and navigation. Inspected screenshots and final error logs (empty); no page-width overflow in the larger view. Not every optional field activity, bonus Mars branch, disabled-WebGL state or physical integrated-GPU laptop was manually retested.
+- Reopened NASA Mazarico abstract, NOAA PRF 2541 p.1 (207 pfu) and active NASA-STD-3001 Vol.1 Rev.C record. Gläser retrieval timed out and full event terms returned HTTP502 again; earlier source transcription/tests remain, not a new complete paper/terms verification. Scientific assumption labels remain intact.
+- Regenerated notices for 40 runtime package versions, unchanged. Only the notices file is in public/. Team license/authorship and inherited-reference rights still need approval; no root project license was granted.
+- All eight built files returned HTTP200 and byte-identical contents from local preview, including matching notices. Bounded tracked-file/artifact token/private-key pattern scans found no matches; no env files, source maps, Git metadata or node_modules were in dist/. This is not an exhaustive security audit. Final artifact hashes are retained outside the repository with QA captures.
+- Known non-blocking technical warnings: large Phaser chunk and Fiber's Three Clock deprecation. Public-host cold loading, actual laptop/GPU behavior, live DONKI success and final public replay-link access still require release-host/laptop checks.
+
+Publication sequence remains: resolve organizer/license/guide gates → approve the exact commit → rebuild using the runbook above → upload only dist/ via Cloudflare Pages Direct Upload → verify unauthenticated HTTPS, hard refresh, notices, both languages/modes, full demo and replay → enter the tested URL and references in the official project submission. No publication occurred during this pass.
