@@ -14,6 +14,7 @@ const bundle = await build({
       export * from '/src/engine/runInput.ts';
       export * from '/src/engine/sharedReplay.ts';
       export * from '/src/engine/shadowPrediction.ts';
+      export * from '/src/utils/playerFeedback.ts';
     ` : null,
   }],
   build: { write: false, minify: false, rollupOptions: { input: entry, output: { format: 'es' }, preserveEntrySignatures: 'strict' } },
@@ -21,7 +22,7 @@ const bundle = await build({
 const [{ code }] = bundle.output;
 const {
   applyRunChoice, cloneRunInput, createRunInput, encodeSharedReplayUrl,
-  evaluateShadowPrediction, parseSharedReplayFromUrl, recordShadowPrediction, runExperiment,
+  evaluateShadowPrediction, parseSharedReplayFromUrl, recordShadowPrediction, runExperiment, phasePreparationChanged,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 const urlFor = (value) => `https://example.com/game/?m=${Buffer.from(JSON.stringify(value)).toString('base64url')}`;
@@ -143,4 +144,23 @@ test('recorded predictions are immutable snapshots and cannot be created before 
   assert.throws(() => { prediction.context.phases[1].tasks.eclssSealed = true; }, TypeError);
   assert.throws(() => recordShadowPrediction('backup', createRunInput([2, 2])), RangeError);
   assert.deepEqual(cloneRunInput(prediction.context), prediction.context);
+});
+
+test('replay preparation markers cover every effective station and field setting', () => {
+  const a = createRunInput([0, 0, 0, 0, 0, 0]);
+  for (const [index, setting, value] of [[0, 'solarCalibrated', true], [1, 'eclssSealed', true],
+    [2, 'busPatched', true], [3, 'icePrepared', true], [3, 'extraIceCores', 5],
+    [4, 'stormClamped', true], [5, 'dishAligned', true], [1, 'fieldSamplesCount', 2]]) {
+    const b = applyRunChoice(a, index + 1, 0, { ...a.phases[index].tasks, [setting]: value });
+    assert.equal(phasePreparationChanged(a, b, index), true, setting);
+    assert.equal(phasePreparationChanged(a, a, index), false);
+  }
+});
+
+test('preparation markers exclude choices, storm setup, irrelevant flags and missing phases', () => {
+  const a = createRunInput([0, 0, 0, 1, 0, 0]);
+  assert.equal(phasePreparationChanged(a, applyRunChoice(a, 2, 1, a.phases[1].tasks), 1), false);
+  assert.equal(phasePreparationChanged(a, createRunInput([0, 0, 0, 1, 0, 0], { stormPeakPfu: 840 }), 4), false);
+  assert.equal(phasePreparationChanged(a, applyRunChoice(a, 4, 1, { ...a.phases[3].tasks, icePrepared: true, extraIceCores: 5 }), 3), false);
+  assert.equal(phasePreparationChanged(a, createRunInput([]), 0), false);
 });

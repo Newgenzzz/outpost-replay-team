@@ -108,7 +108,7 @@ export const STRINGS = {
   deltaTitle: { en: 'Why the outcome changed', az: 'Nəticə niyə dəyişdi' },
   deltaSameOutcome: { en: 'What changed between runs', az: 'Gedişlər arasında nə dəyişdi' },
   deltaFinal: { en: 'Final Δ (B − A)', az: 'Yekun Δ (B − A)' },
-  noDifference: { en: 'Run B is identical to Run A — pick a different option on any step.', az: 'B Gedişi A Gedişi ilə eynidir — istənilən addımda fərqli seçim edin.' },
+  noDifference: { en: 'Run B matches Run A. Open a decision below, change one option or preparation setting, then Apply to compare the results.', az: 'B gedişi A gedişi ilə eynidir. Aşağıdan qərar açın, bir variantı və ya hazırlıq parametrini dəyişin, sonra nəticələri müqayisə etmək üçün Tətbiq et düyməsini basın.' },
   reasonChoice: { en: 'Decision {step}: “{from}” → “{to}”', az: '{step}-ci qərar: “{from}” → “{to}”' },
   reasonRuleAvoided: { en: 'Step {step}: Run B avoided — {rule}', az: '{step}-ci addım: B Gedişi qaçdı — {rule}' },
   reasonRuleTriggered: { en: 'Step {step}: Run B triggered — {rule}', az: '{step}-ci addım: B Gedişində baş verdi — {rule}' },

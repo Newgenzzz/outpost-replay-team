@@ -57,6 +57,7 @@ import { OutcomeBadge } from './components/MetricGauges';
 import DecisionCard from './components/DecisionCard';
 import { DecisionDebrief } from './components/DecisionDebrief';
 import { ShadowPredictionResult } from './components/ShadowPredictionResult';
+import { phasePreparationChanged } from './utils/playerFeedback';
 import { recordShadowPrediction, type ShadowPrediction, type ShadowStrategy } from './engine/shadowPrediction';
 import CompareCharts from './components/CompareCharts';
 import DeltaSummary from './components/DeltaSummary';
@@ -2150,9 +2151,7 @@ export default function App() {
                   const stepNum = d.id;
                   const cA = baselineChoices[idx];
                   const cB = rewoundChoices?.[idx];
-                  const taskChanged =
-                    (stepNum === 1 && runB?.solarCalibrated !== runA.solarCalibrated) ||
-                    (stepNum === 4 && runB?.icePrepared !== runA.icePrepared);
+                  const taskChanged = Boolean(runB && phasePreparationChanged(runA.input, runB.input, idx));
                   const changed = hasBranch && cB !== undefined && (cA !== cB || taskChanged);
                   const active = viewStep === stepNum;
                   const unlocked = stepNum <= lastAvailableStep;
@@ -2184,13 +2183,7 @@ export default function App() {
                         {cB !== undefined ? ` → B: ${CHOICE_LETTERS[cB]}` : ''}
                         {changed && taskChanged && (
                           <span className="block">
-                            {stepNum === 1
-                              ? lang === 'az'
-                                ? 'Kalibrləmə dəyişdi'
-                                : 'Calibration changed'
-                              : lang === 'az'
-                                ? 'Emal hazırlığı dəyişdi'
-                                : 'Extractor preparation changed'}
+                            {lang === 'az' ? 'Hazırlıq və ya sahə işi dəyişdi' : 'Preparation or fieldwork changed'}
                           </span>
                         )}
                       </span>

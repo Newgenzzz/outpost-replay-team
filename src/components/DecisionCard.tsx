@@ -38,6 +38,7 @@ import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings, TrainingMode 
 import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 import { ShadowPredictionInput } from './ShadowPrediction';
+import { ABORT_CAUSES } from './MissionResults';
 import type { ShadowPrediction, ShadowStrategy } from '../engine/shadowPrediction';
 import { applyRunChoice, type RunInput } from '../engine/runInput';
 
@@ -349,15 +350,17 @@ export default function DecisionCard(props: DecisionCardProps) {
   const forecasts = useMemo(() => {
     const prefix = { ...runInput, phases: runInput.phases.slice(0, step - 1) };
     if (prefix.phases.length !== step - 1) return [];
-    return decision.choices.map((_, index) =>
-      runExperiment(applyRunChoice(
+    return decision.choices.map((_, index) => {
+      const result = runExperiment(applyRunChoice(
         prefix, step, index,
         {
           ...effectiveTasks,
           icePrepared: step === 4 ? index === 0 && stepTaskEnabled : effectiveTasks.icePrepared,
         },
-      )).steps[step - 1],
-    );
+      ));
+      const phase = result.steps[step - 1];
+      return phase ? { ...phase, abortCause: result.abortCause } : undefined;
+    });
   }, [decision, runInput, step, effectiveTasks, stepTaskEnabled]);
 
   const forecastStep = forecasts[inspectedIdx];
@@ -636,6 +639,19 @@ export default function DecisionCard(props: DecisionCardProps) {
                             {fmt(forecast.resourceFlows.waterExtractedKg, 2)} {kg}
                           </span>
                         </span>
+                      )}
+                      <span className="mt-1 border-t border-white/10 pt-1 text-slate-200">
+                        {lang === 'az' ? 'Saat' : 'Hour'} {forecast.endHour} · {lang === 'az' ? 'Batareya' : 'Battery'}{' '}
+                        <strong className="font-mono">{fmt(forecast.after.powerKwh)} {t('unitKwh')}</strong>
+                      </span>
+                      <span className={forecast.env.lowPowerHours > 0 ? 'text-amber-200' : 'text-slate-300'}>
+                        {lang === 'az' ? 'Bu mərhələdə 20 kVt·saatdan aşağı:' : 'Below 20 kWh this phase:'}{' '}
+                        {fmt(forecast.env.lowPowerHours)} {lang === 'az' ? 'saat' : 'h'}
+                      </span>
+                      {forecast.abortCause && (
+                        <strong className="text-rose-200">{lang === 'az'
+                          ? `Missiya ${forecast.endHour}-ci saatda dayanır`
+                          : `Mission stops at hour ${forecast.endHour}`} · {tr(ABORT_CAUSES[forecast.abortCause])}</strong>
                       )}
                     </span>
                   )}
@@ -981,7 +997,13 @@ export default function DecisionCard(props: DecisionCardProps) {
                 : `Selected option ${CHOICE_LETTERS[inspectedIdx]}`}
             </p>
             <p className="text-xs text-slate-300">
-              {lang === 'az' ? 'Tətbiq etdikdə missiya irəliləyir.' : 'Apply this option to advance the mission.'}
+              {mode === 'branch'
+                ? lang === 'az'
+                  ? `D${step}-dən B gedişi yenidən hesablanır; sonrakı planlaşdırılmış qərarlar saxlanılır.`
+                  : `Recalculate Run B from D${step}; later planned choices stay fixed.`
+                : lang === 'az'
+                  ? `Tətbiq et: missiya ${decision.phase.startHour}-ci saatdan ${forecastStep?.endHour ?? decision.phase.endHour}-ci saata irəliləyir. Araşdırma zamanı vaxt irəliləmir.`
+                  : `Apply advances from hour ${decision.phase.startHour} to ${forecastStep?.endHour ?? decision.phase.endHour}. Exploring does not advance mission time.`}
             </p>
           </div>
           <button

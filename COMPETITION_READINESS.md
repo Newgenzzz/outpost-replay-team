@@ -80,3 +80,7 @@ This rehearsal duration is not an official video allowance. Submission synopsis:
 - [ ] Final tests/build pass for the exact released commit; all required fields submitted and submission status confirmed on the official site.
 
 See IMPLEMENTATION_LOG.md for actual M6 checks and limitations. Technical local readiness does not clear the external release gates above.
+
+## M5 player-experience follow-up · 8 November 2026
+
+M5 adds endpoint battery/low-reserve/early-stop feedback, explicit Apply-time guidance and complete effective-preparation replay markers. All 47 tests, TypeScript and build passed; focused EN/AZ production Chromium checks at 1366×768 and 1600×900 and Guided Demo retained the documented results. No simulation or scientific parameter changed. The previous M6 artifact hashes refer to M6 only: rebuild and retain the latest approved artifact before publication. All external release gates above still apply; see IMPLEMENTATION_LOG.md for the executed M5 checks and limits.
