@@ -72,13 +72,16 @@ export function JudgeTourBanner({
       <div className="my-3" aria-live="polite">
         <h2 className="font-semibold text-white">{tr(scene.title)}</h2>
         <p className="mt-1 text-sm leading-relaxed text-slate-300">{tr(scene.instruction)}</p>
-        {stage === 'rewind' && (
-          <p className="mt-2 text-sm text-slate-200">{t('runB')} · {alternateLabel}</p>
-        )}
         {stage === 'rewind' && shadow && (
           <p className="mt-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 font-mono text-xs text-amber-100">
+            <strong className="mb-1 block">{t('runA')} · {shadow.choiceIndex === MISSION_DEMO.branch[shadowIndex] ? backupLabel : tr(DEMO_STAGES.shadow.action)}</strong>
             {t(`outcome.${baseline.outcome}`)} · D3 {fmt(shadow.before.powerKwh)} → {fmt(shadow.after.powerKwh)} {t('unitKwh')}
             {' · '}{fmt(shadow.env.lowPowerHours)} {lang === 'az' ? 'saat aşağı gücdə' : 'h on low reserve'}
+          </p>
+        )}
+        {stage === 'rewind' && (
+          <p className="mt-2 text-sm text-slate-200">
+            {lang === 'az' ? 'Növbəti sınaq' : 'Next experiment'}: {t('runB')} · {alternateLabel}
           </p>
         )}
       </div>
