@@ -114,3 +114,18 @@ test('Cadet crop and oxygen text and fuel-cell explanation disclose process boun
   assert.match(d3.choices[1].causeAndEffectExplanation.en, /not tracked/);
   assert.match(d3.choices[1].causeAndEffectExplanation.az, /su və istilik/);
 });
+
+
+test('height lesson starts at a contrasting illustrative horizon without promising a universal advantage', () => {
+  const preset = science.HEIGHT_LESSON_START;
+  const low = science.computeRimIllumination(preset.azimuthDeg, 2, preset.site);
+  const tall = science.computeRimIllumination(preset.azimuthDeg, 10, preset.site);
+  assert.equal(preset.mastHeightMeters, 2);
+  assert.equal(low.illuminatedPct, 0);
+  assert.equal(tall.illuminatedPct, 100);
+  assert.ok(low.blockingRidgeDeg > tall.blockingRidgeDeg);
+  assert.equal(low.solarElevationDeg, science.TERRAIN_PROVENANCE.fixedSolarElevationDeg);
+  // Equally sunlit directions are valid, not an error to hide or rebalance.
+  assert.equal(science.computeRimIllumination(324, 2, 'S').illuminatedPct, 100);
+  assert.equal(science.computeRimIllumination(324, 10, 'S').illuminatedPct, 100);
+});

@@ -25,6 +25,9 @@ export const TERRAIN_PROVENANCE = {
   fixedSolarElevationDeg: 1.55,
 } as const;
 
+/** Authored teaching preset, selected for contrast in this exaggerated model; not a measured Sun position. */
+export const HEIGHT_LESSON_START = { azimuthDeg: 128, site: 'S', mastHeightMeters: 2 } as const;
+
 export const SHACKLETON_MARKERS: ShackletonSiteMarker[] = [
   {
     id: 'S',

@@ -133,3 +133,7 @@ Before November 14, prioritize organizer clarification, rights decisions, learne
 ## Handoff verification scope
 
 Fresh handoff checks are recorded in IMPLEMENTATION_LOG.md. This pass changes documentation only: no gameplay/visual/math change and no new browser session claimed. Core sources for fuel-cell products, ISS recovery, VEG-01A dates and active radiation standard were rechecked; prior independent source-table verification is retained. Use the newest Git commit for this handoff, and `deca79a` as the last gameplay/science change.
+
+## Latest focused follow-up: mast-height lesson
+
+After the Universal demo-label checkpoint `6a7108e`, continued on `codex/mast-height-lesson`. The 3D lesson now starts paused at Demo S/128° with2m selected, making the existing0%/100% height-index contrast stable. Restart height lesson restores the preset and camera; animation, orbit, zoom, slider, sites and camera reset remain available. Selected marker labels identify the mast height. Short teaching guidance distinguishes equal-index directions from directions where height helps, with1.55°/×14/not-power limits visible. The established camera/art and all mission/index calculations are preserved. Tests now total52, including preset contrast and an equally lit counterexample; read the newest IMPLEMENTATION_LOG.md entry for actual browser verification and use `git log -1` for the resulting checkpoint. Do not reintroduce automatic initial Sun motion or present128° as real NASA ephemeris data.

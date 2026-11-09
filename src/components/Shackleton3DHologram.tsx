@@ -9,6 +9,7 @@ import { Compass, Pause, Play, ArrowUpFromLine, Sun, RotateCcw } from 'lucide-re
 import { useI18n } from '../i18n/LanguageContext';
 import {
   SHACKLETON_MARKERS,
+  HEIGHT_LESSON_START,
   computeRimIllumination,
   sampleShackletonElevationKm,
   TERRAIN_PROVENANCE,
@@ -168,7 +169,7 @@ function ShackletonScene({
                     : 'border-white/20 bg-slate-950/75 text-slate-200'
                 }`}
               >
-                {`Demo ${m.id}`}
+                {`Demo ${m.id}${isSelected ? ` · ${mastHeightMeters} m` : ''}`}
               </div>
             </Html>}
           </group>
@@ -193,11 +194,11 @@ function ShackletonScene({
 export function Shackleton3DHologram({ compact = false, active = true }: { compact?: boolean; active?: boolean }) {
   const { lang } = useI18n();
   const az = lang === 'az';
-  const [solarAzimuthDeg, setSolarAzimuthDeg] = useState(128);
-  const [mastHeightMeters, setMastHeightMeters] = useState<2 | 10>(10);
+  const [solarAzimuthDeg, setSolarAzimuthDeg] = useState<number>(HEIGHT_LESSON_START.azimuthDeg);
+  const [mastHeightMeters, setMastHeightMeters] = useState<2 | 10>(HEIGHT_LESSON_START.mastHeightMeters);
   const [viewReset, setViewReset] = useState(0);
-  const [activeSite, setActiveSite] = useState<'S' | 'C1'>('S');
-  const [autoRotateSun, setAutoRotateSun] = useState(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const [activeSite, setActiveSite] = useState<'S' | 'C1'>(HEIGHT_LESSON_START.site);
+  const [autoRotateSun, setAutoRotateSun] = useState(false);
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const changed = () => { if (preference.matches) setAutoRotateSun(false); };
@@ -208,6 +209,14 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
   const illum10m = computeRimIllumination(solarAzimuthDeg, 10, activeSite);
   const illum2m = computeRimIllumination(solarAzimuthDeg, 2, activeSite);
   const currentIllum = mastHeightMeters === 10 ? illum10m : illum2m;
+  const heightHelps = illum10m.illuminatedPct > illum2m.illuminatedPct;
+  function restartHeightLesson() {
+    setAutoRotateSun(false);
+    setSolarAzimuthDeg(HEIGHT_LESSON_START.azimuthDeg);
+    setActiveSite(HEIGHT_LESSON_START.site);
+    setMastHeightMeters(HEIGHT_LESSON_START.mastHeightMeters);
+    setViewReset(value => value + 1);
+  }
 
   const fallback2D = (
     <div className="flex h-full flex-col items-center justify-center rounded-xl border border-sky-400/25 bg-slate-950/80 p-4 text-center text-xs text-slate-300">
@@ -241,10 +250,11 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
           <button
             type="button"
             onClick={() => setAutoRotateSun((v) => !v)}
+            aria-pressed={autoRotateSun}
             className="inline-flex items-center gap-1 rounded-lg border border-sky-300/35 bg-sky-500/15 px-2.5 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-500/25"
           >
             {autoRotateSun ? <Pause size={12} /> : <Play size={12} />}
-            {autoRotateSun ? (az ? 'Fırlanmanı Saxla' : 'Pause Orbit') : (az ? '360° Günəş' : '360° Sun')}
+            {autoRotateSun ? (az ? 'Günəşi dayandır' : 'Pause Sun') : (az ? 'Günəşi hərəkət etdir' : 'Animate Sun')}
           </button>
           <button
             type="button"
@@ -264,11 +274,21 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
       </div>
 
       <p className="mb-3 text-xs text-slate-300">{az
-        ? 'Sxematik relyef və bədii işıqlandırma. Görünmə indeksi ayrıca 1.55° təlim modeli ilə hesablanır.'
-        : 'Illustrative relief and artistic lighting. The visibility index uses a separate 1.55° training model.'}</p>
+        ? 'Sxematik relyef və bədii işıqlandırma. Ayrıca indeks modeli: 1.55° Günəş, ×14 hündürlük; elektrik proqnozu deyil.'
+        : 'Illustrative relief and artistic lighting. Separate index model: 1.55° Sun, ×14 height; not a power prediction.'}</p>
+
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300/25 bg-amber-400/5 px-3 py-2">
+        <p className="flex-1 text-xs leading-relaxed text-amber-100">{az
+          ? 'Hündürlük nəyi dəyişir? Günəşi sabit saxlayıb 2 m / 10 m düyməsini sınayın, sonra azimutu dəyişin.'
+          : 'Does height help? Keep the Sun fixed and try the 2 m / 10 m button, then change its azimuth.'}</p>
+        <button type="button" onClick={restartHeightLesson}
+          className="rounded-md border border-amber-300/40 px-2 py-1 text-xs font-semibold text-amber-100 hover:bg-amber-400/15">
+          {az ? 'Hündürlük sınağını yenidən başlat' : 'Restart height lesson'}
+        </button>
+      </div>
 
       {/* 3D WebGL Canvas */}
-      <div className={`${compact ? 'h-64' : 'h-80'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-[radial-gradient(ellipse_at_50%_70%,#193b50_0%,#07121f_55%,#02060d_100%)]`}>
+      <div className={`${compact ? 'h-64' : 'h-72'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-[radial-gradient(ellipse_at_50%_70%,#193b50_0%,#07121f_55%,#02060d_100%)]`}>
         <WebGLErrorBoundary fallback={fallback2D}>
           <Canvas
             shadows={{ type: THREE.PCFShadowMap }}
@@ -311,6 +331,14 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
             {az ? 'sxematik indeks' : 'illustrative index'}
           </span>
         </div>
+      <p className="mt-2 text-xs leading-relaxed text-slate-200">{heightHelps
+        ? az
+          ? 'Burada hündür panelin indeksi daha yüksəkdir: yüksəklik alçaq Günəşi örtən üfüqü aşmağa kömək edə bilər.'
+          : 'Here height improves visibility over the terrain horizon. A low Sun can be hidden by nearby terrain.'
+        : az
+          ? 'Bu istiqamətdə hər iki hündürlüyün indeksi eynidir. Hündürlük yalnız maneə yaradan üfüqü aşmağa kömək etdikdə üstünlük verir.'
+          : 'Both heights have the same index here. Height helps only when it improves clearance over the obstructing horizon.'}
+        {' '}{az ? 'Faizlər illik işıqlanma deyil.' : 'Percentages are not annual illumination.'}</p>
       <p className="mt-2 text-[10px] text-slate-400">{az
         ? 'Döndərmək üçün sürükləyin, yaxınlaşdırmaq üçün təkəri çevirin. Mavi nöqtə: sxematik soyuq tələ. S/C1 mövqeləri və ölçülər sxematikdir.'
         : 'Drag to orbit · Scroll to zoom. Blue marker: illustrative cold trap. S/C1 positions and dimensions are illustrative.'}</p>
