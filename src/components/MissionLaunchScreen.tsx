@@ -7,6 +7,7 @@ interface MissionLaunchScreenProps {
   callsign: string;
   onChangeCallsign: (name: string) => void;
   trainingMode: TrainingMode;
+  hasMissionProgress: boolean;
   onChangeTrainingMode: (mode: TrainingMode) => void;
   onLaunchMission: () => void;
   onStartJudgeTour: () => void;
@@ -18,6 +19,7 @@ export function MissionLaunchScreen({
   callsign,
   onChangeCallsign,
   trainingMode,
+  hasMissionProgress,
   onChangeTrainingMode,
   onLaunchMission,
   onStartJudgeTour,
@@ -260,7 +262,9 @@ export function MissionLaunchScreen({
 
           {/* Primary Launch Actions */}
           <p className="mt-4 text-xs font-semibold text-[#c0e6aa]">
-            {az ? 'İlk dəfə oynayırsınız? Bir qərarı birlikdə yoxlayaq.' : 'New here? Start with one guided experiment.'}
+            {hasMissionProgress
+              ? az ? 'Missiyanız davam edir. Davam edin və ya yeni bələdçili sınağa başlayın.' : 'Your mission is in progress. Resume it, or start a new guided experiment.'
+              : az ? 'İlk dəfə oynayırsınız? Bir qərarı birlikdə yoxlayaq.' : 'New here? Start with one guided experiment.'}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2.5">
             <button
@@ -285,7 +289,9 @@ export function MissionLaunchScreen({
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-slate-950/40 px-4 py-3.5 text-xs sm:text-sm font-bold text-slate-200 transition hover:bg-white/10"
             >
               <Play size={15} />
-              {az ? 'Tam 9 günlük missiyanı araşdır' : 'Explore the full 9-day mission'}
+              {hasMissionProgress
+                ? az ? 'Missiyanı davam etdir' : 'Resume current mission'
+                : az ? 'Tam 9 günlük missiyanı araşdır' : 'Explore the full 9-day mission'}
             </button>
           </div>
 

@@ -145,6 +145,7 @@ export default function App() {
 
   // Overlays & Modals
   const [launchScreenOpen, setLaunchScreenOpen] = useState<boolean>(() => !initialShared);
+  const [tourConfirmOpen, setTourConfirmOpen] = useState(false);
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
   const [telemetryDrawerOpen, setTelemetryDrawerOpen] = useState<boolean>(() => Boolean(initialShared));
   const [mapModalOpen, setMapModalOpen] = useState(false);
@@ -290,6 +291,7 @@ export default function App() {
 
   const anyOverlayOpen =
     launchScreenOpen ||
+    tourConfirmOpen ||
     decisionModalOpen ||
     telemetryDrawerOpen ||
     mapModalOpen ||
@@ -317,6 +319,7 @@ export default function App() {
   }, [
     anyOverlayOpen,
     launchScreenOpen,
+    tourConfirmOpen,
     decisionModalOpen,
     telemetryDrawerOpen,
     mapModalOpen,
@@ -361,6 +364,10 @@ export default function App() {
         }
       }
       if (e.key !== 'Escape') return;
+      if (tourConfirmOpen) {
+        setTourConfirmOpen(false);
+        return;
+      }
       if (dossierMenuOpen) {
         setDossierMenuOpen(false);
         return;
@@ -385,7 +392,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [anyOverlayOpen, certificateOpen, dossierMenuOpen, launchScreenOpen]);
+  }, [anyOverlayOpen, certificateOpen, dossierMenuOpen, launchScreenOpen, tourConfirmOpen]);
 
   // Passive Cryo-Laser Thermal Cooldown
   useEffect(() => {
@@ -588,6 +595,7 @@ export default function App() {
 
   function closeAllModals() {
     setLaunchScreenOpen(false);
+    setTourConfirmOpen(false);
     setDecisionModalOpen(false);
     setTelemetryDrawerOpen(false);
     setMapModalOpen(false);
@@ -691,13 +699,14 @@ export default function App() {
   }
 
   function handleStartTour() {
-    if (baselineInput.phases.length > 0 && !demoStage && !launchScreenOpen) {
-      const message =
-        lang === 'az'
-          ? 'Bələdçili Münsif Demosu başladılsın? Cari missiya gedişatınız sıfırlanacaq.'
-          : 'Start the Guided Judge Demo? Your current mission progress will be reset.';
-      if (!window.confirm(message)) return;
+    if (baselineInput.phases.length > 0) {
+      setTourConfirmOpen(true);
+      return;
     }
+    startTour();
+  }
+
+  function startTour() {
     handleReset();
     soundFX.startAmbient();
     soundFX.play('tourChime');
@@ -2104,6 +2113,7 @@ export default function App() {
           callsign={commanderCallsign}
           onChangeCallsign={setCommanderCallsign}
           trainingMode={trainingMode}
+          hasMissionProgress={baselineInput.phases.length > 0}
           onChangeTrainingMode={setTrainingMode}
           onLaunchMission={() => {
             soundFX.startAmbient();
@@ -2504,6 +2514,31 @@ export default function App() {
           achievement={achievementToast}
           onDismiss={() => setAchievementToast(null)}
         />
+      )}
+      {tourConfirmOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#04101a]/90 p-4 backdrop-blur-sm"
+          role="dialog" aria-modal="true" aria-labelledby="tour-confirm-title" aria-describedby="tour-confirm-description">
+          <div className="w-full max-w-md rounded-2xl border border-amber-300/40 bg-[#14222b] p-5 shadow-2xl">
+            <h2 id="tour-confirm-title" className="text-lg font-bold text-white">
+              {lang === 'az' ? 'Yeni bələdçili sınaq başladılsın?' : 'Start a new guided experiment?'}
+            </h2>
+            <p id="tour-confirm-description" className="mt-2 text-sm leading-relaxed text-slate-200">
+              {lang === 'az'
+                ? 'Cari missiya və hər iki müqayisə gedişi sıfırlanacaq. Dəyişiklik etmədən qayıtmaq üçün missiyanızı saxlayın.'
+                : 'This replaces your current mission and both comparison runs. Keep your mission to return without changes.'}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setTourConfirmOpen(false)}
+                className="rounded-lg border border-white/25 px-3 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10">
+                {lang === 'az' ? 'Cari missiyanı saxla' : 'Keep current mission'}
+              </button>
+              <button type="button" onClick={startTour}
+                className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-amber-200">
+                {lang === 'az' ? 'Yeni sınağa başla' : 'Start new experiment'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

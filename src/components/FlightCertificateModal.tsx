@@ -30,6 +30,7 @@ export function FlightCertificateModal({
   const crewName = az ? 'Gənc Astronavt' : 'Junior Astronaut';
   const [commanderName, setCommanderName] = useState(defaultCallsign);
   const [copyStatus, setCopyStatus] = useState<'ready' | 'copied' | 'linkCopied' | 'failed'>('ready');
+  const [manualCopyText, setManualCopyText] = useState<string | null>(null);
 
   const isSuccess = run.outcome === 'success';
   const isAbort = run.outcome === 'abort';
@@ -38,6 +39,17 @@ export function FlightCertificateModal({
 
   function handlePrint() {
     window.print();
+  }
+
+  async function copyToClipboard(text: string, success: 'copied' | 'linkCopied') {
+    setManualCopyText(null);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus(success);
+    } catch {
+      setCopyStatus('failed');
+      setManualCopyText(text);
+    }
   }
 
   async function handleCopySummary() {
@@ -51,22 +63,12 @@ ${t('lifeSupport')}: ${fmt(run.final.lifeSupportPct)}%
 ${t('radiation')}: ${fmt(run.final.radiationMsv)} mSv (${warning}: ${RADIATION_LIMITS.missionWarningMsv} mSv)
 ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\nReplay URL: ${shareUrl}` : ''}`;
 
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyStatus('copied');
-    } catch {
-      setCopyStatus('failed');
-    }
+    await copyToClipboard(text, 'copied');
   }
 
   async function handleCopyShareLink() {
     if (!shareUrl) return;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopyStatus('linkCopied');
-    } catch {
-      setCopyStatus('failed');
-    }
+    await copyToClipboard(shareUrl, 'linkCopied');
   }
 
   function handleDownloadPngBadge() {
@@ -309,6 +311,27 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
             </div>
           </div>
 
+          {copyStatus === 'failed' && manualCopyText !== null && (
+            <div className="mb-4 rounded-lg border border-amber-300/40 bg-amber-400/10 p-3 text-xs text-amber-100 print:hidden">
+              <p role="alert">
+                {az
+                  ? 'Avtomatik kopyalama mümkün olmadı. Aşağıdakı mətni seçib klaviatura və ya cihaz menyusu ilə kopyalayın.'
+                  : 'Automatic copying was blocked. Select the text below and copy it using your keyboard or device menu.'}
+              </p>
+              <label className="mt-2 block font-semibold">
+                {az ? 'Əl ilə kopyalanacaq mətn' : 'Text to copy manually'}
+                <textarea
+                  readOnly
+                  tabIndex={0}
+                  rows={3}
+                  value={manualCopyText}
+                  onFocus={event => event.currentTarget.select()}
+                  className="mt-1 block w-full rounded border border-amber-200/30 bg-slate-950 p-2 font-mono text-xs font-normal text-slate-100 focus-visible:outline-2 focus-visible:outline-amber-300"
+                />
+              </label>
+            </div>
+          )}
+
           <h1 className="mt-4 text-2xl font-bold tracking-tight text-white print:text-black">
             {title}
           </h1>
@@ -328,6 +351,7 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
               onChange={(e) => {
                 setCommanderName(e.target.value);
                 setCopyStatus('ready');
+                setManualCopyText(null);
               }}
               className="bg-transparent text-center font-serif text-lg font-bold text-amber-200 outline-none print:text-black"
               aria-label={commander}
