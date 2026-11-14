@@ -1601,9 +1601,14 @@ export class LunarWorld extends Phaser.Scene {
       this.isruGlow
         .setFillStyle(0x38bdf8, hasIsruOxygen ? 0.24 : 0)
         .setStrokeStyle(1.5, 0x7dd3fc, hasIsruOxygen ? 0.65 : 0);
+      const solarHeightLabel = snap.choices[0] === 0
+        ? az ? '10m dirək' : '10m mast'
+        : snap.choices[0] !== undefined
+          ? az ? '2m panel' : '2m deck'
+          : '';
       this.setReadout('solar', az ? 'GÜNƏŞ PANELLƏRİ' : 'SOLAR ARRAY', snap.solarOutputPct === null
         ? az ? 'Quraşdırma gözlənilir' : 'Setup pending'
-        : az ? `Nominal gücün ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% of nominal output`,
+        : `${solarHeightLabel ? `${solarHeightLabel} · ` : ''}${az ? `Nominalın ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% output`}`,
       lowLight ? '#f6d99e' : '#c6e9d1');
       if (previous && (previous.powerLow !== snap.powerLow || previous.sunlightFraction !== snap.sunlightFraction)) {
         this.acknowledgeFacility('solar', snap.powerLow || lowLight ? 0xf6d99e : 0xc6e9d1);
@@ -1611,11 +1616,14 @@ export class LunarWorld extends Phaser.Scene {
 
       this.habitatLight.setFillStyle(snap.powerLow ? 0xe7af64 : 0xa4eadc)
         .setAlpha(snap.powerLow ? 0.05 : 0.19 + powerFrac * 0.32);
+      const hasBackupFuelCells = snap.completedCount >= 3 && snap.choices[2] === 1;
       const habitatStatus = snap.lifeSupportLow
         ? az ? `Həyat təminatı zəif · ${fmt(snap.lifeSupportPct)}%` : `Life support low · ${fmt(snap.lifeSupportPct)}%`
         : snap.powerLow
-          ? az ? 'Batareya ehtiyatı azdır' : 'Battery reserve low'
-          : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
+          ? az ? 'Aşağı enerji <20 kVt·s · İşıq zəif' : 'Brownout <20 kWh · Lights dim'
+          : hasBackupFuelCells
+            ? az ? `Yanacaq elem. aktiv · ${fmt(snap.lifeSupportPct)}%` : `Fuel cells active · ${fmt(snap.lifeSupportPct)}%`
+            : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
       this.setReadout('habitat', az ? 'YAŞAYIŞ MODULU' : 'HABITAT', habitatStatus,
         snap.lifeSupportLow || snap.powerLow ? '#f6d59b' : '#c6e9d1');
 
@@ -1654,8 +1662,18 @@ export class LunarWorld extends Phaser.Scene {
       if (previous && (previous.icePreparationAvailable !== snap.icePreparationAvailable || previous.iceWaterKg !== water)) {
         this.acknowledgeFacility('ice', 0x9edce8);
       }
+      const shelterChoice = snap.completedCount >= 5 ? snap.choices[4] : undefined;
+      const shelterStatus = shelterChoice === 2
+        ? az ? 'Sığınacaq bağlı (×0.06 doza)' : 'Bunker sealed (×0.06 dose)'
+        : shelterChoice === 1
+          ? az ? 'Su divarlı modul (×0.15)' : 'Water-wall module (×0.15)'
+          : shelterChoice === 0
+            ? az ? 'Açıq səth səfəri (100%)' : 'Exposed EVA traverse'
+            : az ? 'Qorunma planını seçin' : 'Choose a shielding plan';
       this.setReadout('shelter', az ? 'D5 · SIĞINACAQ' : 'D5 · SHELTER',
-        az ? 'Qorunma planını seçin' : 'Choose a shielding plan', '#f6d59b', snap.stormPending);
+        shelterStatus,
+        shelterChoice === 2 ? '#c6e9d1' : '#f6d59b',
+        snap.stormPending);
 
       this.batteryLight
         .setVisible(powerFrac > 0)

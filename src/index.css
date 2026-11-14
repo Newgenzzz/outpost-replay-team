@@ -1456,6 +1456,25 @@ button:disabled {
   }
 }
 
+@media (max-height: 820px) {
+  .objective-card {
+    top: 12px;
+    padding: 12px 14px;
+    max-height: calc(100% - 64px);
+  }
+  .objective-card h1 {
+    margin: 5px 0 4px;
+    font-size: 16px;
+  }
+  .sightline-mini-card {
+    top: 252px;
+    padding: 7px 9px;
+  }
+  .action-dock {
+    bottom: 52px;
+  }
+}
+
 @media (max-width: 680px) {
   .mc-actions {
     width: 100%;

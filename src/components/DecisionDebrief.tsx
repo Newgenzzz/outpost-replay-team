@@ -1,4 +1,4 @@
-import { CheckCircle2, X } from 'lucide-react';
+import { CheckCircle2, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, type StepRecord } from '../engine/simulation';
@@ -28,6 +28,42 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
       : `Modeled dose this phase · ${fmt(step.delta.radiationMsv)} mSv`;
   }
 
+  const consequenceBanner =
+    step.env.lowPowerHours > 0
+      ? {
+          warn: true,
+          text: az
+            ? `${fmt(step.env.lowPowerHours)} saat 20 kVt·s-dən aşağı — yaşayış modulu işıqları zəiflədi`
+            : `Dipped below 20 kWh for ${fmt(step.env.lowPowerHours)} h — habitat lights dimmed`,
+        }
+      : step.choiceId === 'D3-B'
+        ? {
+            warn: false,
+            text: az
+              ? 'Ehtiyat yanacaq elementləri aktivləşdi (+16 kVt·s) · qızdırıcılar qorundu'
+              : 'Backup fuel cells activated (+16 kWh) · heaters stayed powered',
+          }
+        : step.choiceId === 'D1-A'
+          ? {
+              warn: false,
+              text: az
+                ? '10 m şaquli dirək · kölgədə 40% günəş enerjisi təmin edəcək'
+                : '10 m tall mast locked · sustains 40% solar output during shadow',
+            }
+          : step.choiceId === 'D5-C'
+            ? {
+                warn: false,
+                text: az
+                  ? 'Fırtına sığınacağı aktiv · ekipaj model dozasından 94% qorundu'
+                  : 'Storm shelter active · shielded 94% of modeled proton storm dose',
+              }
+            : {
+                warn: false,
+                text: az
+                  ? 'Batareya 20 kVt·s təhlükəsizlik həddindən yuxarı qaldı'
+                  : 'Battery reserve held safely above the 20 kWh floor',
+              };
+
   return (
     <section className="decision-debrief">
       <div className="flex items-center justify-between gap-2">
@@ -43,6 +79,20 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
       <div role="status" aria-atomic="true">
         <p className="mt-0.5 text-xs font-medium text-amber-100">{tr(choice.label)}</p>
         <strong className="mt-1 block text-sm leading-snug text-white">{result}</strong>
+        <p
+          className={`mt-1.5 inline-flex w-full items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-medium ${
+            consequenceBanner.warn
+              ? 'border-amber-400/45 bg-amber-950/60 text-amber-100'
+              : 'border-emerald-400/35 bg-emerald-950/45 text-emerald-100'
+          }`}
+        >
+          {consequenceBanner.warn ? (
+            <TriangleAlert size={12} className="shrink-0 text-amber-300" aria-hidden="true" />
+          ) : (
+            <Sparkles size={12} className="shrink-0 text-emerald-300" aria-hidden="true" />
+          )}
+          <span>{consequenceBanner.text}</span>
+        </p>
         <p className="mt-1">{tr(ENGINEERING_LESSONS[step.step - 1])}</p>
         <div className="mt-2 grid grid-cols-2 gap-1 font-mono text-[10px]">
           <span className="rounded bg-black/35 px-1.5 py-0.5 text-amber-200">

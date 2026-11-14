@@ -25,7 +25,7 @@ import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
-import { CITATIONS, GAME_CONSTANTS, RADIATION_LIMITS } from '../data/nasaTelemetry';
+import { CITATIONS, GAME_CONSTANTS, MAY_2024_PROTON_EVENT, RADIATION_LIMITS } from '../data/nasaTelemetry';
 import { soundFX } from '../utils/soundEffects';
 import {
   METRIC_KEYS,
@@ -528,6 +528,47 @@ export default function DecisionCard(props: DecisionCardProps) {
                     {t('source')}: {trigger.citationIds.map((id) => CITATIONS[id]?.short).join(' · ')}
                   </p>
                 )}
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="rounded-lg border border-emerald-400/30 bg-emerald-950/30 px-3 py-2 text-[11px] text-slate-200">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                    {lang === 'az' ? 'NASA OSDR ARXİVİ · VEG-01A (BKS)' : 'NASA OSDR ARCHIVE · VEG-01A (ISS)'}
+                  </span>
+                  <span className="font-mono text-[10px] text-emerald-200">2014-05-08 → 2014-06-10 · 33 d</span>
+                </div>
+                <p className="mt-0.5 leading-snug text-slate-300">
+                  {lang === 'az'
+                    ? 'C variantındakı bitki sınağı BKS-də 33 gün davam edən VEG-01A kahı təcrübəsinə istinad edir (təlimdə 25 günlük hazır şitillər + 5 gün).'
+                    : 'Option C crop growth cites the 33-day ISS VEG-01A lettuce trial (simplified in training to 25-day seedlings + 5 scenario days).'}
+                </p>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="rounded-lg border border-cyan-400/35 bg-cyan-950/30 px-3 py-2 text-[11px] text-slate-200">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                    {lang === 'az'
+                      ? 'NASA DONKI & NOAA GOES ARXİVİ · 20240516-7D-001'
+                      : 'NASA DONKI & NOAA GOES ARCHIVE · 20240516-7D-001'}
+                  </span>
+                  <span className="font-mono text-[10px] text-cyan-100">
+                    {MAY_2024_PROTON_EVENT.activeRegion} · Alert #30944
+                  </span>
+                </div>
+                <p className="mt-1 font-mono text-[10.5px] text-amber-100">
+                  {lang === 'az'
+                    ? `Müşahidə: ${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu → Pik ${MAY_2024_PROTON_EVENT.peakUtc} (${MAY_2024_PROTON_EVENT.peakPfu} pfu, GOES)`
+                    : `Observed: ${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu → Peak ${MAY_2024_PROTON_EVENT.peakUtc} (${MAY_2024_PROTON_EVENT.peakPfu} pfu, GOES)`}
+                </p>
+                <p className="mt-0.5 leading-snug text-slate-300">
+                  {lang === 'az'
+                    ? 'Ay doza əmsalları (×1.0 / ×0.25 / ×0.15 / ×0.06) və 48 saatlıq fırtına forması uydurma təlim parametrləridir; alışma sinfi dozaya çevrilmir.'
+                    : 'Observed near-Earth peak vs. fictional lunar parameters: the 48 h curve, 0.015 factor, and shielding multipliers are training assumptions.'}
+                </p>
               </div>
             )}
           </div>

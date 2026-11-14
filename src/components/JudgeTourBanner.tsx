@@ -87,8 +87,8 @@ export function JudgeTourBanner({
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {(
                 [
-                  { id: 'backup' as const, label: az ? 'Ehtiyat yanacaq elementləri' : 'Backup fuel cells' },
-                  { id: 'drill' as const, label: az ? 'Qazmanı davam etdir' : 'Keep drilling' },
+                  { id: 'backup' as const, label: az ? 'Proqnoz: Ehtiyat yanacaq elementləri' : 'Predict: Backup fuel cells' },
+                  { id: 'drill' as const, label: az ? 'Proqnoz: Qazmanı davam etdir' : 'Predict: Keep drilling' },
                 ] as const
               ).map((opt) => {
                 const active = prediction === opt.id;

@@ -136,11 +136,18 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           </p>
           <h3 className="mt-1 text-xl font-semibold leading-tight text-white">D{firstChange} · {tr(decision.title)}</h3>
         </div>
-        {sameEndpoint && cmp.scoreDelta !== null && (
-          <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${deltaTone(cmp.scoreDelta, true)}`}>
-            {t('score')} {signed(cmp.scoreDelta)}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {a.outcome !== b.outcome && (
+            <span className="rounded-full border border-amber-300/45 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-100">
+              {t(`outcome.${a.outcome}`)} → {t(`outcome.${b.outcome}`)}
+            </span>
+          )}
+          {sameEndpoint && cmp.scoreDelta !== null && (
+            <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${deltaTone(cmp.scoreDelta, true)}`}>
+              {t('score')} {signed(cmp.scoreDelta)}
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-sm text-slate-200">
         {a.input.scenario.stormPeakPfu !== b.input.scenario.stormPeakPfu

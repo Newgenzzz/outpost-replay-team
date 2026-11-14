@@ -55,11 +55,11 @@ interface NasaSensorDeckModalProps {
 }
 
 const TABS = [
-  { id: 'lola', icon: SunDim, label: { en: '3D & Sunlight', az: '3D və İşıq' } },
+  { id: 'lola', icon: SunDim, label: { en: 'Sunlight Lab', az: 'Günəş Sınağı' } },
   { id: 'diviner', icon: Snowflake, label: { en: 'Diviner Temp', az: 'Diviner Temp' } },
   { id: 'lcross', icon: Droplet, label: { en: 'LCROSS Ice', az: 'LCROSS Buzu' } },
   { id: 'donki', icon: Zap, label: { en: 'DONKI & Radiation', az: 'DONKI və Radiasiya' } },
-  { id: 'bvad', icon: HeartPulse, label: { en: 'BVAD & ECLSS', az: 'BVAD və ECLSS' } },
+  { id: 'bvad', icon: HeartPulse, label: { en: 'BVAD & OSDR', az: 'BVAD və OSDR' } },
 ] as const;
 
 const tooltipStyle = {
@@ -84,7 +84,7 @@ export function NasaSensorDeckModal({
   const [fetchingLive, setFetchingLive] = useState(false);
 
   const az = lang === 'az';
-  const title = az ? 'Elm və mənbələr · 3D, DONKI və radiasiya' : 'Science & Sources · 3D, DONKI & Radiation';
+  const title = az ? 'Elm və Mənbələr · Günəş, DONKI və OSDR' : 'Science & Sources · Sunlight, DONKI & OSDR';
   const storm = MAY_2024_PROTON_EVENT;
   const iceConcentration = `${(LCROSS_CABEUS.waterIceMassFraction * 100).toFixed(1)} ± ${(LCROSS_CABEUS.uncertaintyMassFraction * 100).toFixed(1)}%`;
 
@@ -249,9 +249,49 @@ export function NasaSensorDeckModal({
           </div>
         )}
 
-        {/* Training presets, separate flare catalog, and explicitly assumed dose chart */}
+        {/* Training presets, verified archived DONKI event card, and explicitly assumed dose chart */}
         {activeTab === 'donki' && (
           <div className="mt-4 space-y-4">
+            <section className="rounded-xl border border-cyan-400/30 bg-cyan-950/25 p-3.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                    {az ? 'TƏSDİQLƏNMİŞ NASA DONKI & GOES ARXİV HADİSƏSİ' : 'VERIFIED NASA DONKI & GOES ARCHIVE RECORD'}
+                  </span>
+                  <h4 className="mt-0.5 text-sm font-bold text-white">
+                    {az ? 'NASA CCMC DONKI · 20240516-7D-001 (Xəbərdarlıq #30944)' : 'NASA CCMC DONKI · 20240516-7D-001 (Alert #30944)'}
+                  </h4>
+                </div>
+                <span className="rounded border border-cyan-300/35 bg-cyan-500/15 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-cyan-100">
+                  {storm.activeRegion}
+                </span>
+              </div>
+              <dl className="mt-2.5 grid gap-2 sm:grid-cols-3">
+                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                  <dt className="text-[10.5px] text-slate-400">{az ? 'Hədd keçidi (≥10 MeV)' : 'Threshold Crossing (≥10 MeV)'}</dt>
+                  <dd className="mt-0.5 font-mono font-semibold text-amber-200">{storm.onsetUtc} · &gt;{storm.onsetThresholdPfu} pfu</dd>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                  <dt className="text-[10.5px] text-slate-400">{az ? 'Müşahidə olunan pik (GOES)' : 'Observed GOES Peak'}</dt>
+                  <dd className="mt-0.5 font-mono font-semibold text-rose-200">{storm.peakUtc} · {storm.peakPfu} pfu</dd>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
+                  <dt className="text-[10.5px] text-slate-400">{az ? 'Elmi sərhəd' : 'Scientific Boundary'}</dt>
+                  <dd className="mt-0.5 text-slate-200">
+                    {az ? 'Alışmalar (FLR) proton axını/doza çevrilmir' : 'FLR flare classes never convert to pfu or dose'}
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-2 flex flex-wrap gap-3 text-[11px]">
+                <a href={CITATIONS.DONKI.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-cyan-200 underline hover:text-white">
+                  {CITATIONS.DONKI.short} <ExternalLink size={11} aria-hidden="true" />
+                </a>
+                <a href={CITATIONS.GOES_PROTONS.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sky-200 underline hover:text-white">
+                  {CITATIONS.GOES_PROTONS.short} <ExternalLink size={11} aria-hidden="true" />
+                </a>
+              </div>
+            </section>
+
             <section className="rounded-xl border border-rose-400/30 bg-rose-950/20 p-3.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -465,20 +505,45 @@ export function NasaSensorDeckModal({
         )}
 
         {activeTab === 'bvad' && (
-          <dl className="mt-4 grid grid-cols-3 gap-2 text-xs sm:gap-3">
-            {[
-              { title: t('eclssO2'), value: ECLSS_BASELINES.o2KgPerCrewDay, unit: t('perCrewDay') },
-              { title: t('eclssCo2'), value: ECLSS_BASELINES.co2KgPerCrewDay, unit: t('perCrewDay') },
-              { title: t('eclssWater'), value: ECLSS_BASELINES.issWaterRecoveryPct, unit: '%' },
-            ].map(({ title: label, value, unit }) => (
-              <div key={label} className="rounded-lg border border-white/10 bg-slate-950/60 p-3">
-                <dt className="text-slate-300">{label}</dt>
-                <dd className="mt-1 text-base font-bold text-teal-200">
-                  {value} <span className="text-xs font-normal">{unit}</span>
-                </dd>
+          <div className="mt-4 space-y-3">
+            <dl className="grid grid-cols-3 gap-2 text-xs sm:gap-3">
+              {[
+                { title: t('eclssO2'), value: ECLSS_BASELINES.o2KgPerCrewDay, unit: t('perCrewDay') },
+                { title: t('eclssCo2'), value: ECLSS_BASELINES.co2KgPerCrewDay, unit: t('perCrewDay') },
+                { title: t('eclssWater'), value: ECLSS_BASELINES.issWaterRecoveryPct, unit: '%' },
+              ].map(({ title: label, value, unit }) => (
+                <div key={label} className="rounded-lg border border-white/10 bg-slate-950/60 p-3">
+                  <dt className="text-slate-300">{label}</dt>
+                  <dd className="mt-1 text-base font-bold text-teal-200">
+                    {value} <span className="text-xs font-normal">{unit}</span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <section className="rounded-xl border border-emerald-400/30 bg-emerald-950/20 p-3.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                    {az ? 'NASA OSDR BKS BİTKİ SINAĞI ARXİVİ' : 'NASA OSDR ISS PLANT EXPERIMENT ARCHIVE'}
+                  </span>
+                  <h4 className="mt-0.5 text-sm font-bold text-white">
+                    {az ? 'NASA OSDR · VEG-01A Kahı Sınağı (BKS)' : 'NASA OSDR · VEG-01A ISS Lettuce Trial'}
+                  </h4>
+                </div>
+                <span className="rounded border border-emerald-300/35 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-emerald-100">
+                  May 8 – Jun 10, 2014 · 33 d
+                </span>
               </div>
-            ))}
-          </dl>
+              <p className="mt-1.5 leading-relaxed text-slate-200">
+                {az
+                  ? 'Gerçək VEG-01A təcrübəsi BKS-də 33 gün davam edib. Oyundakı D2-C tədris ssenarisi isə bunu təlim məqsədilə 25 günlük hazır şitillər + 5 günlük (30-cu gün) yığım kimi sadələşdirir və Ay üçün təsdiqləmə iddiası etmir.'
+                  : 'The archived VEG-01A payload ran for 33 days aboard the ISS (May 8 – June 10, 2014). Option D2-C adapts this as a classroom training simplification (25-day-old seedlings harvested at 30 growing days after +5 scenario days) rather than a validated lunar yield model.'}
+              </p>
+              <a href={CITATIONS.ISS_VEGGIE.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-emerald-200 underline hover:text-white">
+                {CITATIONS.ISS_VEGGIE.short} <ExternalLink size={11} aria-hidden="true" />
+              </a>
+            </section>
+          </div>
         )}
       </div>
     </div>

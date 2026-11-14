@@ -1520,6 +1520,125 @@ export default function App() {
                   : `${Math.round(cropProgress * 100)}%`}
               </div>
             )}
+            {(completedPhases > 0 || worldSnapshot.powerLow || worldSnapshot.lifeSupportLow) && (
+              <div className="mt-2 rounded-lg border border-white/10 bg-slate-950/55 px-2.5 py-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+                  <span className="inline-flex items-center gap-1">
+                    <Wrench size={11} className="text-sky-300" />
+                    <span>{lang === 'az' ? 'Aktiv Baza Sistemləri' : 'Active Outpost Systems'}</span>
+                  </span>
+                  {hasBranch && (
+                    <span className="rounded border border-amber-400/35 bg-amber-400/15 px-1.5 py-0.5 text-[9px] text-amber-200">
+                      {lang === 'az' ? 'Sınaq B' : 'Run B'}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {completedPhases >= 1 && activeChoices[0] !== undefined && (
+                    <span
+                      className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                        activeChoices[0] === 0
+                          ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-100'
+                          : 'border-amber-400/35 bg-amber-400/10 text-amber-100'
+                      }`}
+                    >
+                      {activeChoices[0] === 0
+                        ? lang === 'az'
+                          ? '10 m Hündür Dirək'
+                          : '10 m Tall Mast'
+                        : activeChoices[0] === 1
+                          ? lang === 'az'
+                            ? '2 m Alçaq Panel'
+                            : '2 m Low Deck'
+                          : lang === 'az'
+                            ? '25° Sapmalı Panel'
+                            : '25° Off-Axis Array'}
+                    </span>
+                  )}
+                  {completedPhases >= 2 && activeChoices[1] !== undefined && (
+                    <span className="rounded border border-sky-400/30 bg-sky-400/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-100">
+                      {activeChoices[1] === 0
+                        ? lang === 'az'
+                          ? 'Reqolit Səddi'
+                          : 'Regolith Berm'
+                        : activeChoices[1] === 1
+                          ? lang === 'az'
+                            ? 'ISRU O₂ Qurğusu'
+                            : 'ISRU O₂ Rig'
+                          : lang === 'az'
+                            ? 'İstixana Bitkisi'
+                            : 'Veggie Crop'}
+                    </span>
+                  )}
+                  {completedPhases >= 3 && activeChoices[2] !== undefined && (
+                    <span
+                      className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                        activeChoices[2] === 1
+                          ? 'border-cyan-400/35 bg-cyan-400/10 text-cyan-100'
+                          : activeChoices[2] === 0
+                            ? 'border-amber-400/35 bg-amber-400/10 text-amber-100'
+                            : 'border-rose-400/35 bg-rose-400/10 text-rose-100'
+                      }`}
+                    >
+                      {activeChoices[2] === 1
+                        ? lang === 'az'
+                          ? 'Yanacaq Elementi Aktiv'
+                          : 'Fuel Cells Active'
+                        : activeChoices[2] === 0
+                          ? lang === 'az'
+                            ? 'Yük Azaltma Rejimi'
+                            : 'Load-Shed Mode'
+                          : lang === 'az'
+                            ? 'Tam Qazma Rejimi'
+                            : 'Deep Drill Ops'}
+                    </span>
+                  )}
+                  {completedPhases >= 5 && activeChoices[4] !== undefined && (
+                    <span
+                      className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                        activeChoices[4] === 2
+                          ? 'border-emerald-400/35 bg-emerald-400/10 text-emerald-100'
+                          : activeChoices[4] === 1
+                            ? 'border-sky-400/35 bg-sky-400/10 text-sky-100'
+                            : 'border-rose-400/35 bg-rose-400/10 text-rose-100'
+                      }`}
+                    >
+                      {activeChoices[4] === 2
+                        ? lang === 'az'
+                          ? 'Fırtına Sığınacağı'
+                          : 'Storm Bunker'
+                        : activeChoices[4] === 1
+                          ? lang === 'az'
+                            ? 'Su Divarlı Modul'
+                            : 'Water-Wall Hab'
+                          : lang === 'az'
+                            ? 'Açıq EVA Keçidi'
+                            : 'Exposed EVA'}
+                    </span>
+                  )}
+                </div>
+                {worldSnapshot.powerLow && (
+                  <div className="mt-1.5 flex items-start gap-1.5 rounded border border-amber-400/35 bg-amber-950/50 px-2 py-1 text-[10.5px] leading-snug text-amber-100">
+                    <Zap size={12} className="mt-0.5 shrink-0 text-amber-300" />
+                    <span>
+                      {lang === 'az'
+                        ? 'Enerji 20 kVt·s həddindən aşağı düşdü — yaşayış işıqları azaldıldı'
+                        : 'Power below 20 kWh floor — habitat lights dimmed'}
+                    </span>
+                  </div>
+                )}
+                {worldSnapshot.lifeSupportLow && (
+                  <div className="mt-1.5 flex items-start gap-1.5 rounded border border-rose-400/35 bg-rose-950/50 px-2 py-1 text-[10.5px] leading-snug text-rose-100">
+                    <ShieldAlert size={12} className="mt-0.5 shrink-0 text-rose-300" />
+                    <span>
+                      {lang === 'az'
+                        ? 'Həyat təminatı xəbərdarlığı aktivdir — stansiya rəngi qırmızıya keçdi'
+                        : 'ECLSS reserve warning active — habitat alerts lit'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             {viewStep <= 3 && solarOutputPct !== null && (
               <div className="mt-1.5 text-xs text-amber-100">
                 {lang === 'az'
@@ -1596,7 +1715,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 1-Click Direct 3D Shackleton Sightline & Astronaut Rim POV Launcher */}
+            {/* 1-Click Direct Mountain Horizon & 2m vs 10m Sunlight Lab Launcher */}
             <button
               type="button"
               onClick={() => {
@@ -1610,12 +1729,12 @@ export default function App() {
                 <Orbit size={13} className="shrink-0 text-cyan-300" />
                 <span>
                   {lang === 'az'
-                    ? '3D Krater və 2m/10m Günəş Şüası'
-                    : '3D Crater & 2m/10m Sightline'}
+                    ? 'Günəş Dağ Arxasında · 2m/10m'
+                    : 'Sun Behind Mountain · 2m vs 10m'}
                 </span>
               </span>
               <span className="rounded border border-cyan-300/35 bg-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-200">
-                3D POV
+                2D/3D LAB
               </span>
             </button>
 
@@ -1759,7 +1878,7 @@ export default function App() {
           onNavigateStation={handleNavigateFromMap}
         />
 
-        {/* RIGHT-SIDE LIVE 3D SIGHTLINE & SHACKLETON RIM CROSS-SECTION CARD */}
+        {/* RIGHT-SIDE MOUNTAIN HORIZON & SOLAR MAST CROSS-SECTION CARD */}
         {!demoStage && !anyOverlayOpen && (
           <button
             type="button"
@@ -1768,15 +1887,15 @@ export default function App() {
               closeAllModals();
               setSensorDeckOpen(true);
             }}
-            className="sightline-mini-card hidden xl:flex"
+            className="sightline-mini-card hidden lg:flex"
             title={
               lang === 'az'
-                ? 'İnteraktiv 3D Şeklton Krateri və Astronavt POV səhnəsini açın'
-                : 'Open interactive 3D Shackleton Crater & Astronaut POV scene'
+                ? 'Dağ üfüqü və 2m/10m günəş sınağını açın'
+                : 'Open mountain horizon & 2m vs 10m sunlight lab'
             }
           >
             <div className="sightline-mini-header">
-              <span>{lang === 'az' ? '3D SİLSİLƏ GÖRÜNÜŞÜ' : '3D RIM SIGHTLINE'}</span>
+              <span>{lang === 'az' ? 'GÜNƏŞ DAĞ ARXASINDA?' : 'SUN BEHIND MOUNTAIN?'}</span>
               <span className="rounded bg-cyan-400/20 px-1.5 py-0.5 text-[8.5px] font-bold text-cyan-200">
                 128° AZ
               </span>
@@ -1835,8 +1954,8 @@ export default function App() {
             <div className="sightline-mini-footer">
               <span>
                 {lang === 'az'
-                  ? '3D Krater və Astronavt POV aç'
-                  : 'Inspect 3D Crater & Rim POV'}
+                  ? '2m və 10m günəş sınağı'
+                  : 'Test 2m vs 10m sunlight lab'}
               </span>
               <span className="font-mono text-cyan-300">→</span>
             </div>
@@ -2273,6 +2392,115 @@ export default function App() {
                   : 'Older replay link: missing preparation settings use defaults; results may differ from the original experiment.'}
               </p>
             )}
+            <div className="mb-4 rounded-xl border border-cyan-400/25 bg-cyan-950/20 p-3.5">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                  {lang === 'az' ? '7 Addımlıq Elmi Metod Axını' : '7-Step Scientific Replay Loop'}
+                </span>
+                <span className="text-[11px] text-slate-300">
+                  {runB && divergedStep !== null
+                    ? lang === 'az'
+                      ? 'Sınaq A və B müqayisəsi hazırdır'
+                      : 'Run A vs Run B comparison active'
+                    : hasBranch
+                      ? lang === 'az'
+                        ? 'İndi Sınaq B üçün fərqli strategiya seçin'
+                        : 'Now choose an alternate strategy for Run B'
+                      : runA.steps.length > 0
+                        ? lang === 'az'
+                          ? 'Geri qayıtmaq üçün aşağıdan tamamlanmış qərarı seçin'
+                          : 'Select any completed decision below to rewind'
+                        : lang === 'az'
+                          ? 'Proqnoz verin və ilk qərarınızı sınayın'
+                          : 'Make a prediction and test your first decision'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
+                {[
+                  {
+                    n: 1,
+                    en: 'Predict',
+                    az: 'Proqnoz',
+                    done: Boolean(shadowPrediction) || runA.steps.length > 0,
+                    active: !shadowPrediction && runA.steps.length === 0,
+                  },
+                  {
+                    n: 2,
+                    en: 'Choose',
+                    az: 'Seçim',
+                    done: runA.steps.length > 0,
+                    active: runA.steps.length === 0,
+                  },
+                  {
+                    n: 3,
+                    en: 'Observe A',
+                    az: 'Sınaq A',
+                    done: runA.steps.length > 0,
+                    active: runA.steps.length > 0 && !hasBranch,
+                  },
+                  {
+                    n: 4,
+                    en: 'Rewind',
+                    az: 'Geri Qayıt',
+                    done: hasBranch,
+                    active: runA.steps.length > 0 && !hasBranch,
+                  },
+                  {
+                    n: 5,
+                    en: 'Choose B',
+                    az: 'Sınaq B',
+                    done: Boolean(runB && divergedStep !== null),
+                    active: hasBranch && divergedStep === null,
+                  },
+                  {
+                    n: 6,
+                    en: 'Compare',
+                    az: 'Müqayisə',
+                    done: Boolean(runB && divergedStep !== null),
+                    active: false,
+                  },
+                  {
+                    n: 7,
+                    en: 'Principle',
+                    az: 'Prinsip',
+                    done: Boolean(runB && divergedStep !== null),
+                    active: false,
+                  },
+                ].map((stage) => (
+                  <div
+                    key={stage.n}
+                    className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-medium ${
+                      stage.done
+                        ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-100'
+                        : stage.active
+                          ? 'border-amber-300/55 bg-amber-400/15 text-amber-100'
+                          : 'border-white/10 bg-slate-950/45 text-slate-400'
+                    }`}
+                  >
+                    <span
+                      className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                        stage.done
+                          ? 'bg-emerald-400 text-slate-950'
+                          : stage.active
+                            ? 'bg-amber-300 text-slate-950'
+                            : 'bg-white/10 text-slate-300'
+                      }`}
+                    >
+                      {stage.n}
+                    </span>
+                    <span className="truncate">{lang === 'az' ? stage.az : stage.en}</span>
+                  </div>
+                ))}
+              </div>
+              {!hasBranch && runA.steps.length > 0 && (
+                <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-950/40 px-2.5 py-1.5 text-xs text-amber-100">
+                  {lang === 'az'
+                    ? 'Növbəti addım: Aşağıdakı tamamlanmış qərarlardan (D1–D6) birini klikləyib alternativ strategiya ilə Sınaq B yaradın.'
+                    : 'Next step: Click any completed decision (D1–D6) below to rewind, pick an alternate strategy, and compare Run A vs Run B.'}
+                </p>
+              )}
+            </div>
+
             {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
             {runB && (
               <div className="mb-4">
