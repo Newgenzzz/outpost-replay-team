@@ -25,7 +25,14 @@ import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
-import { CITATIONS, GAME_CONSTANTS, MAY_2024_PROTON_EVENT, RADIATION_LIMITS } from '../data/nasaTelemetry';
+import {
+  CITATIONS,
+  DOSE_COEFF_MSV_PER_HR_PER_PFU,
+  GAME_CONSTANTS,
+  MAY_2024_PROTON_EVENT,
+  RADIATION_LIMITS,
+  SHIELDING,
+} from '../data/nasaTelemetry';
 import { soundFX } from '../utils/soundEffects';
 import {
   METRIC_KEYS,
@@ -548,27 +555,130 @@ export default function DecisionCard(props: DecisionCardProps) {
             )}
 
             {step === 5 && (
-              <div className="rounded-lg border border-cyan-400/35 bg-cyan-950/30 px-3 py-2 text-[11px] text-slate-200">
+              <div className="rounded-lg border border-cyan-400/35 bg-cyan-950/30 px-3 py-2.5 text-[11px] text-slate-200">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
                     {lang === 'az'
-                      ? 'NASA DONKI & NOAA GOES ARXİVİ · 20240516-7D-001'
-                      : 'NASA DONKI & NOAA GOES ARCHIVE · 20240516-7D-001'}
+                      ? 'NASA DONKI HƏFTƏLİK XÜLASƏSİ (8–14 MAY 2024) · 20240516-7D-001'
+                      : 'NASA DONKI WEEKLY SUMMARY (MAY 8–14, 2024) · 20240516-7D-001'}
                   </span>
                   <span className="font-mono text-[10px] text-cyan-100">
                     {MAY_2024_PROTON_EVENT.activeRegion} · Alert #30944
                   </span>
                 </div>
-                <p className="mt-1 font-mono text-[10.5px] text-amber-100">
+                <p className="mt-1 rounded border border-amber-300/30 bg-amber-950/40 px-2 py-1 text-[10.5px] leading-snug text-amber-100">
                   {lang === 'az'
-                    ? `Müşahidə: ${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu → Pik ${MAY_2024_PROTON_EVENT.peakUtc} (${MAY_2024_PROTON_EVENT.peakPfu} pfu, GOES)`
-                    : `Observed: ${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu → Peak ${MAY_2024_PROTON_EVENT.peakUtc} (${MAY_2024_PROTON_EVENT.peakPfu} pfu, GOES)`}
+                    ? `Diqqət: 20240516-7D-001 8–14 May 2024 həftəlik kosmik hava xülasəsidir (müşahidə olunmuş astronavt dozası deyil). GOES (${MAY_2024_PROTON_EVENT.peakPfu} pfu) Yerə yaxın zərrəcik axınıdır, Ay səthi dozası deyil.`
+                    : `Provenance note: 20240516-7D-001 is a weekly space-weather summary covering May 8–14, 2024 — not an observed astronaut radiation dose. NOAA GOES (${MAY_2024_PROTON_EVENT.peakPfu} pfu) measured near-Earth proton flux, not lunar surface dose.`}
                 </p>
-                <p className="mt-0.5 leading-snug text-slate-300">
-                  {lang === 'az'
-                    ? 'Ay doza əmsalları (×1.0 / ×0.25 / ×0.15 / ×0.06) və 48 saatlıq fırtına forması uydurma təlim parametrləridir; alışma sinfi dozaya çevrilmir.'
-                    : 'Observed near-Earth peak vs. fictional lunar parameters: the 48 h curve, 0.015 factor, and shielding multipliers are training assumptions.'}
-                </p>
+
+                {/* Interactive Shielding Comparison Selector (synced with A/B/C cards below) */}
+                <div className="mt-2">
+                  <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+                    <span>
+                      {lang === 'az'
+                        ? 'Müqayisə et: Ay Qalxanı və 48 Saatlıq Model Dozası'
+                        : 'Interactive Shielding Check · Modeled 48 h Lunar Dose'}
+                    </span>
+                    <span className="font-mono text-cyan-200">
+                      {lang === 'az' ? 'Ssenari piki:' : 'Scenario peak:'} {runInput.scenario.stormPeakPfu} pfu
+                    </span>
+                  </div>
+                  <div className="grid gap-1.5 sm:grid-cols-3">
+                    {([
+                      {
+                        idx: 0,
+                        name: lang === 'az' ? 'A: Çöl (EVA + Modul)' : 'A: EVA + Habitat',
+                        factor: `24h ×${SHIELDING.evaSuit.toFixed(2)} + 24h ×${SHIELDING.habitat.toFixed(2)}`,
+                      },
+                      {
+                        idx: 1,
+                        name: lang === 'az' ? 'B: Yaşayış Modulu' : 'B: Habitat Inside',
+                        factor: `48h ×${SHIELDING.habitat.toFixed(2)} (${Math.round(SHIELDING.habitat * 100)}%)`,
+                      },
+                      {
+                        idx: 2,
+                        name: flagsBefore.includes('regolithBerm')
+                          ? lang === 'az'
+                            ? 'C: Sığınacaq + D2 Səddi'
+                            : 'C: Shelter + D2 Berm'
+                          : lang === 'az'
+                            ? 'C: Su Divarlı Sığınacaq'
+                            : 'C: Water-Wall Shelter',
+                        factor: flagsBefore.includes('regolithBerm')
+                          ? `48h ×${SHIELDING.regolithBerm.toFixed(2)} (${Math.round(SHIELDING.regolithBerm * 100)}%)`
+                          : `48h ×${SHIELDING.waterWall.toFixed(2)} (${Math.round(SHIELDING.waterWall * 100)}%)`,
+                      },
+                    ] as const).map((tier) => {
+                      const f = forecasts[tier.idx];
+                      const dose = f?.delta.radiationMsv ?? 0;
+                      const active = inspectedIdx === tier.idx;
+                      const pctOfMax = Math.min(100, Math.round((dose / Math.max(1, forecasts[0]?.delta.radiationMsv ?? 45)) * 100));
+                      return (
+                        <button
+                          key={tier.idx}
+                          type="button"
+                          onClick={() => setInspectedChoice(tier.idx)}
+                          className={`rounded-md border p-2 text-left transition ${
+                            active
+                              ? 'border-sky-300 bg-sky-950/60 ring-1 ring-sky-400/50'
+                              : 'border-white/10 bg-slate-950/60 hover:border-sky-400/50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 text-[10.5px] font-semibold text-white">
+                            <span className="truncate">{tier.name}</span>
+                            <span className="shrink-0 font-mono text-amber-200">+{fmt(dose)} mSv</span>
+                          </div>
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className={`h-full rounded-full ${
+                                dose >= 25 ? 'bg-rose-400' : dose >= 8 ? 'bg-amber-300' : 'bg-emerald-400'
+                              }`}
+                              style={{ width: `${Math.max(4, pctOfMax)}%` }}
+                            />
+                          </div>
+                          <span className="mt-1 block font-mono text-[9.5px] text-slate-400">{tier.factor}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Explicit 4-Category Scientific Separation */}
+                <div className="mt-2 grid gap-1.5 rounded-md border border-white/10 bg-slate-950/60 p-2 text-[10px] text-slate-300 sm:grid-cols-2">
+                  <div>
+                    <strong className="text-cyan-200">
+                      {lang === 'az' ? '1. Müşahidə (NASA/NOAA): ' : '1. Observed (NASA/NOAA): '}
+                    </strong>
+                    {lang === 'az'
+                      ? `${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu; Yerə yaxın pik ${MAY_2024_PROTON_EVENT.peakPfu} pfu (${MAY_2024_PROTON_EVENT.peakUtc}).`
+                      : `${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu; near-Earth peak ${MAY_2024_PROTON_EVENT.peakPfu} pfu (${MAY_2024_PROTON_EVENT.peakUtc}).`}
+                  </div>
+                  <div>
+                    <strong className="text-sky-200">
+                      {lang === 'az' ? '2. Nəşr Standartı (NASA-STD-3001): ' : '2. Published (NASA-STD-3001): '}
+                    </strong>
+                    {lang === 'az'
+                      ? `Karyera həddi <${RADIATION_LIMITS.careerLimitMsv} mSv · ALARA prinsipi; FLR alışması dozaya çevrilmir.`
+                      : `Career limit <${RADIATION_LIMITS.careerLimitMsv} mSv · ALARA shielding principle; FLR flares do not convert to dose.`}
+                  </div>
+                  <div>
+                    <strong className="text-amber-200">
+                      {lang === 'az' ? '3. Təlim Fərziyyəsi: ' : '3. Educational Assumption: '}
+                    </strong>
+                    {lang === 'az'
+                      ? `${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ əmsalı + qalxan vuruqları (×1.00 / ×0.25 / ×0.15 / ×0.06).`
+                      : `${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹ factor & shielding multipliers (×1.00 / ×0.25 / ×0.15 / ×0.06).`}
+                  </div>
+                  <div>
+                    <strong className="text-rose-200">
+                      {lang === 'az' ? '4. Uydurma Missiya Parametri: ' : '4. Fictional Mission Param: '}
+                    </strong>
+                    {lang === 'az'
+                      ? `48 saatlıq Ay fırtına əyrisi və ${RADIATION_LIMITS.missionWarningMsv} mSv xəbərdarlıq həddi.`
+                      : `Synthetic 48 h lunar storm pulse & ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning limit.`}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -629,7 +739,7 @@ export default function DecisionCard(props: DecisionCardProps) {
                       : 'border-slate-700 bg-slate-950/55 hover:border-sky-400 hover:bg-slate-800/60'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <span
                       className={`grid h-6 w-6 place-items-center rounded-md text-xs font-bold ${
                         selected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-200'
@@ -637,7 +747,39 @@ export default function DecisionCard(props: DecisionCardProps) {
                     >
                       {CHOICE_LETTERS[i]}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex flex-wrap items-center justify-end gap-1">
+                      {copilotEnabled && c.copilotRecommendation && (
+                        <span className="rounded border border-emerald-400/45 bg-emerald-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-200">
+                          ★ {lang === 'az' ? 'CapCom tövsiyəsi' : 'CapCom Pick'}
+                        </span>
+                      )}
+                      {forecast &&
+                        (forecast.env.lowPowerHours > 0 ||
+                        forecast.after.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh ? (
+                          <span className="rounded border border-amber-400/45 bg-amber-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-amber-200">
+                            ⚠ {lang === 'az'
+                              ? `Aşağı batareya (${fmt(forecast.env.lowPowerHours, 0)}s)`
+                              : `Low battery (${fmt(forecast.env.lowPowerHours, 0)}h)`}
+                          </span>
+                        ) : forecast.after.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct ? (
+                          <span className="rounded border border-rose-400/45 bg-rose-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-200">
+                            ⚠ {lang === 'az'
+                              ? `Zəif həyat təminatı (${fmt(forecast.after.lifeSupportPct)}%)`
+                              : `Low ECLSS (${fmt(forecast.after.lifeSupportPct)}%)`}
+                          </span>
+                        ) : step === 5 && forecast.delta.radiationMsv >= 25 ? (
+                          <span className="rounded border border-rose-400/45 bg-rose-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-200">
+                            ⚠ {lang === 'az'
+                              ? `Yüksək doza (+${fmt(forecast.delta.radiationMsv)} mSv)`
+                              : `High storm dose (+${fmt(forecast.delta.radiationMsv)} mSv)`}
+                          </span>
+                        ) : (
+                          <span className="rounded border border-emerald-400/35 bg-emerald-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-emerald-200">
+                            ✓ {lang === 'az'
+                              ? `${fmt(forecast.after.powerKwh)} kVt·s təhlükəsiz`
+                              : `${fmt(forecast.after.powerKwh)} kWh safe`}
+                          </span>
+                        ))}
                       {isA && (
                         <span className="rounded bg-slate-200 px-1.5 text-[10px] font-bold text-slate-900">
                           {t('runA')}
@@ -748,14 +890,22 @@ export default function DecisionCard(props: DecisionCardProps) {
             </div>
           )}
 
-          {/* Cause & Effect Explanation Card */}
-          <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-            <div className="flex items-center justify-between">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
-                <Info className="h-3.5 w-3.5" /> {t('causeEffect')} ({CHOICE_LETTERS[inspectedIdx]})
-              </p>
-            </div>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-200">
+          {/* Cause & Effect Explanation Card (Progressive Disclosure in Cadet Mode) */}
+          <details open={!isCadet} className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+            <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+              <span className="flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5" />
+                {lang === 'az'
+                  ? `${CHOICE_LETTERS[inspectedIdx]} variantı niyə belə işləyir? · NASA mənbəyi`
+                  : `Why Option ${CHOICE_LETTERS[inspectedIdx]} works this way · NASA source`}
+              </span>
+              {conditionals.some((item) => item.active) && (
+                <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] normal-case text-emerald-200">
+                  ✓ {lang === 'az' ? 'Əvvəlki qərardan bonus aktivdir' : 'Prior decision bonus active'}
+                </span>
+              )}
+            </summary>
+            <p className="mt-2 text-sm leading-relaxed text-slate-200">
               {tr(decision.choices[inspectedIdx].causeAndEffectExplanation)}
             </p>
             {conditionals.map(({ flag, active, note }) => (
@@ -770,7 +920,7 @@ export default function DecisionCard(props: DecisionCardProps) {
                 {tr(decision.choices[inspectedIdx].nasaSourceCitation)}
               </span>
             </p>
-          </div>
+          </details>
 
           {/* Procedural teaching illustration and separate published planner at Decision 1 */}
           {step === 1 && <LunarSiteIntelligence />}

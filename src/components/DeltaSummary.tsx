@@ -170,6 +170,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           const calibration = firstChange === 1 && a.solarCalibrated !== b.solarCalibrated;
           const preparation = phase.choiceId === 'D4-A' && a.icePrepared !== b.icePrepared;
           const value = showWaterYield ? phase.resourceFlows.waterExtractedKg : phase.after[primaryKey];
+          const choice = decision.choices[phase.choiceIndex];
           return (
             <article key={label} className={`flex flex-col gap-2 rounded-xl border p-3 ${index === 0
               ? 'border-[#546879] bg-[#16242f]' : 'border-[#668f82] bg-[#193433]'}`}>
@@ -182,7 +183,14 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
                 <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs text-slate-200">
                   {az ? 'Var.' : 'Opt'} {CHOICE_LETTERS[phase.choiceIndex]}
                 </span>
-                <span>{tr(decision.choices[phase.choiceIndex].label)}</span>
+                <span>
+                  <span className="block">{tr(choice.label)}</span>
+                  {choice.cadetLabel && (
+                    <span className="mt-0.5 block text-xs font-normal text-slate-300">
+                      {tr(choice.cadetLabel)}
+                    </span>
+                  )}
+                </span>
               </p>
               {calibration && <p className="text-xs text-amber-100">{run.solarCalibrated
                 ? az ? 'Kalibrləmə tətbiq edildi' : 'Calibration applied'
@@ -190,14 +198,52 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
               {preparation && <p className="text-xs text-sky-100">{run.icePrepared
                 ? az ? 'Hazırlanmış qurğu' : 'Prepared extractor'
                 : az ? 'Standart qurğu' : 'Standard extractor'}</p>}
-              {samePhaseEnd && (
-                <div className="mt-auto border-t border-white/15 pt-2">
-                  <p className="text-xs text-slate-300">{phaseLabel} · {az ? `Saat ${phase.endHour}` : `Hour ${phase.endHour}`}</p>
-                  <p className="font-mono text-2xl font-semibold tracking-tight text-white">
-                    {fmt(value, showWaterYield ? 2 : 1)} <span className="text-sm text-slate-300">{phaseUnit}</span>
-                  </p>
-                </div>
-              )}
+              {samePhaseEnd && (() => {
+                const maxScale = showWaterYield
+                  ? Math.max(0.5, phaseA.resourceFlows.waterExtractedKg, phaseB.resourceFlows.waterExtractedKg)
+                  : primaryKey === 'radiationMsv'
+                    ? 60
+                    : 100;
+                const pct = Math.min(100, Math.max(4, Math.round((value / maxScale) * 100)));
+                const isRisk =
+                  !showWaterYield &&
+                  ((primaryKey === 'powerKwh' && value < 20) ||
+                    (primaryKey === 'lifeSupportPct' && value < 40) ||
+                    (primaryKey === 'radiationMsv' && value >= 50));
+                const barCls = isRisk
+                  ? 'bg-rose-400'
+                  : index === 0
+                    ? 'bg-amber-300'
+                    : 'bg-emerald-400';
+                return (
+                  <div className="mt-auto border-t border-white/15 pt-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-xs text-slate-300">{phaseLabel} · {az ? `Saat ${phase.endHour}` : `Hour ${phase.endHour}`}</p>
+                      {!showWaterYield && primaryKey === 'powerKwh' && (
+                        <span className={`font-mono text-[10px] font-semibold ${value < 20 ? 'text-rose-200' : 'text-emerald-200'}`}>
+                          {value < 20
+                            ? (az ? '<20 kVt·s riski' : '<20 kWh brownout')
+                            : (az ? '≥20 kVt·s təhlükəsiz' : '≥20 kWh safe')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-mono text-2xl font-semibold tracking-tight text-white">
+                      {fmt(value, showWaterYield ? 2 : 1)} <span className="text-sm text-slate-300">{phaseUnit}</span>
+                    </p>
+                    <div className="relative mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/45">
+                      <div className={`h-full rounded-full transition-all ${barCls}`} style={{ width: `${pct}%` }} />
+                      {!showWaterYield && primaryKey === 'powerKwh' && (
+                        <span
+                          aria-hidden="true"
+                          title={az ? '20 kVt·s həddi' : '20 kWh brownout threshold'}
+                          className="absolute bottom-0 top-0 w-0.5 bg-white/80"
+                          style={{ left: '20%' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </article>
           );
         })}

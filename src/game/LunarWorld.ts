@@ -1200,6 +1200,16 @@ export class LunarWorld extends Phaser.Scene {
       from = point;
     }
 
+    // Subtle pulsing target beacon ring around the active objective station
+    if (snap.completedCount < 6) {
+      const targetSt = STATIONS[Math.min(5, Math.max(0, snap.activeStep - 1))];
+      const ringPulse = this.bridge.reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * 0.0055);
+      const ringColor = snap.stormPending ? 0xfb923c : snap.powerLow ? 0xf6d59b : 0x86efac;
+      this.fxGfx
+        .lineStyle(2, ringColor, 0.32 + ringPulse * 0.42)
+        .strokeEllipse(targetSt.x, targetSt.y + 8, 74 + ringPulse * 14, 34 + ringPulse * 7);
+    }
+
     if (!this.bridge.reducedMotion) {
       for (const [stepId, start] of this.facilityPulseAt) {
         const phase = (time - start) / 1200;
@@ -1626,6 +1636,17 @@ export class LunarWorld extends Phaser.Scene {
             : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
       this.setReadout('habitat', az ? 'YAŞAYIŞ MODULU' : 'HABITAT', habitatStatus,
         snap.lifeSupportLow || snap.powerLow ? '#f6d59b' : '#c6e9d1');
+      if (
+        previous &&
+        (previous.powerLow !== snap.powerLow ||
+          previous.lifeSupportLow !== snap.lifeSupportLow ||
+          (previous.choices[2] === 1) !== hasBackupFuelCells)
+      ) {
+        this.acknowledgeFacility(
+          'habitat',
+          snap.lifeSupportLow || snap.powerLow ? 0xf6d59b : hasBackupFuelCells ? 0x38bdf8 : 0xc6e9d1,
+        );
+      }
 
       const crop = CROP_DISPLAY[snap.cropStatus];
       const cropProgress = Phaser.Math.Clamp(snap.cropProgress, 0, 1);
@@ -1674,6 +1695,9 @@ export class LunarWorld extends Phaser.Scene {
         shelterStatus,
         shelterChoice === 2 ? '#c6e9d1' : '#f6d59b',
         snap.stormPending);
+      if (previous && (previous.stormPending !== snap.stormPending || previous.choices[4] !== snap.choices[4])) {
+        this.acknowledgeFacility('shelter', shelterChoice === 2 ? 0xc6e9d1 : 0xf6d59b);
+      }
 
       this.batteryLight
         .setVisible(powerFrac > 0)

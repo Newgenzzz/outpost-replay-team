@@ -295,14 +295,17 @@ export function MissionLaunchScreen({
             </button>
           </div>
 
-          {/* Secondary Quick Explorers: 3D NASA LOLA Hologram + Bonus Mars Mission */}
+          {/* Secondary Quick Explorers: 2.5D Mountain Horizon Sunlight Lab + Bonus Mars Mission */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3 text-xs">
             <button
               type="button"
               onClick={onOpen3DNasaDeck}
               className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 font-semibold text-cyan-200 hover:bg-cyan-500/25"
             >
-              🛰️ {az ? '3D Şeklton Krateri, Astronavt POV və NASA DONKI →' : '3D Shackleton Crater, Astronaut POV & NASA DONKI →'}
+              🛰️{' '}
+              {az
+                ? 'Günəş Dağ Arxasında (2m/10m) və NASA Arxivləri →'
+                : 'Sun Behind Mountain (2m vs 10m) & NASA Archives →'}
             </button>
 
             <button

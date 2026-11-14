@@ -1,11 +1,19 @@
-import { CheckCircle2, Sparkles, TriangleAlert, X } from 'lucide-react';
+import { CheckCircle2, GitBranch, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, type StepRecord } from '../engine/simulation';
 import { useI18n } from '../i18n/LanguageContext';
 import { CHOICE_LETTERS, fmt, signed } from './metricMeta';
 
-export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismiss: () => void }) {
+export function DecisionDebrief({
+  step,
+  onDismiss,
+  onOpenRewind,
+}: {
+  step: StepRecord;
+  onDismiss: () => void;
+  onOpenRewind?: () => void;
+}) {
   const { lang, t, tr } = useI18n();
   const az = lang === 'az';
   const kg = az ? 'kq' : 'kg';
@@ -123,6 +131,20 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
           <p className="mt-2 text-amber-100">{step.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}</p>
         )}
       </details>
+      {onOpenRewind && step.step >= 3 && (
+        <button
+          type="button"
+          onClick={onOpenRewind}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-sky-400/40 bg-sky-500/15 px-2.5 py-1.5 text-[11px] font-semibold text-sky-100 transition hover:bg-sky-500/25"
+        >
+          <GitBranch size={12} aria-hidden="true" />
+          <span>
+            {az
+              ? `D${step.step} qərarını geri sar və başqasını sına [R]`
+              : `Rewind D${step.step} & compare another choice [R]`}
+          </span>
+        </button>
+      )}
     </section>
   );
 }

@@ -256,29 +256,64 @@ export function NasaSensorDeckModal({
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
-                    {az ? 'TƏSDİQLƏNMİŞ NASA DONKI & GOES ARXİV HADİSƏSİ' : 'VERIFIED NASA DONKI & GOES ARCHIVE RECORD'}
+                    {az
+                      ? 'NASA DONKI HƏFTƏLİK XÜLASƏSİ VƏ GOES PEYK QEYDİ'
+                      : 'NASA DONKI WEEKLY SUMMARY & GOES SATELLITE RECORD'}
                   </span>
                   <h4 className="mt-0.5 text-sm font-bold text-white">
-                    {az ? 'NASA CCMC DONKI · 20240516-7D-001 (Xəbərdarlıq #30944)' : 'NASA CCMC DONKI · 20240516-7D-001 (Alert #30944)'}
+                    {az
+                      ? 'NASA CCMC DONKI · 20240516-7D-001 (8–14 May 2024 Həftəlik Xülasə · #30944)'
+                      : 'NASA CCMC DONKI · 20240516-7D-001 (May 8–14, 2024 Weekly Summary · Alert #30944)'}
                   </h4>
                 </div>
                 <span className="rounded border border-cyan-300/35 bg-cyan-500/15 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-cyan-100">
                   {storm.activeRegion}
                 </span>
               </div>
-              <dl className="mt-2.5 grid gap-2 sm:grid-cols-3">
-                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
-                  <dt className="text-[10.5px] text-slate-400">{az ? 'Hədd keçidi (≥10 MeV)' : 'Threshold Crossing (≥10 MeV)'}</dt>
-                  <dd className="mt-0.5 font-mono font-semibold text-amber-200">{storm.onsetUtc} · &gt;{storm.onsetThresholdPfu} pfu</dd>
+              <p className="mt-1.5 rounded-lg border border-amber-300/30 bg-amber-950/35 px-2.5 py-1.5 text-[11px] leading-snug text-amber-100">
+                {az
+                  ? 'Elmi sərhəd: 20240516-7D-001 8–14 May 2024 tarixlərini əhatə edən həftəlik kosmik hava xülasəsidir — astronavtın müşahidə olunmuş radiasiya dozası deyil. NOAA GOES piki (207 pfu) Yerə yaxın zərrəcik axınıdır, Ay səthində ölçülmüş doza deyil.'
+                  : 'Scientific provenance: 20240516-7D-001 is a weekly space-weather summary covering May 8–14, 2024 — not an observed astronaut radiation dose. NOAA GOES (207 pfu) is near-Earth geosynchronous particle flux, not a lunar surface dose measurement.'}
+              </p>
+              <dl className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border border-cyan-400/30 bg-slate-950/60 p-2">
+                  <dt className="font-mono text-[9.5px] font-bold uppercase text-cyan-300">
+                    {az ? '1. Faktiki NASA/NOAA Müşahidəsi' : '1. Actual NASA/NOAA Data'}
+                  </dt>
+                  <dd className="mt-0.5 text-[11px] text-slate-200">
+                    {az
+                      ? `GOES ≥10 MeV axını: ${storm.onsetUtc} >${storm.onsetThresholdPfu} pfu; pik ${storm.peakPfu} pfu (${storm.peakUtc}, Yerə yaxın).`
+                      : `GOES ≥10 MeV flux crossed >${storm.onsetThresholdPfu} pfu at ${storm.onsetUtc}; peaked at ${storm.peakPfu} pfu (${storm.peakUtc}, near-Earth).`}
+                  </dd>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
-                  <dt className="text-[10.5px] text-slate-400">{az ? 'Müşahidə olunan pik (GOES)' : 'Observed GOES Peak'}</dt>
-                  <dd className="mt-0.5 font-mono font-semibold text-rose-200">{storm.peakUtc} · {storm.peakPfu} pfu</dd>
+                <div className="rounded-lg border border-sky-400/30 bg-slate-950/60 p-2">
+                  <dt className="font-mono text-[9.5px] font-bold uppercase text-sky-300">
+                    {az ? '2. Nəşr Edilmiş Standart' : '2. Published Standard'}
+                  </dt>
+                  <dd className="mt-0.5 text-[11px] text-slate-200">
+                    {az
+                      ? `NASA-STD-3001 karyera həddi <${RADIATION_LIMITS.careerLimitMsv} mSv və ALARA mühafizə prinsipi; alışma (FLR) sinfi pfu-ya çevrilmir.`
+                      : `NASA-STD-3001 career limit <${RADIATION_LIMITS.careerLimitMsv} mSv & ALARA shielding principle; FLR flare classes never convert to pfu/dose.`}
+                  </dd>
                 </div>
-                <div className="rounded-lg border border-white/10 bg-slate-950/60 p-2">
-                  <dt className="text-[10.5px] text-slate-400">{az ? 'Elmi sərhəd' : 'Scientific Boundary'}</dt>
-                  <dd className="mt-0.5 text-slate-200">
-                    {az ? 'Alışmalar (FLR) proton axını/doza çevrilmir' : 'FLR flare classes never convert to pfu or dose'}
+                <div className="rounded-lg border border-amber-400/30 bg-slate-950/60 p-2">
+                  <dt className="font-mono text-[9.5px] font-bold uppercase text-amber-300">
+                    {az ? '3. Təlim Fərziyyələri' : '3. Educational Assumptions'}
+                  </dt>
+                  <dd className="mt-0.5 text-[11px] text-slate-200">
+                    {az
+                      ? '0.015 mSv·saat⁻¹·pfu⁻¹ çevirmə əmsalı və qalxan vuruqları (EVA ×1.00, Modul ×0.25, Su divarı ×0.15, Sədd ×0.06).'
+                      : 'Classroom conversion 0.015 mSv·h⁻¹·pfu⁻¹ and shielding factors (EVA ×1.00, Hab ×0.25, Water-wall ×0.15, Berm ×0.06).'}
+                  </dd>
+                </div>
+                <div className="rounded-lg border border-rose-400/30 bg-slate-950/60 p-2">
+                  <dt className="font-mono text-[9.5px] font-bold uppercase text-rose-300">
+                    {az ? '4. Uydurma Missiya Parametri' : '4. Fictional Mission Inputs'}
+                  </dt>
+                  <dd className="mt-0.5 text-[11px] text-slate-200">
+                    {az
+                      ? `48 saatlıq Ay fırtınası əyrisi və ${RADIATION_LIMITS.missionWarningMsv} mSv təlim xəbərdarlıq həddi.`
+                      : `Synthetic 48-hour lunar pulse timing & ${RADIATION_LIMITS.missionWarningMsv} mSv educational warning threshold.`}
                   </dd>
                 </div>
               </dl>

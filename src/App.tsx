@@ -1004,9 +1004,21 @@ export default function App() {
             </strong>
           </div>
 
-          <div className="mc-gauge mc-gauge--power">
+          <div className={`mc-gauge mc-gauge--power ${worldSnapshot.powerLow ? 'mc-gauge--warn' : ''}`}>
             <span className="mc-gauge-label">
               <Zap size={11} /> {t('power')}
+              {worldSnapshot.powerLow ? (
+                <em className="ml-1 rounded bg-rose-500/25 px-1 py-0.5 text-[8.5px] font-bold not-italic text-rose-200">
+                  &lt;20
+                </em>
+              ) : (
+                completedPhases >= 3 &&
+                activeChoices[2] === 1 && (
+                  <em className="ml-1 rounded bg-cyan-500/20 px-1 py-0.5 text-[8.5px] font-bold not-italic text-cyan-200">
+                    {lang === 'az' ? 'YEDƏK' : 'BACKUP'}
+                  </em>
+                )
+              )}
             </span>
             <strong className="mc-gauge-val">
               {fmt(currentMetrics.powerKwh)}
@@ -1022,9 +1034,14 @@ export default function App() {
             </i>
           </div>
 
-          <div className="mc-gauge mc-gauge--life">
+          <div className={`mc-gauge mc-gauge--life ${worldSnapshot.lifeSupportLow ? 'mc-gauge--warn' : ''}`}>
             <span className="mc-gauge-label">
               <HeartPulse size={11} /> {t('lifeSupport')}
+              {worldSnapshot.lifeSupportLow && (
+                <em className="ml-1 rounded bg-rose-500/25 px-1 py-0.5 text-[8.5px] font-bold not-italic text-rose-200">
+                  {lang === 'az' ? 'ZƏİF' : 'LOW'}
+                </em>
+              )}
             </span>
             <strong className="mc-gauge-val">
               {fmt(currentMetrics.lifeSupportPct)}
@@ -1796,7 +1813,15 @@ export default function App() {
               </section>
             )}
             {lastDebrief && (
-              <DecisionDebrief key={lastDebrief.choiceId} step={lastDebrief} onDismiss={() => setLastDebrief(null)} />
+              <DecisionDebrief
+                key={lastDebrief.choiceId}
+                step={lastDebrief}
+                onDismiss={() => setLastDebrief(null)}
+                onOpenRewind={() => {
+                  soundFX.play('rewind');
+                  setTelemetryDrawerOpen(true);
+                }}
+              />
             )}
 
             {nearbyCrewSpeech && (
