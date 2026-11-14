@@ -111,6 +111,108 @@ export function MarsBonusModal({
           </button>
         </div>
 
+        {/* Jezero Crater Dust Storm Visual Panorama + 3-Sol Rewind Stepper */}
+        <div className="mt-3.5 overflow-hidden rounded-xl border border-orange-300/25 bg-[#160a07]">
+          <svg viewBox="0 0 760 110" className="h-24 sm:h-28 w-full object-cover" aria-hidden="true">
+            <defs>
+              <linearGradient id="mars-sky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={decision?.opticalDepthTau && decision.opticalDepthTau > 3.5 ? '#3b150c' : '#572213'} />
+                <stop offset="65%" stopColor="#8c3b1e" />
+                <stop offset="100%" stopColor="#451a0d" />
+              </linearGradient>
+              <radialGradient id="mars-sun" cx="0.24" cy="0.38" r="0.32">
+                <stop offset="0%" stopColor="#fed7aa" stopOpacity={decision ? Math.max(0.22, (100 - decision.solarAttenuationPct) / 100) : 0.65} />
+                <stop offset="100%" stopColor="#ea580c" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <rect width="760" height="110" fill="url(#mars-sky)" />
+            {/* Attenuated Martian Sun */}
+            <circle cx="182" cy="42" r="56" fill="url(#mars-sun)" />
+            <circle
+              cx="182"
+              cy="42"
+              r="11"
+              fill="#ffedd5"
+              opacity={decision ? Math.max(0.25, (100 - decision.solarAttenuationPct) / 100) : 0.75}
+            />
+            {/* Dust Storm Wind Streaks */}
+            <line x1="40" y1="28" x2="290" y2="34" stroke="#fdba74" strokeWidth="1" opacity="0.22" strokeDasharray="18 10" />
+            <line x1="210" y1="54" x2="540" y2="62" stroke="#fdba74" strokeWidth="1.2" opacity="0.26" strokeDasharray="24 12" />
+            <line x1="390" y1="24" x2="710" y2="32" stroke="#fdba74" strokeWidth="1" opacity="0.2" strokeDasharray="16 8" />
+            {/* Jezero Delta Rim Silhouette */}
+            <path
+              d="M0 84 L110 68 L220 75 L340 60 L470 74 L610 64 L760 72 L760 110 L0 110 Z"
+              fill="#36150b"
+            />
+            {/* Mars Habitat Dome, Solar Array & MOXIE Unit */}
+            <g transform="translate(495 72)">
+              <path d="M-26 14 A26 22 0 0 1 26 14 Z" fill="#cbd5e1" stroke="#f97316" strokeWidth="1.5" />
+              <rect x="-10" y="4" width="20" height="6" rx="2" fill="#38bdf8" opacity="0.85" />
+              {/* Dust-coated Solar Wing */}
+              <line x1="-44" y1="14" x2="-44" y2="-8" stroke="#fde047" strokeWidth="2" />
+              <rect x="-60" y="-8" width="32" height="8" rx="1" fill="#0284c7" stroke="#fb923c" strokeWidth="1" />
+              {/* MOXIE O2 Tower */}
+              <rect x="36" y="-4" width="14" height="18" rx="2" fill="#fb923c" />
+              <circle cx="43" cy="-9" r="3.5" fill="#22d3ee" />
+            </g>
+            {/* Earth-Mars 252M km DSN Radio Wave */}
+            <text x="16" y="20" fill="#fed7aa" fontSize="9.5" fontFamily="monospace">
+              {decision
+                ? `SOL ${decision.sol} · τ=${decision.opticalDepthTau.toFixed(1)} · SUN ${100 - decision.solarAttenuationPct}%`
+                : 'SOL 1–3 COMPLETE · JEZERO DELTA'}
+            </text>
+          </svg>
+
+          {/* Interactive 3-Sol Stepper (Click any earlier Sol to rewind!) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-orange-300/20 bg-black/45 px-3 py-2 text-xs">
+            <div className="flex items-center gap-1.5">
+              {MARS_DECISIONS.map((d, idx) => {
+                const chosen = choices[idx];
+                const isCurrent = idx === currentSolIdx && !isFinished;
+                const canRewind = idx < choices.length;
+                return (
+                  <button
+                    key={d.sol}
+                    type="button"
+                    disabled={!canRewind}
+                    onClick={() => {
+                      playSfx('click');
+                      setChoices(choices.slice(0, idx));
+                      setPingState('idle');
+                    }}
+                    title={
+                      canRewind
+                        ? az
+                          ? `Sol ${d.sol} qərarını dəyişmək üçün geri sar`
+                          : `Click to rewind to Sol ${d.sol}`
+                        : `Sol ${d.sol}`
+                    }
+                    className={`rounded-md border px-2.5 py-1 font-mono text-[11px] font-bold transition ${
+                      isCurrent
+                        ? 'border-orange-300 bg-orange-500/30 text-white'
+                        : canRewind
+                          ? 'border-emerald-400/45 bg-emerald-950/45 text-emerald-200 hover:bg-emerald-900/60'
+                          : 'border-white/10 bg-white/5 text-slate-400'
+                    }`}
+                  >
+                    Sol {d.sol}
+                    {chosen !== undefined ? ` · ${String.fromCharCode(65 + chosen)}` : ''}
+                  </button>
+                );
+              })}
+            </div>
+            <span className="font-mono text-[10px] text-orange-200/80">
+              {choices.length > 0
+                ? az
+                  ? 'Əvvəlki Sol-a klikləyərək qərarı dəyişə bilərsiniz'
+                  : 'Click a completed Sol pill to rewind & test another option'
+                : az
+                  ? '3 Sol sağqalma ardıcıllığı'
+                  : '3-Sol autonomous survival sequence'}
+            </span>
+          </div>
+        </div>
+
         {/* Live Telemetry Strip */}
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <div className="rounded-xl border border-orange-300/20 bg-black/30 px-3 py-2">

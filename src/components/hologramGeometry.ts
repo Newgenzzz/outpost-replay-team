@@ -1,5 +1,156 @@
 import { BufferGeometry, Float32BufferAttribute, Color } from 'three';
-import { sampleShackletonElevationKm } from '../data/shackletonDem';
+import {
+  PATCH_WIDTH_KM,
+  SHACKLETON_MARKERS,
+  TERRAIN_PROVENANCE,
+  computeRimIllumination,
+  sampleShackletonElevationKm,
+} from '../data/shackletonDem';
+
+export interface SightlineGeometryData {
+  siteWorld: [number, number, number];
+  collectorWorld: [number, number, number];
+  altCollectorWorld: [number, number, number];
+  ridgeWorld: [number, number, number];
+  rayOverRidgeWorld: [number, number, number];
+  sunOrbWorld: [number, number, number];
+  illuminatedPct: number;
+  blockingRidgeDeg: number;
+  solarElevationDeg: number;
+  topLimbDeg: number;
+  inShadow: boolean;
+  isBlocked: boolean;
+}
+
+/**
+ * Computes deterministic 3D world coordinates for the illustrative solar sightline ray,
+ * the highest obstructing ridge point along the current azimuth, and the alternate mast height.
+ * Display coordinates only; illumination percentages come unmodified from computeRimIllumination.
+ */
+export function computeSightlineGeometry(
+  solarAzimuthDeg: number,
+  mastHeightMeters: 2 | 10,
+  siteId: 'S' | 'C1' = 'S',
+): SightlineGeometryData {
+  const site = SHACKLETON_MARKERS.find((m) => m.id === siteId) ?? SHACKLETON_MARKERS[0];
+  const illum = computeRimIllumination(solarAzimuthDeg, mastHeightMeters, siteId);
+
+  const baseElevKm = sampleShackletonElevationKm(site.nx, site.nz);
+  const effectiveHeightKm = (mastHeightMeters / 1000) * TERRAIN_PROVENANCE.mastHeightExaggeration;
+  const observerElevKm = baseElevKm + effectiveHeightKm;
+
+  const rad = (solarAzimuthDeg * Math.PI) / 180;
+  const dx = Math.cos(rad);
+  const dz = Math.sin(rad);
+
+  let maxHorizonAngleDeg = -90;
+  let blockerNx = site.nx + dx * 0.18;
+  let blockerNz = site.nz + dz * 0.18;
+
+  for (let step = 1; step <= 34; step++) {
+    const distKm = step * 0.45;
+    const sx = site.nx + (dx * distKm) / (PATCH_WIDTH_KM * 0.5);
+    const sz = site.nz + (dz * distKm) / (PATCH_WIDTH_KM * 0.5);
+    if (Math.abs(sx) > 1.05 || Math.abs(sz) > 1.05) break;
+    const terrainKm = sampleShackletonElevationKm(sx, sz);
+    const angleDeg = (Math.atan2(terrainKm - observerElevKm, distKm) * 180) / Math.PI;
+    if (angleDeg > maxHorizonAngleDeg) {
+      maxHorizonAngleDeg = angleDeg;
+      const radial = Math.hypot(sx, sz);
+      const clampScale = radial > 0.95 ? 0.95 / radial : 1;
+      blockerNx = sx * clampScale;
+      blockerNz = sz * clampScale;
+    }
+  }
+
+  const siteWorldX = site.nx * 6;
+  const siteWorldZ = site.nz * 6;
+  const siteWorldY = baseElevKm * 0.52;
+
+  const mastWorldHeight = mastHeightMeters === 10 ? 0.62 : 0.14;
+  const altMastWorldHeight = mastHeightMeters === 10 ? 0.14 : 0.62;
+
+  const collectorWorld: [number, number, number] = [
+    siteWorldX,
+    siteWorldY + mastWorldHeight,
+    siteWorldZ,
+  ];
+  const altCollectorWorld: [number, number, number] = [
+    siteWorldX,
+    siteWorldY + altMastWorldHeight,
+    siteWorldZ,
+  ];
+
+  const ridgeWorldX = blockerNx * 6;
+  const ridgeWorldZ = blockerNz * 6;
+  const ridgeWorldY = sampleShackletonElevationKm(blockerNx, blockerNz) * 0.52 + 0.035;
+  const ridgeWorld: [number, number, number] = [ridgeWorldX, ridgeWorldY, ridgeWorldZ];
+
+  const sunDist = 14;
+  const sunOrbWorld: [number, number, number] = [
+    dx * sunDist * 0.58,
+    1.45 * 0.86,
+    dz * sunDist * 0.58,
+  ];
+
+  const distToRidge = Math.hypot(ridgeWorldX - siteWorldX, ridgeWorldZ - siteWorldZ);
+  const distToSun = Math.hypot(sunOrbWorld[0] - siteWorldX, sunOrbWorld[2] - siteWorldZ);
+  const t = Math.min(0.88, Math.max(0.06, distToRidge / Math.max(0.001, distToSun)));
+
+  const linearRayY = collectorWorld[1] + (sunOrbWorld[1] - collectorWorld[1]) * t;
+  const isBlocked = illum.illuminatedPct < 100;
+  const rayOverRidgeY = isBlocked
+    ? ridgeWorldY
+    : Math.max(ridgeWorldY + 0.16, linearRayY);
+
+  return {
+    siteWorld: [siteWorldX, siteWorldY, siteWorldZ],
+    collectorWorld,
+    altCollectorWorld,
+    ridgeWorld,
+    rayOverRidgeWorld: [ridgeWorldX, rayOverRidgeY, ridgeWorldZ],
+    sunOrbWorld,
+    illuminatedPct: illum.illuminatedPct,
+    blockingRidgeDeg: illum.blockingRidgeDeg,
+    solarElevationDeg: illum.solarElevationDeg,
+    topLimbDeg: Math.round((illum.solarElevationDeg + 0.265) * 100) / 100,
+    inShadow: illum.inShadow,
+    isBlocked,
+  };
+}
+
+/** Deterministic polar starfield backdrop geometry for the 3D hologram dome. */
+export function buildPolarStarfield(count = 160): BufferGeometry {
+  const positions: number[] = [];
+  const colors: number[] = [];
+  const warm = new Color('#fef3c7');
+  const cool = new Color('#bae6fd');
+  const neutral = new Color('#e2e8f0');
+  const c = new Color();
+
+  for (let i = 0; i < count; i++) {
+    // Golden-angle spiral on upper celestial dome for deterministic, clump-free distribution
+    const u = (i + 0.5) / count;
+    const theta = i * 2.399963229728653;
+    const phi = Math.acos(1 - u * 0.78); // stay above horizon plane
+    const radius = 15.5 + (i % 5) * 0.9;
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.cos(phi) - 1.2;
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    positions.push(x, y, z);
+
+    const tint = i % 3 === 0 ? cool : i % 5 === 0 ? warm : neutral;
+    const brightness = 0.65 + ((i * 7) % 10) * 0.035;
+    c.copy(tint).multiplyScalar(brightness);
+    colors.push(c.r, c.g, c.b);
+  }
+
+  const stars = new BufferGeometry();
+  stars.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  stars.setAttribute('color', new Float32BufferAttribute(colors, 3));
+  return stars;
+}
+
 
 /** Authored circular display crop of the existing procedural relief, not a NASA DEM. */
 export function buildHologramRelief() {

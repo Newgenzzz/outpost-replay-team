@@ -43,6 +43,20 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
       <div role="status" aria-atomic="true">
         <strong className="block text-sm leading-snug text-white">{result}</strong>
         <p className="mt-1">{tr(ENGINEERING_LESSONS[step.step - 1])}</p>
+        <div className="mt-2 grid grid-cols-2 gap-1 font-mono text-[10px]">
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-amber-200">
+            ⚡ {signed(step.delta.powerKwh)} {t('unitKwh')}
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-teal-200">
+            🫁 {signed(step.delta.lifeSupportPct)} {az ? 'f.b.' : 'pp'}
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-rose-200">
+            ☢️ {signed(step.delta.radiationMsv)} mSv
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-sky-200">
+            🔬 {signed(step.delta.sciencePoints)} {t('unitPts')}
+          </span>
+        </div>
       </div>
       <details className="mt-1.5 text-xs text-slate-200">
         <summary className="cursor-pointer font-medium text-sky-200">{az ? 'Qərarın təsiri' : 'Why it changed'}</summary>

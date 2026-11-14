@@ -9,7 +9,6 @@ import {
   Award,
   BarChart3,
   BookOpen,
-  Check,
   CheckCheck,
   ChevronDown,
   ChevronRight,
@@ -692,6 +691,13 @@ export default function App() {
   }
 
   function handleStartTour() {
+    if (baselineInput.phases.length > 0 && !demoStage && !launchScreenOpen) {
+      const message =
+        lang === 'az'
+          ? 'Bələdçili Münsif Demosu başladılsın? Cari missiya gedişatınız sıfırlanacaq.'
+          : 'Start the Guided Judge Demo? Your current mission progress will be reset.';
+      if (!window.confirm(message)) return;
+    }
     handleReset();
     soundFX.startAmbient();
     soundFX.play('tourChime');
@@ -699,7 +705,11 @@ export default function App() {
     world.current?.teleportTo({ x: STATIONS[0].x, y: STATIONS[0].y + 38 });
   }
 
-  function handleAdvanceTour(stage: DemoStage, useBackup = false) {
+  function handleAdvanceTour(
+    stage: DemoStage,
+    useBackup = false,
+    prediction: ShadowStrategy | null = null,
+  ) {
     soundFX.play('tourChime');
     if (stage !== 'rewind') setBranchInput(null);
     setPendingTasks({});
@@ -710,7 +720,9 @@ export default function App() {
       world.current?.teleportTo({ x: STATIONS[2].x, y: STATIONS[2].y + 40 });
     } else if (stage === 'shadow') {
       const choices = useBackup ? MISSION_DEMO.branch : MISSION_DEMO.baseline;
-      setBaselineInput(createRunInput(choices));
+      const nextInput = createRunInput(choices);
+      setBaselineInput(nextInput);
+      setShadowPrediction(prediction ? recordShadowPrediction(prediction, nextInput) : null);
       setViewStep(MISSION_DEMO.rewindStep);
       setDemoStage('rewind');
     } else {
@@ -1394,7 +1406,7 @@ export default function App() {
           <JudgeTourBanner
             stage={demoStage}
             baseline={runA}
-            onAdvance={(useBackup) => handleAdvanceTour(demoStage, useBackup)}
+            onAdvance={(useBackup, prediction) => handleAdvanceTour(demoStage, useBackup, prediction)}
             onOpenScience={() => setSensorDeckOpen(true)}
             onClose={() => setDemoStage(null)}
           />
@@ -1514,6 +1526,28 @@ export default function App() {
               </div>
             )}
 
+            {/* Live Phase Environment & Crew Consumables Telemetry Grid */}
+            <div className="mt-2.5 grid grid-cols-2 gap-1.5 rounded-lg border border-white/10 bg-slate-950/55 p-2 font-mono text-[10px]">
+              <div className="flex items-center justify-between rounded bg-white/[0.03] px-1.5 py-1">
+                <span className="text-slate-400">{lang === 'az' ? '☀️ Günəş' : '☀️ Sunlight'}</span>
+                <strong className={availableSunlight < 0.35 ? 'text-amber-300' : 'text-emerald-300'}>
+                  {Math.round(availableSunlight * 100)}%
+                </strong>
+              </div>
+              <div className="flex items-center justify-between rounded bg-white/[0.03] px-1.5 py-1">
+                <span className="text-slate-400">{lang === 'az' ? '🌡️ Səth' : '🌡️ Temp'}</span>
+                <strong className="text-sky-200">{fmt(surfaceTemperature)} K</strong>
+              </div>
+              <div className="flex items-center justify-between rounded bg-white/[0.03] px-1.5 py-1">
+                <span className="text-slate-400">🫁 O₂</span>
+                <strong className="text-teal-200">{fmt(displayedResources.oxygenKg, 1)} kg</strong>
+              </div>
+              <div className="flex items-center justify-between rounded bg-white/[0.03] px-1.5 py-1">
+                <span className="text-slate-400">💧 H₂O</span>
+                <strong className="text-cyan-200">{fmt(displayedResources.waterKg, 1)} kg</strong>
+              </div>
+            </div>
+
             {/* Quick Action Navigation & Direct Console Trigger Buttons */}
             {runA.complete ? (
               <button
@@ -1552,6 +1586,29 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            {/* 1-Click Direct 3D Shackleton Sightline & Astronaut Rim POV Launcher */}
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.play('StepNav');
+                closeAllModals();
+                setSensorDeckOpen(true);
+              }}
+              className="mt-2 flex w-full items-center justify-between rounded-lg border border-cyan-400/35 bg-cyan-950/45 px-2.5 py-1.5 text-left text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-300/65 hover:bg-cyan-900/55"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Orbit size={13} className="shrink-0 text-cyan-300" />
+                <span>
+                  {lang === 'az'
+                    ? '3D Krater və 2m/10m Günəş Şüası'
+                    : '3D Crater & 2m/10m Sightline'}
+                </span>
+              </span>
+              <span className="rounded border border-cyan-300/35 bg-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-200">
+                3D POV
+              </span>
+            </button>
 
             {/* Crisis Alert Pill (Step 3 Lights Out / Step 5 Solar Storm) */}
             {isShadowCrisis && (
@@ -1632,6 +1689,8 @@ export default function App() {
                 const isChanged =
                   hasBranch && rewoundChoices !== null && baselineChoices[idx] !== rewoundChoices[idx];
                 const clickable = stepNum <= lastAvailableStep;
+                const choiceIdx = activeChoices[idx];
+                const choiceLetter = choiceIdx !== undefined ? CHOICE_LETTERS[choiceIdx] : null;
 
                 return (
                   <div key={stepNum} className="contents">
@@ -1643,14 +1702,14 @@ export default function App() {
                         const st = STATIONS[stepNum - 1];
                         if (st) world.current?.walkTo({ x: st.x, y: st.y });
                       }}
-                      title={`D${stepNum}: ${tr(d.title)}`}
+                      title={`D${stepNum}: ${tr(d.title)}${choiceLetter ? ` (${choiceLetter})` : ''}`}
                       aria-label={`D${stepNum} · ${tr(d.title)}`}
                       aria-current={isCurrent ? 'step' : undefined}
                       className={`objective-dot ${
                         isChanged ? 'changed' : isLocked ? 'complete' : isCurrent ? 'current' : ''
                       }`}
                     >
-                      {isLocked && !isChanged ? <Check size={10} /> : stepNum}
+                      {isLocked && choiceLetter ? `${stepNum}${choiceLetter}` : `D${stepNum}`}
                     </button>
                     {idx < DECISION_COUNT - 1 && <i />}
                   </div>
@@ -1690,6 +1749,90 @@ export default function App() {
           }}
           onNavigateStation={handleNavigateFromMap}
         />
+
+        {/* RIGHT-SIDE LIVE 3D SIGHTLINE & SHACKLETON RIM CROSS-SECTION CARD */}
+        {!demoStage && !anyOverlayOpen && (
+          <button
+            type="button"
+            onClick={() => {
+              soundFX.play('StepNav');
+              closeAllModals();
+              setSensorDeckOpen(true);
+            }}
+            className="sightline-mini-card hidden xl:flex"
+            title={
+              lang === 'az'
+                ? 'İnteraktiv 3D Şeklton Krateri və Astronavt POV səhnəsini açın'
+                : 'Open interactive 3D Shackleton Crater & Astronaut POV scene'
+            }
+          >
+            <div className="sightline-mini-header">
+              <span>{lang === 'az' ? '3D SİLSİLƏ GÖRÜNÜŞÜ' : '3D RIM SIGHTLINE'}</span>
+              <span className="rounded bg-cyan-400/20 px-1.5 py-0.5 text-[8.5px] font-bold text-cyan-200">
+                128° AZ
+              </span>
+            </div>
+            <svg
+              viewBox="0 0 196 64"
+              className="w-full"
+              aria-hidden="true"
+            >
+              <rect width="196" height="64" rx="6" fill="#07131c" />
+              {/* Grazing 1.55 deg Sun on left */}
+              <circle cx="16" cy="24" r="9" fill="#fde047" opacity="0.24" />
+              <circle cx="16" cy="24" r="5" fill="#fef08a" />
+              {/* 10m Clear Solar Sightline Ray */}
+              <line
+                x1="22"
+                y1="23"
+                x2="156"
+                y2="16"
+                stroke="#facc15"
+                strokeWidth="1.8"
+              />
+              {/* 2m Blocked Solar Sightline Ray */}
+              <line
+                x1="22"
+                y1="26"
+                x2="92"
+                y2="30"
+                stroke="#fb7185"
+                strokeWidth="1.6"
+                strokeDasharray="3 2"
+              />
+              <circle cx="92" cy="30" r="3" fill="#f43f5e" />
+              {/* Shackleton Ridge Terrain Profile */}
+              <path
+                d="M 0 58 L 52 52 L 92 27 L 122 48 L 196 46 L 196 64 L 0 64 Z"
+                fill="#1d2f3a"
+                stroke="#587786"
+                strokeWidth="1"
+              />
+              {/* 10m Tall Mast & 2m Low Mast at Site A (x=156) */}
+              <line x1="156" y1="46" x2="156" y2="16" stroke="#38bdf8" strokeWidth="2.2" />
+              <rect x="150" y="13" width="12" height="4" rx="1" fill="#fde047" />
+              <line x1="172" y1="46" x2="172" y2="38" stroke="#fb7185" strokeWidth="2" />
+              <rect x="167" y="36" width="10" height="3" rx="1" fill="#fb7185" />
+              <text x="80" y="21" fill="#fda4af" fontSize="7.5" fontFamily="monospace">
+                {lang === 'az' ? 'Silsilə' : 'Ridge'}
+              </text>
+              <text x="134" y="11" fill="#fde047" fontSize="7.5" fontFamily="monospace">
+                10m:100%
+              </text>
+              <text x="148" y="58" fill="#fda4af" fontSize="7.5" fontFamily="monospace">
+                2m:0%
+              </text>
+            </svg>
+            <div className="sightline-mini-footer">
+              <span>
+                {lang === 'az'
+                  ? '3D Krater və Astronavt POV aç'
+                  : 'Inspect 3D Crater & Rim POV'}
+              </span>
+              <span className="font-mono text-cyan-300">→</span>
+            </div>
+          </button>
+        )}
 
         {/* Loading / Error States */}
         {!ready && !error && (

@@ -954,10 +954,10 @@ export default function DecisionCard(props: DecisionCardProps) {
           )}
 
           {ledgerRecord && (
-            <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+            <details open={!isCadet} className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+              <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
                 <CheckCircle2 className="h-3.5 w-3.5" /> {t('stepBreakdown')}
-              </p>
+              </summary>
               <ul className="mt-1.5 space-y-1.5">
                 {ledgerRecord.contributions.map((c, i) => (
                   <li key={i} className="flex flex-col gap-0.5 border-b border-slate-800/80 pb-1.5 last:border-0">
@@ -983,7 +983,7 @@ export default function DecisionCard(props: DecisionCardProps) {
                   <DeltaChips delta={ledgerRecord.delta} size="xs" />
                 </li>
               </ul>
-            </div>
+            </details>
           )}
         </div>
       </div>

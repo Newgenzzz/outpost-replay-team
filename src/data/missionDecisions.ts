@@ -204,8 +204,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Elektriklə Ay daşlarında birləşmiş oksigeni ayırın (+3 kq O₂)',
         },
         cadetSummary: {
-          en: 'Uses an electrically powered extraction process to separate oxygen from minerals (+10 Science & +8% Life Support). The yield is assumed.',
-          az: 'Elektriklə işləyən proses minerallardan oksigen ayırır (+10 Elm və +8% Həyat Təminatı). Məhsuldarlıq fərziyyədir.',
+          en: 'Uses an electrically powered extraction process to separate oxygen from minerals (+10 Science & +8 pp direct Life Support bonus; check the forecast for net 36h change). The yield is assumed.',
+          az: 'Elektriklə işləyən proses minerallardan oksigen ayırır (+10 Elm və +8 fb birbaşa Həyat Təminatı effekti; 36 saatlıq xalis dəyişiklik üçün proqnoza baxın). Məhsuldarlıq fərziyyədir.',
         },
         effects: { powerKwh: -10, lifeSupportPct: 8, sciencePoints: 10 },
         resourceEffects: { oxygenKg: 3 },
@@ -294,8 +294,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Qənaət rejimi — batareyanı qorumaq üçün laboratoriya cihazlarını söndürün',
         },
         cadetSummary: {
-          en: 'Saves lots of battery (+14 kWh), though the chilly cabin makes air scrubbers work slower (−6% Life Support).',
-          az: 'Çoxlu batareya qoruyur (+14 kVt·s), amma sərin kabin hava təmizləyicilərini bir az zəiflədir (−6% Həyat Təminatı).',
+          en: 'Cuts non-essential cabin load (+14 kWh direct load offset, −6 pp Life Support before 72h shadow drain; check the forecast for net reserve).',
+          az: 'Vacib olmayan kabin yükünü azaldır (+14 kVt·s birbaşa qənaət effekti, 72 saatlıq kölgə sərfindən əvvəl −6 fb Həyat Təminatı; xalis ehtiyata proqnozda baxın).',
         },
         effects: { powerKwh: 14, lifeSupportPct: -6 },
         powerStrategy: 'load-shed',
@@ -324,8 +324,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Ehtiyat hidrogen-oksigen enerji elementlərini işə salın',
         },
         cadetSummary: {
-          en: 'Keeps the base warm and bright (+18 kWh & +4 Science!), but uses up your one-time backup tank before Day 9.',
-          az: 'Bazanı isti və işıqlı saxlayır (+18 kVt·s və +4 Elm!), lakin birdəfəlik ehtiyat çənini son günə qədər bitirir.',
+          en: 'Supplies +18 kWh of backup fuel-cell power and +4 Science during the shadow (check the forecast for net 72h change), spending your one-time backup tank before Day 9.',
+          az: 'Kölgə zamanı +18 kVt·s ehtiyat yanacaq elementi gücü və +4 Elm verir (72 saatlıq xalis dəyişiklik üçün proqnoza baxın), lakin birdəfəlik ehtiyat çənini son günə qədər bitirir.',
         },
         effects: { powerKwh: 18, lifeSupportPct: -1, sciencePoints: 4 },
         powerStrategy: 'backup',

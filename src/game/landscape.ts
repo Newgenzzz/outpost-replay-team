@@ -90,40 +90,60 @@ export function terrain(): SvgAsset {
         <radialGradient id="cold-trap" cx=".55" cy=".55" r=".62">
           <stop stop-color="#365268"/>
           <stop offset=".58" stop-color="#243d52"/>
-          <stop offset="1" stop-color="#172d44"/>
+          <stop offset="1" stop-color="#112438"/>
         </radialGradient>
+        <linearGradient id="space-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop stop-color="#02060d"/>
+          <stop offset=".68" stop-color="#061220"/>
+          <stop offset="1" stop-color="#0e2235"/>
+        </linearGradient>
+        <linearGradient id="sun-shaft" x1="0.2" y1="0" x2="0.65" y2="1">
+          <stop stop-color="#fef08a" stop-opacity=".22"/>
+          <stop offset=".5" stop-color="#fde047" stop-opacity=".08"/>
+          <stop offset="1" stop-color="#fde047" stop-opacity="0"/>
+        </linearGradient>
       </defs>
 
       <!-- Base Shackleton Regolith -->
       <path fill="url(#ground)" d="M0 0h1840v1120H0z"/>
-      <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".09"/>
-      <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 139l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#465661" opacity=".19"/>
+      <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".11"/>
+      <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 205l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#3a4c58" opacity=".24"/>
 
-      <!-- Far Northern Space-Horizon Rim Silhouette, Starfield, Grazing Sun & Crescent Earth -->
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78V0H0Z" fill="#040b14"/>
-      ${Array.from({ length: 76 }, (_, i) => {
+      <!-- Subtle Topographic Contour Lines across the Plateau -->
+      <g stroke="#d8cbb3" stroke-width="1.1" stroke-dasharray="8 6" opacity=".18" fill="none">
+        <path d="M35 535 Q 360 565 735 505 T 1520 515 L 1810 495"/>
+        <path d="M45 645 Q 480 615 920 640 T 1790 610"/>
+        <path d="M85 885 Q 520 845 940 895"/>
+      </g>
+
+      <!-- Far Northern Space-Horizon Rim Silhouette, Starfield, Grazing Sun & Crescent Earth (Framed in visible viewport y=0..205) -->
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152V0H0Z" fill="url(#space-sky)"/>
+      <!-- Distant secondary lunar mountain range -->
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152 L1840 198 1715 178 1595 188 1460 172 1325 192 1190 182 1035 168 910 188 785 196 645 178 535 162 415 186 265 178 135 194 0 212Z" fill="#2c3d4b" opacity=".82"/>
+      ${Array.from({ length: 120 }, (_, i) => {
         const sx = (((Math.sin(i * 91.7 + 4) * 43758.5453) % 1) + 1) % 1 * 1820 + 10;
-        const sy = (((Math.sin(i * 47.3 + 9) * 24631.193) % 1) + 1) % 1 * 62 + 4;
-        const sr = (0.7 + (i % 5) * 0.35).toFixed(1);
-        const col = i % 7 === 0 ? '#bae6fd' : i % 5 === 0 ? '#fef08a' : '#f1f5f9';
-        return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr}" fill="${col}" opacity="${(0.45 + (i % 4) * 0.16).toFixed(2)}"/>`;
+        const sy = (((Math.sin(i * 47.3 + 9) * 24631.193) % 1) + 1) % 1 * 132 + 6;
+        const sr = (0.75 + (i % 5) * 0.38).toFixed(1);
+        const col = i % 6 === 0 ? '#7dd3fc' : i % 4 === 0 ? '#fef08a' : '#f8fafc';
+        return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr}" fill="${col}" opacity="${(0.5 + (i % 4) * 0.15).toFixed(2)}"/>`;
       }).join('')}
-      <!-- 1.5 deg Grazing South-Polar Horizon Sun & Corona Glow -->
-      <g transform="translate(388 58)">
-        <ellipse cx="0" cy="0" rx="88" ry="30" fill="#fde047" opacity=".16"/>
-        <ellipse cx="0" cy="0" rx="42" ry="16" fill="#fef08a" opacity=".32"/>
-        <line x1="-115" y1="0" x2="115" y2="0" stroke="#fef9c3" stroke-width="1.4" opacity=".55"/>
-        <circle cx="0" cy="0" r="11" fill="#fffbeb"/>
+      <!-- 1.55 deg Grazing South-Polar Horizon Sun, Lens Flare & Diagonal Light Shafts -->
+      <polygon points="555,112 180,490 695,485" fill="url(#sun-shaft)"/>
+      <g transform="translate(555 112)">
+        <ellipse cx="0" cy="0" rx="135" ry="44" fill="#fde047" opacity=".2"/>
+        <ellipse cx="0" cy="0" rx="68" ry="24" fill="#fef08a" opacity=".38"/>
+        <line x1="-165" y1="0" x2="165" y2="0" stroke="#fef9c3" stroke-width="1.8" opacity=".68"/>
+        <line x1="-75" y1="-22" x2="75" y2="22" stroke="#fef08a" stroke-width="1" opacity=".35"/>
+        <circle cx="0" cy="0" r="15" fill="#fffbeb"/>
       </g>
-      <!-- Crescent Blue-Marble Earth low above Northern Horizon -->
-      <g transform="translate(1335 34)">
-        <circle cx="0" cy="0" r="21" fill="#0ea5e9" opacity=".18"/>
-        <circle cx="0" cy="0" r="15" fill="#082f49"/>
-        <path d="M-4 -14 A15 15 0 0 1 -4 14 A11 14 0 0 0 -4 -14Z" fill="#38bdf8"/>
-        <path d="M2 -10 A12 12 0 0 1 6 8 A9 11 0 0 0 2 -10Z" fill="#e0f2fe" opacity=".75"/>
+      <!-- Crescent Blue-Marble Earth hanging in the Polar Sky -->
+      <g transform="translate(1245 84)">
+        <circle cx="0" cy="0" r="32" fill="#38bdf8" opacity=".16"/>
+        <circle cx="0" cy="0" r="22" fill="#082f49"/>
+        <path d="M-6 -21 A22 22 0 0 1 -6 21 A15 21 0 0 0 -6 -21Z" fill="#0ea5e9"/>
+        <path d="M3 -15 A17 17 0 0 1 9 12 A13 16 0 0 0 3 -15Z" fill="#e0f2fe" opacity=".82"/>
       </g>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78" stroke="#f5e7c6" stroke-width="2.6" opacity=".68"/>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44l-58 52-93 20-190-10-96 26L0 137Z" fill="#455260" opacity=".57"/>
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152" stroke="#fde68a" stroke-width="2.8" opacity=".76"/>
 
       <!-- ZONE 1: NW ELEVATED SUNLIT SHACKLETON RIM CREST (+2 ELEVATION, D1 SOLAR) -->
       <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398 694 330 715 165 618 154 510 132 401 147 310 136 195 140 132 167 40 205Z" fill="url(#sunlit-ridge)"/>

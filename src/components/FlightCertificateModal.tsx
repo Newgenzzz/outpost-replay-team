@@ -121,7 +121,21 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
     ctx.fillStyle = '#334155';
     ctx.fill();
 
-    // 10m Mast in patch
+    // 10m Mast & Sightline Rays in patch
+    ctx.strokeStyle = '#fde047';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(-28, 14);
+    ctx.lineTo(52, -26);
+    ctx.stroke();
+    ctx.strokeStyle = '#fb7185';
+    ctx.beginPath();
+    ctx.moveTo(-28, 14);
+    ctx.lineTo(15, 26);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
     ctx.strokeStyle = '#fde047';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -176,13 +190,21 @@ ${t('science')}: ${fmt(run.final.sciencePoints)} ${t('unitPts')}${shareUrl ? `\n
       ctx.fillText(c.val, cx + 20, cy + 84);
     });
 
-    // Choice Trail Footer
+    // Choice Trail & Crew Stores Footer
     const routeText = run.steps
       .map((s) => `D${s.step}:${CHOICE_LETTERS[s.choiceIndex]}`)
       .join('  →  ');
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '18px monospace';
-    ctx.fillText(`Causal Decision Route:  ${routeText || 'In Progress'}`, 75, 545);
+    ctx.fillText(`Causal Decision Route:  ${routeText || 'In Progress'}`, 75, 535);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '16px monospace';
+    ctx.fillText(
+      `Crew Reserves:  O₂ ${fmt(run.resources.oxygenKg)} kg  ·  H₂O ${fmt(run.resources.waterKg)} kg  ·  Food ${fmt(run.resources.foodKg)} kg`,
+      75,
+      568,
+    );
 
     ctx.fillStyle = '#64748b';
     ctx.font = '14px monospace';

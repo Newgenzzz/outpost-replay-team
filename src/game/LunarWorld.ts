@@ -241,9 +241,9 @@ export class LunarWorld extends Phaser.Scene {
           .ellipse(-13, -55, 106, 34, 0xa7dab6, 0.16)
           .setRotation(0.3);
         group.add(this.greenhouseLight);
-        const panel = this.createFacilityReadout('greenhouse', building.x - 12, building.y + 27, 172, 49);
-        this.cropTrack = this.add.rectangle(-76, 16, 152, 3, 0x314950).setOrigin(0, 0.5);
-        this.cropFill = this.add.rectangle(-76, 16, 152, 3, 0x87cebd).setOrigin(0, 0.5);
+        const panel = this.createFacilityReadout('greenhouse', building.x - 18, building.y - 108, 168, 44);
+        this.cropTrack = this.add.rectangle(-74, 14, 148, 3, 0x314950).setOrigin(0, 0.5);
+        this.cropFill = this.add.rectangle(-74, 14, 148, 3, 0x87cebd).setOrigin(0, 0.5);
         panel.add([this.cropTrack, this.cropFill]);
       }
       if (building.id === 'iceProcessor') {
@@ -635,18 +635,20 @@ export class LunarWorld extends Phaser.Scene {
     if (transition && !this.bridge.reducedMotion) camera.setScroll(scrollX, scrollY);
   }
 
-  private createFacilityReadout(key: FacilityReadout, x: number, y: number, width: number, height = 41) {
+  private createFacilityReadout(key: FacilityReadout, x: number, y: number, width: number, height = 37) {
     const backing = this.add
-      .rectangle(0, 0, width, height, 0x0c1c25, 0.97)
-      .setStrokeStyle(1, 0x60818a, 0.9);
-    const title = this.add.text(19 - width / 2, 5 - height / 2, '', {
-      fontFamily: 'monospace', fontSize: '10px', color: '#b4c9c8',
+      .rectangle(0, 0, width, height, 0x071420, 0.86)
+      .setStrokeStyle(1.2, 0x38bdf8, 0.45);
+    const accent = this.add
+      .rectangle(0, -height / 2 + 1, width - 2, 2, 0x7dd3fc, 0.55);
+    const title = this.add.text(19 - width / 2, 4 - height / 2, '', {
+      fontFamily: 'monospace', fontSize: '9.5px', color: '#93c5fd',
     });
-    const value = this.add.text(9 - width / 2, 19 - height / 2, '', {
-      fontFamily: 'Inter, sans-serif', fontSize: '12.5px', fontStyle: 'bold',
+    const value = this.add.text(9 - width / 2, 17 - height / 2, '', {
+      fontFamily: 'Inter, sans-serif', fontSize: '11.5px', fontStyle: 'bold',
     });
-    const indicator = this.add.circle(10 - width / 2, 11 - height / 2, 2.6, 0x8bb8b4);
-    const panel = this.add.container(x, y, [backing, indicator, title, value]).setDepth(2030);
+    const indicator = this.add.circle(10 - width / 2, 10 - height / 2, 2.8, 0x8bb8b4);
+    const panel = this.add.container(x, y, [backing, accent, indicator, title, value]).setDepth(2030);
     this.readouts.set(key, { panel, title, value, indicator });
     return panel;
   }
@@ -1018,7 +1020,7 @@ export class LunarWorld extends Phaser.Scene {
   ) {
     this.fxGfx.clear();
 
-    // Lamps illuminate a patch of ground ahead of the rover.
+    // Lamps illuminate a patch of ground ahead of the rover with volumetric cones in shadow.
     const { x: dx, y: dy } = this.heading;
     this.roverLamps.forEach((lamp, index) => {
       const side = index === 0 ? -1 : 1;
@@ -1026,27 +1028,91 @@ export class LunarWorld extends Phaser.Scene {
       if (snap.controllingRover) {
         lamp.setPosition(activePos.x + dx * 80 - dy * side * 12, activePos.y + dy * 61 + dx * side * 12)
           .setRotation(Math.atan2(dy, dx))
-          .setAlpha(0.06 + 0.23 * (1 - snap.sunlightFraction));
+          .setAlpha(0.08 + 0.25 * (1 - snap.sunlightFraction));
       }
     });
+    if (snap.controllingRover && snap.sunlightFraction < 0.95) {
+      const coneAlpha = 0.09 + 0.18 * (1 - snap.sunlightFraction);
+      const perpX = -dy;
+      const perpY = dx * 0.65;
+      const originX = activePos.x + dx * 22;
+      const originY = activePos.y + dy * 14 - 8;
+      const farX = activePos.x + dx * 138;
+      const farY = activePos.y + dy * 98;
+      this.fxGfx
+        .fillStyle(0xfef08a, coneAlpha)
+        .fillTriangle(
+          originX,
+          originY,
+          farX + perpX * 42,
+          farY + perpY * 42,
+          farX - perpX * 42,
+          farY - perpY * 42,
+        );
+    }
+
+    // Sequential chaser glow along outpost guide bollards
+    if (!this.bridge.reducedMotion) {
+      const bollardPts = [
+        [555, 555],
+        [690, 555],
+        [810, 555],
+        [985, 555],
+        [1155, 555],
+        [1395, 555],
+        [425, 665],
+        [795, 685],
+        [795, 790],
+      ];
+      const activeBollard = Math.floor(time / 260) % bollardPts.length;
+      bollardPts.forEach(([bx, by], idx) => {
+        const isActive = idx === activeBollard;
+        const glowColor = snap.stormPending ? 0xfb7185 : snap.powerLow ? 0xfbbf24 : 0x7dd3fc;
+        this.fxGfx
+          .fillStyle(glowColor, isActive ? 0.42 : 0.14)
+          .fillCircle(bx, by - 8, isActive ? 5.5 : 3);
+      });
+
+      // Animated HVDC power flow packets traveling along outpost conduit lines
+      const conduitSegments: Array<[[number, number], [number, number]]> = [
+        [[340, 355], [585, 355]],
+        [[585, 355], [585, 415]],
+        [[585, 415], [895, 415]],
+        [[425, 595], [425, 745]],
+        [[425, 595], [795, 595]],
+        [[795, 595], [795, 865]],
+        [[1085, 415], [1290, 415]],
+        [[1290, 415], [1545, 445]],
+      ];
+      const packetColor = snap.powerLow ? 0xfbbf24 : 0x38bdf8;
+      conduitSegments.forEach(([p0, p1], segIdx) => {
+        const t = ((time * 0.00055 + segIdx * 0.21) % 1 + 1) % 1;
+        const px = p0[0] + (p1[0] - p0[0]) * t;
+        const py = p0[1] + (p1[1] - p0[1]) * t;
+        this.fxGfx.fillStyle(packetColor, 0.62).fillCircle(px, py, 2.8);
+        this.fxGfx.fillStyle(0xe0f2fe, 0.85).fillCircle(px, py, 1.3);
+      });
+    }
 
     // Show glowing cryo-laser beam and sparkling ice shards while the training drill is in use.
     if (drilling && nearIceIdx >= 0) {
       const point = ICE_DEPOSITS[nearIceIdx];
       const beamOriginY = snap.controllingRover ? activePos.y - 18 : activePos.y - 36;
       const radius = this.bridge.reducedMotion ? 6 : 6 + Math.sin(time * 0.02) * 2.5;
-      this.fxGfx.lineStyle(5, 0x0ea5e9, 0.32).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
+      this.fxGfx.lineStyle(8, 0x0284c7, 0.22).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
+      this.fxGfx.lineStyle(5, 0x0ea5e9, 0.38).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
       this.fxGfx.lineStyle(2.2, 0xe0f2fe, 0.95).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
       this.fxGfx.lineStyle(1.8, 0x67e8f9, 0.95).strokeCircle(point.x, point.y - 14, radius + 3);
-      this.fxGfx.fillStyle(0xffffff, 0.95).fillCircle(point.x, point.y - 14, 3);
+      this.fxGfx.lineStyle(1.2, 0x38bdf8, 0.55).strokeCircle(point.x, point.y - 14, radius + 9);
+      this.fxGfx.fillStyle(0xffffff, 0.95).fillCircle(point.x, point.y - 14, 3.4);
       if (!this.bridge.reducedMotion) {
-        for (let k = 0; k < 4; k++) {
-          const ang = time * 0.012 + (k * Math.PI) / 2;
-          const dist = 6 + ((time * 0.05 + k * 7) % 16);
-          this.fxGfx.fillStyle(0x7dd3fc, 0.85).fillCircle(
+        for (let k = 0; k < 6; k++) {
+          const ang = time * 0.014 + (k * Math.PI) / 3;
+          const dist = 6 + ((time * 0.055 + k * 6) % 18);
+          this.fxGfx.fillStyle(k % 2 === 0 ? 0x7dd3fc : 0xe0f2fe, 0.88).fillCircle(
             point.x + Math.cos(ang) * dist,
             point.y - 14 + Math.sin(ang) * dist * 0.6,
-            1.8,
+            1.9,
           );
         }
       }

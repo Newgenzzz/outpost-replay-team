@@ -84,11 +84,41 @@ export function MissionLaunchScreen({
               strokeWidth="2"
               opacity="0.7"
             />
-            {/* Outpost 10m Vertical Solar Mast Silhouette */}
+            {/* Outpost 10m Vertical Solar Mast vs 2m Blocked Mast Silhouette */}
+            <line
+              x1="252"
+              y1="136"
+              x2="435"
+              y2="96"
+              stroke="#fde047"
+              strokeWidth="1.6"
+              strokeDasharray="4 3"
+              opacity="0.75"
+            />
+            <line
+              x1="252"
+              y1="138"
+              x2="340"
+              y2="146"
+              stroke="#fb7185"
+              strokeWidth="1.5"
+              strokeDasharray="3 2"
+              opacity="0.8"
+            />
             <g transform="translate(435 126)">
               <line x1="0" y1="0" x2="0" y2="-38" stroke="#fde047" strokeWidth="2.5" />
               <rect x="-11" y="-34" width="9" height="22" fill="#38bdf8" opacity="0.9" />
               <rect x="2" y="-34" width="9" height="22" fill="#38bdf8" opacity="0.9" />
+              <text x="-18" y="-43" fill="#fef08a" fontSize="9" fontFamily="monospace" fontWeight="bold">
+                10m · 100%
+              </text>
+            </g>
+            <g transform="translate(362 146)">
+              <line x1="0" y1="0" x2="0" y2="-11" stroke="#fb7185" strokeWidth="2" />
+              <rect x="-7" y="-11" width="14" height="5" fill="#fb7185" opacity="0.85" />
+              <text x="-14" y="-15" fill="#fda4af" fontSize="8.5" fontFamily="monospace">
+                2m · 0%
+              </text>
             </g>
           </svg>
 
@@ -195,8 +225,36 @@ export function MissionLaunchScreen({
             </div>
           </div>
 
+          {/* 3-Pillar Learning Loop Strip */}
+          <div className="mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 text-[11px] text-slate-200">
+            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 font-mono text-[10px] font-bold text-emerald-300">
+                1
+              </span>
+              <span>
+                {az ? 'D1–D6 mühəndislik qərarları və 90K buz qazması' : 'Make D1–D6 choices & drill 90 K ice cores'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/20 font-mono text-[10px] font-bold text-cyan-300">
+                2
+              </span>
+              <span>
+                {az ? '3D Şeklton krateri və 2m vs 10m şüa bucağı' : 'Inspect 3D Crater & 2m vs 10m sightline POV'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/20 font-mono text-[10px] font-bold text-amber-300">
+                3
+              </span>
+              <span>
+                {az ? 'İstənilən qərarı geri sarıb A və B gedişini müqayisə et' : 'Rewind any step to compare Run A vs Run B'}
+              </span>
+            </div>
+          </div>
+
           {/* Primary Launch Actions */}
-          <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -228,9 +286,9 @@ export function MissionLaunchScreen({
             <button
               type="button"
               onClick={onOpen3DNasaDeck}
-              className="inline-flex items-center gap-1.5 font-semibold text-sky-300 hover:text-sky-200"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/40 bg-cyan-500/15 px-3 py-1.5 font-semibold text-cyan-200 hover:bg-cyan-500/25"
             >
-              🛰️ {az ? '3D təlim relyefi və NASA DONKI mənbələri →' : 'Explore 3D teaching terrain & NASA DONKI sources →'}
+              🛰️ {az ? '3D Şeklton Krateri, Astronavt POV və NASA DONKI →' : '3D Shackleton Crater, Astronaut POV & NASA DONKI →'}
             </button>
 
             <button

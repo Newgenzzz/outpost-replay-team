@@ -13,8 +13,14 @@ const bundle = await build({
   build: { write: false, minify: false, rollupOptions: { input: entry, output: { format: 'es' }, preserveEntrySignatures: 'strict' } },
 });
 const [{ code }] = bundle.output;
-const { buildHologramRelief, destroyWorldRenderer, hologramFrameLoop, updateWorldRendering } =
-  await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
+const {
+  buildHologramRelief,
+  buildPolarStarfield,
+  computeSightlineGeometry,
+  destroyWorldRenderer,
+  hologramFrameLoop,
+  updateWorldRendering,
+} = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
 test('hologram draws continuously only when visible and rotating', () => {
   assert.equal(hologramFrameLoop(true, true), 'always');
@@ -100,4 +106,28 @@ test('relief display geometry is deterministic across recreation', () => {
     }
     a[name].dispose(); b[name].dispose();
   }
+});
+
+test('3D solar sightline geometry contrasts blocked 2 m vs clear 10 m at the 128 deg lesson azimuth', () => {
+  const low = computeSightlineGeometry(128, 2, 'S');
+  const tall = computeSightlineGeometry(128, 10, 'S');
+  assert.equal(low.isBlocked, true);
+  assert.equal(low.illuminatedPct, 0);
+  assert.equal(tall.isBlocked, false);
+  assert.equal(tall.illuminatedPct, 100);
+  assert.ok(tall.collectorWorld[1] > low.collectorWorld[1]);
+  assert.deepEqual(low.altCollectorWorld, tall.collectorWorld);
+  assert.ok(Math.hypot(low.ridgeWorld[0], low.ridgeWorld[2]) <= 6);
+  assert.ok(tall.rayOverRidgeWorld[1] > tall.ridgeWorld[1]);
+});
+
+test('polar starfield dome is deterministic and finite', () => {
+  const a = buildPolarStarfield(120);
+  const b = buildPolarStarfield(120);
+  assert.equal(a.getAttribute('position').count, 120);
+  assert.deepEqual(a.getAttribute('position').array, b.getAttribute('position').array);
+  assert.deepEqual(a.getAttribute('color').array, b.getAttribute('color').array);
+  assert.ok([...a.getAttribute('position').array].every(Number.isFinite));
+  a.dispose();
+  b.dispose();
 });
