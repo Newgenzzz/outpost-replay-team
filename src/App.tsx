@@ -2332,8 +2332,17 @@ export default function App() {
                         {isCadet && d.cadetTitle ? tr(d.cadetTitle) : tr(d.title)}
                       </strong>
                       <span className="mt-1.5 font-mono text-[10px] text-[#c0e6aa]">
-                        {cA !== undefined ? `A: ${CHOICE_LETTERS[cA]}` : '—'}
-                        {cB !== undefined ? ` → B: ${CHOICE_LETTERS[cB]}` : ''}
+                        {cA !== undefined
+                          ? `${lang === 'az' ? 'A: Var.' : 'Run A: Opt'} ${CHOICE_LETTERS[cA]}`
+                          : '—'}
+                        {cB !== undefined
+                          ? ` → ${lang === 'az' ? 'B: Var.' : 'Run B: Opt'} ${CHOICE_LETTERS[cB]}`
+                          : ''}
+                        {changed && cA !== undefined && cB !== undefined && cA !== cB && (
+                          <span className="mt-1 block font-sans text-[10.5px] leading-snug text-amber-100">
+                            {tr(d.choices[cA].label)} → {tr(d.choices[cB].label)}
+                          </span>
+                        )}
                         {changed && taskChanged && (
                           <span className="block">
                             {lang === 'az' ? 'Hazırlıq və ya sahə işi dəyişdi' : 'Preparation or fieldwork changed'}

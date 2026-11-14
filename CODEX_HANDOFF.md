@@ -2,9 +2,9 @@
 
 Updated 14 November 2026. Continue the existing game, not a new engine or roadmap.
 
-**Latest follow-up:** branch `codex/protect-progress-and-sharing`, based on verified `6dd15f6`. The commit containing this update saves two focused reliability fixes; obtain its exact hash with `git log -1 --oneline`. Guided-experiment reset now uses an in-game confirmation from both launcher and header, with Keep/Escape preserving the current runs and a Resume action on the launcher. Certificate clipboard failure now exposes the exact replay URL/summary for manual copying in EN/AZ. All56 tests, TypeScript, production build and whitespace checks passed; production Chromium verified normal copy, policy-denied fallback, fallback URL import, confirmation Cancel/Confirm and unchanged demo outcomes. No push or deployment.
+**Latest follow-up:** branch `codex/protect-progress-and-sharing`, building on verified `245d498`. The commit containing this update completes the deferred strategy-naming task plus focused Rewind & Compare, Decision Console/Debrief, and 4-tier Scientific Provenance clarity improvements (no simulation physics, equations, parameters, or score changes). See `git log -1 --oneline` for the exact commit hash. Remaining external gates below (submission rules/eligibility, real learner playtesting, license choice, approved public hosting) stay open for team review. The earlier branch/checkpoint history below is retained.
 
-**Next small development task:** name the D3 prediction strategies explicitly instead of displaying only B/C choice letters alongside Run A/B. This was identified but deliberately deferred to keep the current session to two reliability fixes. External eligibility/license/publication gates below remain unresolved. The earlier event branch/checkpoint history below is retained.
+**Next small development task:** observe 3–5 unfamiliar students (ages 7–12) and an educator playing EN/AZ modes without guidance to identify any remaining friction, and confirm organizer rules/license/public URL before submission.
 
 ## Current state
 

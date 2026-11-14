@@ -49,7 +49,7 @@ const SIMPLIFIED_ROWS: Array<{ param: Bilingual; value: string; why: Bilingual }
   },
   {
     param: { en: 'Resource reserves', az: 'Resurs ehtiyatları' },
-    value: 'kg O₂ · kg H₂O · kg',
+    value: 'kg O₂ · kg H₂O · kg food',
     why: { en: 'The crew uses oxygen, water, and rations each hour. Low power reduces water recovery.', az: 'Ekipaj hər saat oksigen, su və qida ehtiyatından istifadə edir. Enerji azaldıqda suyun təkrar emalı zəifləyir.' },
   },
   {
@@ -89,6 +89,50 @@ const EQUATIONS = {
   az: `Enerji balansı = günəş + ehtiyat enerji − avadanlıq sərfi\nEkipajın oksigen tələbi = ekipaj sayı × ${ECLSS_BASELINES.o2KgPerCrewDay} kq/gün × gün sayı\nBuzdan çıxarılan su = emal edilən qrunt × buzun kütlə payı × emal səmərəliliyi\nTəlim dozasının hesablanması = ∫ (ssenari axını × fərz edilən doza əmsalı × fərz edilən keçiricilik) dt\nYalnız standart 207 pfu üçün tam fırtına dozası ≈ ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv (fon radiasiyası xaric)`,
 };
 
+const PROVENANCE_TIERS: Array<{
+  badge: Bilingual;
+  title: Bilingual;
+  body: Bilingual;
+  tone: string;
+}> = [
+  {
+    badge: { en: '1 · MEASURED', az: '1 · ÖLÇÜLMÜŞ' },
+    title: { en: 'Actual NASA & NOAA Measurements', az: 'Real NASA və NOAA ölçmələri' },
+    body: {
+      en: 'GOES ≥10 MeV peak proton flux (207 pfu, NOAA SWPC PRF 2541); LRO LOLA laser altimetry & Diviner thermal radiometer observations; LCROSS Cabeus impact plume spectra; optional live NASA DONKI FLR flare metadata.',
+      az: 'GOES ≥10 MeV pik proton axını (207 pfu, NOAA SWPC PRF 2541); LRO LOLA altimetriyası və Diviner istilik ölçmələri; LCROSS Cabeus spektrləri; canlı NASA DONKI FLR məlumatları.',
+    },
+    tone: 'border-emerald-400/35 bg-emerald-500/10 text-emerald-200',
+  },
+  {
+    badge: { en: '2 · DERIVED', az: '2 · ELMDƏN ALINMIŞ' },
+    title: { en: 'Values Derived from Published Science', az: 'Nəşr edilmiş elmi dəyərlər' },
+    body: {
+      en: 'Gläser et al. (2018) 2 m illumination & max shadow at S (85.5%, 66 h) and C1 (88.0%, 112 h); Mazarico et al. (2011) horizon profiles; Colaprete et al. (2010) 5.6 ± 2.9% water ice; Paige et al. (2010) ~38 K cold traps; NASA BVAD crew rates (0.82 kg O₂, 1.04 kg CO₂/crew-day); ISS ~98% water recovery & VEG-01A 33-day test; NASA-STD-3001 600 mSv career limit.',
+      az: 'Gläser və b. (2018) 2 m işıqlanma S (85.5%, 66 s) və C1 (88.0%, 112 s); Mazarico və b. (2011) üfüq profilləri; Colaprete və b. (2010) 5.6 ± 2.9% su buzu; Paige və b. (2010) ~38 K soyuq tələlər; NASA BVAD ekipaj sərfi (0.82 kq O₂, 1.04 kq CO₂); BKS ~98% su bərpası & VEG-01A 33 gün; NASA-STD-3001 600 mSv hədd.',
+    },
+    tone: 'border-sky-400/35 bg-sky-500/10 text-sky-200',
+  },
+  {
+    badge: { en: '3 · SIMPLIFIED', az: '3 · SADƏLƏŞDİRİLMİŞ' },
+    title: { en: 'Educational Model Simplifications', az: 'Təlim modeli sadələşdirmələri' },
+    body: {
+      en: '100 kWh lossless battery, 12 / 10 kWh·day⁻¹ generation & load, linear flux-to-dose factor (0.015 mSv·h⁻¹·pfu⁻¹), fixed shielding transmission (100% / 25% / 15% / 6%), 85% / 55% / 20% water recycling states, 25→30 day pre-grown crop tray, and procedural 3D relief (×14 height scale).',
+      az: '100 kVt·s itkisiz batareya, 12 / 10 kVt·s·gün⁻¹ istehsal/yük, xətti axın→doza əmsalı (0.015 mSv·s⁻¹·pfu⁻¹), sabit qalxan keçiriciliyi (100% / 25% / 15% / 6%), 85% / 55% / 20% su bərpası, 25→30 gün bitki sınağı və prosedural 3D relyef (×14 miqyas).',
+    },
+    tone: 'border-amber-400/35 bg-amber-500/10 text-amber-200',
+  },
+  {
+    badge: { en: '4 · SCENARIO', az: '4 · SSENARİ' },
+    title: { en: 'Fictional Scenario Parameters', az: 'Uydurma ssenari parametrləri' },
+    body: {
+      en: 'Fictional outpost near Shackleton’s rim (no assigned lunar coordinates), scripted 216-hour timeline, scripted 72-hour ridge shadow (90 K surface cooling), scripted 48-hour storm curve, 840 / 18 pfu stress-test presets, and 50 mSv classroom warning rule.',
+      az: 'Şeklton kənarı yaxınlığında uydurma baza (real koordinatlar təyin olunmayıb), 216 saatlıq ssenari xətti, 72 saatlıq silsilə kölgəsi (90 K soyuma), 48 saatlıq fırtına əyrisi, 840 / 18 pfu test rejimləri və 50 mSv təlim xəbərdarlığı.',
+    },
+    tone: 'border-purple-400/35 bg-purple-500/10 text-purple-200',
+  },
+];
+
 function Tag({ kind }: { kind: 'reference' | 'model' }) {
   const { lang } = useI18n();
   const label = kind === 'model' ? 'MODEL' : lang === 'az' ? 'MƏNBƏ' : 'REFERENCE';
@@ -121,6 +165,21 @@ export default function EvidencePanel({ stormPeakPfu = SEP_PEAK_FLUX_PFU }: { st
           </p>
         </div>
       </header>
+
+      <div
+        className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4"
+        aria-label={az ? 'Elmi mənbə dərəcələri' : 'Scientific provenance classification'}
+      >
+        {PROVENANCE_TIERS.map((tier) => (
+          <article key={tier.badge.en} className={`rounded-xl border p-2.5 text-xs ${tier.tone}`}>
+            <span className="font-mono text-[9.5px] font-bold uppercase tracking-wider opacity-90">
+              {tr(tier.badge)}
+            </span>
+            <h3 className="mt-0.5 text-[12.5px] font-semibold leading-snug text-white">{tr(tier.title)}</h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-200/90">{tr(tier.body)}</p>
+          </article>
+        ))}
+      </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="space-y-3">
@@ -243,8 +302,8 @@ export default function EvidencePanel({ stormPeakPfu = SEP_PEAK_FLUX_PFU }: { st
 
       <p className="flex items-start gap-2 rounded-xl border border-sky-500/30 bg-sky-500/5 p-3 text-xs text-sky-100">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /> {az
-          ? 'Təlim modeli ssenari dəyərlərindən, NASA-nın LCROSS və BVAD göstəricilərindən və NOAA pik müşahidəsindən istifadə edir.'
-          : 'The training model combines scripted conditions, published NASA LCROSS and BVAD values, and an observed NOAA peak.'}
+          ? 'Təlim modeli ssenari şəraitini NASA-nın LRO, LCROSS, BVAD, STD-3001 və BKS istinadları, həmçinin NOAA-nın pik proton müşahidəsi ilə birləşdirir. Müstəqil təhsil layihəsidir; NASA tərəfindən təsdiqlənməyib.'
+          : 'The training model combines scripted scenario conditions with published NASA LRO, LCROSS, BVAD, STD-3001, and ISS references plus an observed NOAA proton peak. Independent educational project; not endorsed by NASA.'}
       </p>
 
       <details className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-xs text-slate-300">

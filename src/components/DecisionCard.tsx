@@ -990,11 +990,19 @@ export default function DecisionCard(props: DecisionCardProps) {
 
       {canChoose && (
         <footer className="decision-footer">
-          <div className="min-w-0" role="status">
+          <div className="min-w-0 flex-1" role="status">
             <p className="text-sm font-semibold text-white">
               {lang === 'az'
-                ? `Seçilmiş variant · ${CHOICE_LETTERS[inspectedIdx]}`
-                : `Selected option ${CHOICE_LETTERS[inspectedIdx]}`}
+                ? `Seçilmiş variant ${CHOICE_LETTERS[inspectedIdx]} · ${
+                    isCadet && decision.choices[inspectedIdx].cadetLabel
+                      ? tr(decision.choices[inspectedIdx].cadetLabel)
+                      : tr(decision.choices[inspectedIdx].label)
+                  }`
+                : `Selected Option ${CHOICE_LETTERS[inspectedIdx]} · ${
+                    isCadet && decision.choices[inspectedIdx].cadetLabel
+                      ? tr(decision.choices[inspectedIdx].cadetLabel)
+                      : tr(decision.choices[inspectedIdx].label)
+                  }`}
             </p>
             <p className="text-xs text-slate-300">
               {mode === 'branch'

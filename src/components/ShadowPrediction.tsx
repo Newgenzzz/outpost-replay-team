@@ -13,13 +13,13 @@ export function ShadowPredictionInput({ value, onChange, locked }: {
   const options: { id: ShadowStrategy; label: string; badge: string }[] = [
     {
       id: 'backup',
-      badge: 'B',
-      label: az ? 'B · Ehtiyat yanacaq elementləri' : 'B · Backup fuel cells',
+      badge: 'Opt B',
+      label: az ? 'Var. B · Ehtiyat yanacaq elementləri' : 'Opt B · Backup fuel cells',
     },
     {
       id: 'drill',
-      badge: 'C',
-      label: az ? 'C · Qazmanı davam etdir' : 'C · Keep drilling',
+      badge: 'Opt C',
+      label: az ? 'Var. C · Qazmanı davam etdir' : 'Opt C · Keep drilling',
     },
     {
       id: 'tie',
@@ -92,8 +92,8 @@ export function ShadowPredictionInput({ value, onChange, locked }: {
               ? 'Proqnoz A gedişində qeydə alınıb. Nəticəni Geri Sar və Müqayisə Et bölməsində yoxlayın.'
               : 'Recorded with Run A. Check the result in Rewind & Compare.'
             : az
-              ? 'A variantını, B variantını və ya C variantını tətbiq etdikdə proqnoz da saxlanılır. Sonra D3-ü geri sarıb digər strategiyanı sınayın.'
-              : 'Your prediction is saved when you apply a choice. Then rewind D3 and test the other strategy.'}
+              ? 'A, B və ya C variantını tətbiq etdikdə bu proqnoz A gedişi ilə birlikdə saxlanılır. Sonra D3-ü geri sarıb digər strategiyanı sınayın.'
+              : 'Applying Option A, B, or C records this prediction with Run A. Then rewind D3 to test the other strategy.'}
       </p>
     </section>
   );

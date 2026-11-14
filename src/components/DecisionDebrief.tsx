@@ -41,7 +41,8 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
         </button>
       </div>
       <div role="status" aria-atomic="true">
-        <strong className="block text-sm leading-snug text-white">{result}</strong>
+        <p className="mt-0.5 text-xs font-medium text-amber-100">{tr(choice.label)}</p>
+        <strong className="mt-1 block text-sm leading-snug text-white">{result}</strong>
         <p className="mt-1">{tr(ENGINEERING_LESSONS[step.step - 1])}</p>
         <div className="mt-2 grid grid-cols-2 gap-1 font-mono text-[10px]">
           <span className="rounded bg-black/35 px-1.5 py-0.5 text-amber-200">
