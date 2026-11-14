@@ -1,121 +1,41 @@
 import { BufferGeometry, Float32BufferAttribute, Color } from 'three';
 import {
-  PATCH_WIDTH_KM,
-  SHACKLETON_MARKERS,
-  TERRAIN_PROVENANCE,
   computeRimIllumination,
   sampleShackletonElevationKm,
 } from '../data/shackletonDem';
 
-export interface SightlineGeometryData {
-  siteWorld: [number, number, number];
-  collectorWorld: [number, number, number];
-  altCollectorWorld: [number, number, number];
-  ridgeWorld: [number, number, number];
-  rayOverRidgeWorld: [number, number, number];
-  sunOrbWorld: [number, number, number];
+export interface HorizonDiagramData {
   illuminatedPct: number;
   blockingRidgeDeg: number;
   solarElevationDeg: number;
-  topLimbDeg: number;
-  inShadow: boolean;
-  isBlocked: boolean;
+  visibility: 'hidden' | 'partial' | 'clear';
+  sunCenterY: number;
+  sunRadius: number;
+  horizonY: number;
 }
 
 /**
- * Computes deterministic 3D world coordinates for the illustrative solar sightline ray,
- * the highest obstructing ridge point along the current azimuth, and the alternate mast height.
- * Display coordinates only; illumination percentages come unmodified from computeRimIllumination.
+ * A separate angular-index diagram, NOT a ray projected onto the artistic 3D relief.
+ * The horizon cuts the disk's vertical diameter by the model's rounded visibility proxy.
+ * Neither the disk area nor the distance to the ridge is being calculated here.
+ * Keeping the disk fixed makes the observer-height comparison a controlled illustration.
  */
-export function computeSightlineGeometry(
+export function computeHorizonDiagram(
   solarAzimuthDeg: number,
   mastHeightMeters: 2 | 10,
   siteId: 'S' | 'C1' = 'S',
-): SightlineGeometryData {
-  const site = SHACKLETON_MARKERS.find((m) => m.id === siteId) ?? SHACKLETON_MARKERS[0];
-  const illum = computeRimIllumination(solarAzimuthDeg, mastHeightMeters, siteId);
-
-  const baseElevKm = sampleShackletonElevationKm(site.nx, site.nz);
-  const effectiveHeightKm = (mastHeightMeters / 1000) * TERRAIN_PROVENANCE.mastHeightExaggeration;
-  const observerElevKm = baseElevKm + effectiveHeightKm;
-
-  const rad = (solarAzimuthDeg * Math.PI) / 180;
-  const dx = Math.cos(rad);
-  const dz = Math.sin(rad);
-
-  let maxHorizonAngleDeg = -90;
-  let blockerNx = site.nx + dx * 0.18;
-  let blockerNz = site.nz + dz * 0.18;
-
-  for (let step = 1; step <= 34; step++) {
-    const distKm = step * 0.45;
-    const sx = site.nx + (dx * distKm) / (PATCH_WIDTH_KM * 0.5);
-    const sz = site.nz + (dz * distKm) / (PATCH_WIDTH_KM * 0.5);
-    if (Math.abs(sx) > 1.05 || Math.abs(sz) > 1.05) break;
-    const terrainKm = sampleShackletonElevationKm(sx, sz);
-    const angleDeg = (Math.atan2(terrainKm - observerElevKm, distKm) * 180) / Math.PI;
-    if (angleDeg > maxHorizonAngleDeg) {
-      maxHorizonAngleDeg = angleDeg;
-      const radial = Math.hypot(sx, sz);
-      const clampScale = radial > 0.95 ? 0.95 / radial : 1;
-      blockerNx = sx * clampScale;
-      blockerNz = sz * clampScale;
-    }
-  }
-
-  const siteWorldX = site.nx * 6;
-  const siteWorldZ = site.nz * 6;
-  const siteWorldY = baseElevKm * 0.52;
-
-  const mastWorldHeight = mastHeightMeters === 10 ? 0.62 : 0.14;
-  const altMastWorldHeight = mastHeightMeters === 10 ? 0.14 : 0.62;
-
-  const collectorWorld: [number, number, number] = [
-    siteWorldX,
-    siteWorldY + mastWorldHeight,
-    siteWorldZ,
-  ];
-  const altCollectorWorld: [number, number, number] = [
-    siteWorldX,
-    siteWorldY + altMastWorldHeight,
-    siteWorldZ,
-  ];
-
-  const ridgeWorldX = blockerNx * 6;
-  const ridgeWorldZ = blockerNz * 6;
-  const ridgeWorldY = sampleShackletonElevationKm(blockerNx, blockerNz) * 0.52 + 0.035;
-  const ridgeWorld: [number, number, number] = [ridgeWorldX, ridgeWorldY, ridgeWorldZ];
-
-  const sunDist = 14;
-  const sunOrbWorld: [number, number, number] = [
-    dx * sunDist * 0.58,
-    1.45 * 0.86,
-    dz * sunDist * 0.58,
-  ];
-
-  const distToRidge = Math.hypot(ridgeWorldX - siteWorldX, ridgeWorldZ - siteWorldZ);
-  const distToSun = Math.hypot(sunOrbWorld[0] - siteWorldX, sunOrbWorld[2] - siteWorldZ);
-  const t = Math.min(0.88, Math.max(0.06, distToRidge / Math.max(0.001, distToSun)));
-
-  const linearRayY = collectorWorld[1] + (sunOrbWorld[1] - collectorWorld[1]) * t;
-  const isBlocked = illum.illuminatedPct < 100;
-  const rayOverRidgeY = isBlocked
-    ? ridgeWorldY
-    : Math.max(ridgeWorldY + 0.16, linearRayY);
-
+): HorizonDiagramData {
+  const sample = computeRimIllumination(solarAzimuthDeg, mastHeightMeters, siteId);
+  const sunCenterY = 44;
+  const sunRadius = 18;
   return {
-    siteWorld: [siteWorldX, siteWorldY, siteWorldZ],
-    collectorWorld,
-    altCollectorWorld,
-    ridgeWorld,
-    rayOverRidgeWorld: [ridgeWorldX, rayOverRidgeY, ridgeWorldZ],
-    sunOrbWorld,
-    illuminatedPct: illum.illuminatedPct,
-    blockingRidgeDeg: illum.blockingRidgeDeg,
-    solarElevationDeg: illum.solarElevationDeg,
-    topLimbDeg: Math.round((illum.solarElevationDeg + 0.265) * 100) / 100,
-    inShadow: illum.inShadow,
-    isBlocked,
+    illuminatedPct: sample.illuminatedPct,
+    blockingRidgeDeg: sample.blockingRidgeDeg,
+    solarElevationDeg: sample.solarElevationDeg,
+    visibility: sample.illuminatedPct === 0 ? 'hidden' : sample.illuminatedPct === 100 ? 'clear' : 'partial',
+    sunCenterY,
+    sunRadius,
+    horizonY: sunCenterY - sunRadius + 2 * sunRadius * sample.illuminatedPct / 100,
   };
 }
 

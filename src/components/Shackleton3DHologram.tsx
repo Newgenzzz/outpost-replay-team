@@ -5,7 +5,7 @@ import { hologramFrameLoop } from '../utils/renderPolicy';
 import {
   buildHologramRelief,
   buildPolarStarfield,
-  computeSightlineGeometry,
+  computeHorizonDiagram,
 } from './hologramGeometry';
 import { Html, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -18,57 +18,6 @@ import {
   sampleShackletonElevationKm,
   TERRAIN_PROVENANCE,
 } from '../data/shackletonDem';
-
-const UP_AXIS = new THREE.Vector3(0, 1, 0);
-
-function BeamSegment({
-  start,
-  end,
-  radius = 0.022,
-  haloRadius = 0,
-  color,
-  opacity = 0.9,
-}: {
-  start: [number, number, number];
-  end: [number, number, number];
-  radius?: number;
-  haloRadius?: number;
-  color: string;
-  opacity?: number;
-}) {
-  const { position, quaternion, length } = useMemo(() => {
-    const a = new THREE.Vector3(...start);
-    const b = new THREE.Vector3(...end);
-    const dir = new THREE.Vector3().subVectors(b, a);
-    const len = dir.length();
-    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
-    const quat = new THREE.Quaternion();
-    if (len > 0.0001) {
-      quat.setFromUnitVectors(UP_AXIS, dir.normalize());
-    }
-    return {
-      position: [mid.x, mid.y, mid.z] as [number, number, number],
-      quaternion: quat,
-      length: Math.max(0.001, len),
-    };
-  }, [start, end]);
-
-  return (
-    <group position={position} quaternion={quaternion}>
-      <mesh>
-        <cylinderGeometry args={[radius, radius, length, 10]} />
-        <meshBasicMaterial color={color} transparent={opacity < 1} opacity={opacity} />
-      </mesh>
-      {haloRadius > radius && (
-        <mesh>
-          <cylinderGeometry args={[haloRadius, haloRadius, length, 10]} />
-          <meshBasicMaterial color={color} transparent opacity={opacity * 0.28} depthWrite={false} />
-        </mesh>
-      )}
-    </group>
-  );
-}
-
 
 class WebGLErrorBoundary extends Component<
   { fallback: ReactNode; children: ReactNode },
@@ -92,8 +41,6 @@ interface TerrainMeshProps {
   onTickAzimuth: (next: number) => void;
   viewReset: number;
   cameraMode: 'orbit' | 'rim';
-  az: boolean;
-  heightHelps: boolean;
 }
 
 const COMPASS_DEGREE_TICKS = Array.from({ length: 24 }, (_, idx) => idx * 15);
@@ -106,8 +53,6 @@ function ShackletonScene({
   onTickAzimuth,
   viewReset,
   cameraMode,
-  az,
-  heightHelps,
 }: TerrainMeshProps) {
   const azimuthRef = useRef(solarAzimuthDeg);
   const gl = useThree(state => state.gl);
@@ -136,38 +81,40 @@ function ShackletonScene({
   const sunZ = Math.sin(sunRad) * sunDist;
   const sunY = 1.45;
 
-  const sightline = useMemo(
-    () => computeSightlineGeometry(solarAzimuthDeg, mastHeightMeters, activeSite),
-    [solarAzimuthDeg, mastHeightMeters, activeSite],
-  );
-  const [siteWorldX, siteWorldY, siteWorldZ] = sightline.siteWorld;
+  const site = SHACKLETON_MARKERS.find(marker => marker.id === activeSite)!;
+  const siteWorldX = site.nx * 6;
+  const siteWorldZ = site.nz * 6;
+  const siteWorldY = sampleShackletonElevationKm(site.nx, site.nz) * 0.52;
+  const currentIllum = computeRimIllumination(solarAzimuthDeg, mastHeightMeters, activeSite);
   const mastWorldHeight = mastHeightMeters === 10 ? 0.62 : 0.14;
   const altMastWorldHeight = mastHeightMeters === 10 ? 0.14 : 0.62;
   const psrFloorY = sampleShackletonElevationKm(0, 0) * 0.52;
 
+  // Sun changes never reset a learner's orbit. Only mode, Reset view and site changes do.
+  const cameraAnchor = useRef({ sunRad, site: [siteWorldX, siteWorldY, siteWorldZ] });
+  cameraAnchor.current = { sunRad, site: [siteWorldX, siteWorldY, siteWorldZ] };
+
   useEffect(() => {
     const ctrl = controls.current;
     if (!ctrl) return;
+    const anchor = cameraAnchor.current;
     if (cameraMode === 'rim') {
-      const dx = Math.cos(sunRad);
-      const dz = Math.sin(sunRad);
+      const dx = Math.cos(anchor.sunRad);
+      const dz = Math.sin(anchor.sunRad);
+      const [sx, sy, sz] = anchor.site;
       camera.position.set(
-        siteWorldX - dx * 1.85 + dz * 0.42,
-        siteWorldY + 0.58,
-        siteWorldZ - dz * 1.85 - dx * 0.42,
+        sx - dx * 3.2 + dz * 1.1,
+        sy + 1.6,
+        sz - dz * 3.2 - dx * 1.1,
       );
-      ctrl.target.set(
-        sightline.ridgeWorld[0],
-        sightline.ridgeWorld[1] + 0.12,
-        sightline.ridgeWorld[2],
-      );
+      ctrl.target.set(sx + dx * 0.7, sy + 0.35, sz + dz * 0.7);
     } else {
       camera.position.set(8.5, 9, 11.5);
       ctrl.target.set(0, -1.4, 0);
     }
     ctrl.update();
     invalidate();
-  }, [cameraMode, viewReset, activeSite, camera, invalidate, siteWorldX, siteWorldY, siteWorldZ, sunRad, sightline.ridgeWorld]);
+  }, [cameraMode, viewReset, activeSite, camera, invalidate]);
 
   return (
     <>
@@ -197,7 +144,7 @@ function ShackletonScene({
       </points>
 
       {/* Grazing Polar Sun Orb + Solar Corona Halo */}
-      <group position={sightline.sunOrbWorld}>
+      <group position={[sunX * 0.58, sunY * 0.86, sunZ * 0.58]}>
         <mesh>
           <sphereGeometry args={[0.2, 20, 20]} />
           <meshBasicMaterial color="#fff4c2" />
@@ -311,9 +258,9 @@ function ShackletonScene({
         <mesh position={[0, mastWorldHeight, 0]} rotation={[0, -sunRad, 0]} castShadow>
           <boxGeometry args={[0.055, mastHeightMeters === 10 ? 0.34 : 0.14, 0.38]} />
           <meshStandardMaterial
-            color={sightline.inShadow ? '#64748b' : '#38bdf8'}
-            emissive={sightline.inShadow ? '#334155' : '#0284c7'}
-            emissiveIntensity={sightline.inShadow ? 0.25 : 0.65}
+            color={currentIllum.inShadow ? '#64748b' : '#38bdf8'}
+            emissive={currentIllum.inShadow ? '#334155' : '#0284c7'}
+            emissiveIntensity={currentIllum.inShadow ? 0.25 : 0.65}
           />
         </mesh>
 
@@ -330,7 +277,7 @@ function ShackletonScene({
           {/* Glowing habitat viewport window */}
           <mesh position={[-0.09, 0.065, -0.09]}>
             <sphereGeometry args={[0.028, 10, 10]} />
-            <meshBasicMaterial color={sightline.inShadow ? '#fbbf24' : '#7dd3fc'} />
+            <meshBasicMaterial color={currentIllum.inShadow ? '#fbbf24' : '#7dd3fc'} />
           </mesh>
           {/* Miniature 3D Lunar Rover */}
           <group position={[-0.22, 0.015, 0.12]} rotation={[0, 0.6, 0]}>
@@ -346,103 +293,8 @@ function ShackletonScene({
         </group>
       </group>
 
-      {/* 3D Solar Sightline Ray & Horizon Obstruction / Clearance Visualization */}
-      {sightline.isBlocked ? (
-        <>
-          {/* Ray from active collector intercepted by blocking ridge crest */}
-          <BeamSegment
-            start={sightline.collectorWorld}
-            end={sightline.ridgeWorld}
-            radius={0.024}
-            haloRadius={0.056}
-            color="#fb7185"
-            opacity={0.92}
-          />
-          {/* Dimmed shadow continuation from blocking ridge toward Sun Orb */}
-          <BeamSegment
-            start={sightline.ridgeWorld}
-            end={sightline.sunOrbWorld}
-            radius={0.013}
-            color="#94a3b8"
-            opacity={0.24}
-          />
-          {/* Subtle ghost sightline showing how the 10 m mast clears this ridge when heightHelps */}
-          {heightHelps && mastHeightMeters === 2 && (
-            <BeamSegment
-              start={sightline.altCollectorWorld}
-              end={sightline.sunOrbWorld}
-              radius={0.012}
-              color="#38bdf8"
-              opacity={0.24}
-            />
-          )}
-        </>
-      ) : (
-        <>
-          {/* Unbroken golden solar beam from collector over the horizon to the Sun Orb */}
-          <BeamSegment
-            start={sightline.collectorWorld}
-            end={sightline.rayOverRidgeWorld}
-            radius={0.025}
-            haloRadius={0.06}
-            color="#fde047"
-            opacity={0.94}
-          />
-          <BeamSegment
-            start={sightline.rayOverRidgeWorld}
-            end={sightline.sunOrbWorld}
-            radius={0.022}
-            haloRadius={0.052}
-            color="#fde047"
-            opacity={0.85}
-          />
-          {/* Vertical clearance pin from ridge crest up to the passing solar ray */}
-          <BeamSegment
-            start={sightline.ridgeWorld}
-            end={sightline.rayOverRidgeWorld}
-            radius={0.014}
-            color="#34d399"
-            opacity={0.65}
-          />
-        </>
-      )}
-
-      {/* Horizon Ridge Crest Target Ring & Educational Callout */}
-      <group position={sightline.ridgeWorld}>
-        <mesh>
-          <sphereGeometry args={[0.075, 12, 12]} />
-          <meshBasicMaterial color={sightline.isBlocked ? '#fb7185' : '#34d399'} />
-        </mesh>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-          <ringGeometry args={[0.13, 0.18, 24]} />
-          <meshBasicMaterial
-            color={sightline.isBlocked ? '#fda4af' : '#6ee7b7'}
-            transparent
-            opacity={0.85}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-        {(sightline.isBlocked || heightHelps) && (
-          <Html center position={[0, 0.55, 0]} distanceFactor={11} style={{ pointerEvents: 'none' }}>
-            <div
-              className={`whitespace-nowrap rounded-md border px-1.5 py-0.5 font-mono text-[9.5px] font-semibold shadow-lg backdrop-blur-sm ${
-                sightline.isBlocked
-                  ? 'border-rose-400/70 bg-rose-950/90 text-rose-100'
-                  : 'border-emerald-400/70 bg-emerald-950/90 text-emerald-100'
-              }`}
-            >
-              {sightline.isBlocked
-                ? az
-                  ? `Silsilə ${mastHeightMeters}m-i örtür (${sightline.blockingRidgeDeg.toFixed(2)}°)`
-                  : `Ridge blocks ${mastHeightMeters}m (${sightline.blockingRidgeDeg.toFixed(2)}°)`
-                : az
-                  ? `${mastHeightMeters}m silsiləni aşır (${sightline.blockingRidgeDeg.toFixed(2)}°)`
-                  : `${mastHeightMeters}m clears ridge (${sightline.blockingRidgeDeg.toFixed(2)}°)`}
-            </div>
-          </Html>
-        )}
-      </group>
-
+      {/* The independent horizon diagram below carries the model result. No ray is fitted to
+          the differently exaggerated artistic mesh: that would imply false geometric agreement. */}
 
       {/* Illustrative markers, not mapped NASA study coordinates */}
       {SHACKLETON_MARKERS.map((m) => {
@@ -458,7 +310,7 @@ function ShackletonScene({
               <sphereGeometry args={[isSelected ? 0.11 : 0.08, 12, 12]} />
               <meshBasicMaterial color={isPsr ? '#22d3ee' : isSelected ? '#fde047' : '#a7f3d0'} />
             </mesh>
-            {!isPsr && <Html center position={[0, 0.85, 0]} distanceFactor={10} style={{ pointerEvents: 'none' }}>
+            {!isPsr && <Html center position={[0, 0.85, 0]} style={{ pointerEvents: 'none' }}>
               <div
                 className={`whitespace-nowrap rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-semibold shadow-lg backdrop-blur-sm ${
                   isPsr
@@ -481,7 +333,7 @@ function ShackletonScene({
         enableDamping
         dampingFactor={0.09}
         enablePan={false}
-        minDistance={cameraMode === 'rim' ? 0.7 : 8}
+        minDistance={cameraMode === 'rim' ? 2.5 : 8}
         maxDistance={21}
         minPolarAngle={0.22}
         maxPolarAngle={Math.PI / 2.04}
@@ -589,7 +441,7 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
       </div>
 
       {/* 3D WebGL Canvas */}
-      <div className={`${compact ? 'h-64' : 'h-72'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-[radial-gradient(ellipse_at_50%_70%,#193b50_0%,#07121f_55%,#02060d_100%)]`}>
+      <div className={`${compact ? 'h-52' : 'h-56'} relative w-full overflow-hidden rounded-xl border border-sky-300/20 bg-[radial-gradient(ellipse_at_50%_70%,#193b50_0%,#07121f_55%,#02060d_100%)]`}>
         <WebGLErrorBoundary fallback={fallback2D}>
           <Canvas
             shadows={{ type: THREE.PCFShadowMap }}
@@ -607,8 +459,6 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
               onTickAzimuth={setSolarAzimuthDeg}
               viewReset={viewReset}
               cameraMode={cameraMode}
-              az={az}
-              heightHelps={heightHelps}
             />
           </Canvas>
         </WebGLErrorBoundary>
@@ -628,13 +478,8 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
               currentIllum.illuminatedPct < 100 ? 'bg-rose-400' : 'bg-emerald-400'
             }`}
           />
-          {currentIllum.illuminatedPct < 100
-            ? az
-              ? `Şüa: Silsilə tərəfindən tutulur (${currentIllum.blockingRidgeDeg.toFixed(2)}° > 1.82°)`
-              : `Sightline: Blocked by ridge (${currentIllum.blockingRidgeDeg.toFixed(2)}° > 1.82°)`
-            : az
-              ? `Şüa: Üfüqü aşır (${currentIllum.blockingRidgeDeg.toFixed(2)}° < 1.82°)`
-              : `Sightline: Clears horizon (${currentIllum.blockingRidgeDeg.toFixed(2)}° < 1.82°)`}
+          {az ? 'Görünmə indeksi' : 'Visibility index'}: {currentIllum.illuminatedPct}%
+          {' · '}{az ? 'aşağıdakı sxemə baxın' : 'see diagram below'}
         </div>
         <div className="absolute right-3 top-3 flex items-center gap-1.5">
           <button
@@ -663,6 +508,36 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
             <RotateCcw size={11} />{az ? 'Görünüşü sıfırla' : 'Reset view'}
           </button>
         </div>
+      </div>
+      <div className="mt-2 rounded-lg border border-sky-300/25 bg-slate-950/70 p-2.5">
+        <p className="text-xs font-semibold text-sky-100">{az ? 'Panelin gördüyü üfüq · ayrıca indeks sxemi' : 'The panel’s horizon · separate index diagram'}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {([2, 10] as const).map(height => {
+            const diagram = computeHorizonDiagram(solarAzimuthDeg, height, activeSite);
+            const selected = height === mastHeightMeters;
+            const stateLabel = az
+              ? diagram.visibility === 'hidden' ? 'Örtülüb' : diagram.visibility === 'partial' ? 'Qismən görünür' : 'Görünür'
+              : diagram.visibility === 'hidden' ? 'Hidden' : diagram.visibility === 'partial' ? 'Partly visible' : 'Clear';
+            return (
+              <div key={height} className={`overflow-hidden rounded-lg border ${selected ? 'border-amber-300/70' : 'border-white/15'}`}>
+                <div className="flex flex-wrap justify-between gap-1 px-2 pt-1.5 text-[11px] font-semibold">
+                  <span>{height} m{selected ? (az ? ' · seçilib' : ' · selected') : ''}</span>
+                  <span className={diagram.visibility === 'clear' ? 'text-emerald-300' : 'text-amber-200'}>{diagram.illuminatedPct}% · {stateLabel}</span>
+                </div>
+                <svg viewBox="0 0 240 92" role="img" aria-label={`${height} m · ${stateLabel} · ${diagram.illuminatedPct}%`} className="h-20 w-full">
+                  <rect width="240" height="92" fill="#07131d" />
+                  <circle cx="172" cy={diagram.sunCenterY} r={diagram.sunRadius} fill="#fde047" />
+                  <rect x="0" y={diagram.horizonY} width="240" height={92 - diagram.horizonY} fill="#294252" />
+                  <line x1="0" x2="240" y1={diagram.horizonY} y2={diagram.horizonY} stroke="#7dd3fc" strokeWidth="1.5" />
+                  <text x="9" y="81" fill="#cbd5e1" fontSize="11">{az ? 'Yerli üfüq' : 'Local horizon'} {diagram.blockingRidgeDeg.toFixed(2)}°</text>
+                </svg>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-slate-300">{az
+          ? 'Günəş eyni yerdədir (1.55°). Hündürlük artdıqca üfüq alçala bilər. Sxem miqyaslı deyil; faiz görünən disk sahəsi deyil, xətti görünmə indeksidir. 3D işıqlandırma bədiidir.'
+          : 'Same Sun (1.55°): raising the panel can lower its horizon. Diagram not to scale; percentages are a linear visibility index, not visible disk area. 3D lighting is artistic.'}</p>
       </div>
         {/* Teaching index, separate from the artistic light and display geometry. */}
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/15 bg-slate-950/80 px-3 py-1.5 text-[11px]">

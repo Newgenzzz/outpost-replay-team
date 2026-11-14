@@ -204,8 +204,8 @@ export const MISSION_DECISIONS: Decision[] = [
           az: 'Elektriklə Ay daşlarında birləşmiş oksigeni ayırın (+3 kq O₂)',
         },
         cadetSummary: {
-          en: 'Uses an electrically powered extraction process to separate oxygen from minerals (+10 Science & +8 pp direct Life Support bonus; check the forecast for net 36h change). The yield is assumed.',
-          az: 'Elektriklə işləyən proses minerallardan oksigen ayırır (+10 Elm və +8 fb birbaşa Həyat Təminatı effekti; 36 saatlıq xalis dəyişiklik üçün proqnoza baxın). Məhsuldarlıq fərziyyədir.',
+          en: 'Uses an electrically powered extraction process to separate oxygen from minerals (+10 Science & +8 pp direct Life Support bonus; check the forecast for the net change over hours 24–48). The yield is assumed.',
+          az: 'Elektriklə işləyən proses minerallardan oksigen ayırır (+10 Elm və +8 fb birbaşa Həyat Təminatı effekti; 24–48-ci saatlar üzrə xalis dəyişiklik üçün proqnoza baxın). Məhsuldarlıq fərziyyədir.',
         },
         effects: { powerKwh: -10, lifeSupportPct: 8, sciencePoints: 10 },
         resourceEffects: { oxygenKg: 3 },

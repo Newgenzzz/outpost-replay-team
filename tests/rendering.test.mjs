@@ -8,7 +8,7 @@ const bundle = await build({
   plugins: [{
     name: 'rendering-test-entry',
     resolveId: id => id === entry ? `\0${id}` : null,
-    load: id => id === `\0${entry}` ? `export * from '/src/utils/renderPolicy.ts'; export * from '/src/components/hologramGeometry.ts';` : null,
+    load: id => id === `\0${entry}` ? `export * from '/src/utils/renderPolicy.ts'; export * from '/src/components/hologramGeometry.ts'; export { computeRimIllumination } from '/src/data/shackletonDem.ts';` : null,
   }],
   build: { write: false, minify: false, rollupOptions: { input: entry, output: { format: 'es' }, preserveEntrySignatures: 'strict' } },
 });
@@ -16,7 +16,8 @@ const [{ code }] = bundle.output;
 const {
   buildHologramRelief,
   buildPolarStarfield,
-  computeSightlineGeometry,
+  computeHorizonDiagram,
+  computeRimIllumination,
   destroyWorldRenderer,
   hologramFrameLoop,
   updateWorldRendering,
@@ -108,17 +109,50 @@ test('relief display geometry is deterministic across recreation', () => {
   }
 });
 
-test('3D solar sightline geometry contrasts blocked 2 m vs clear 10 m at the 128 deg lesson azimuth', () => {
-  const low = computeSightlineGeometry(128, 2, 'S');
-  const tall = computeSightlineGeometry(128, 10, 'S');
-  assert.equal(low.isBlocked, true);
+test('separate horizon diagram retains the contrasting 128 deg mast-height lesson', () => {
+  const low = computeHorizonDiagram(128, 2, 'S');
+  const tall = computeHorizonDiagram(128, 10, 'S');
+  assert.equal(low.visibility, 'hidden');
   assert.equal(low.illuminatedPct, 0);
-  assert.equal(tall.isBlocked, false);
+  assert.equal(tall.visibility, 'clear');
   assert.equal(tall.illuminatedPct, 100);
-  assert.ok(tall.collectorWorld[1] > low.collectorWorld[1]);
-  assert.deepEqual(low.altCollectorWorld, tall.collectorWorld);
-  assert.ok(Math.hypot(low.ridgeWorld[0], low.ridgeWorld[2]) <= 6);
-  assert.ok(tall.rayOverRidgeWorld[1] > tall.ridgeWorld[1]);
+  assert.ok(tall.horizonY > low.horizonY, 'a lower angular horizon exposes more Sun');
+  assert.equal(low.sunCenterY, tall.sunCenterY);
+});
+
+test('horizon diagram faithfully represents the index at every degree without moving the Sun or claiming relief ray geometry', () => {
+  for (const site of ['S', 'C1']) {
+    for (let azimuth = 0; azimuth <= 360; azimuth++) {
+      const low = computeHorizonDiagram(azimuth, 2, site);
+      const tall = computeHorizonDiagram(azimuth, 10, site);
+      assert.equal(low.sunCenterY, tall.sunCenterY);
+      assert.equal(low.sunRadius, tall.sunRadius);
+      assert.ok(tall.illuminatedPct >= low.illuminatedPct);
+      for (const [height, g] of [[2, low], [10, tall]]) {
+        const source = computeRimIllumination(azimuth, height, site);
+        assert.equal(g.illuminatedPct, source.illuminatedPct);
+        assert.equal(g.blockingRidgeDeg, source.blockingRidgeDeg);
+        const top = g.sunCenterY - g.sunRadius;
+        const bottom = g.sunCenterY + g.sunRadius;
+        assert.ok(g.horizonY >= top && g.horizonY <= bottom);
+        const visibleHeightPct = (g.horizonY - top) / (bottom - top) * 100;
+        assert.ok(Math.abs(visibleHeightPct - g.illuminatedPct) < 1e-9);
+        assert.equal(g.visibility, g.illuminatedPct === 0 ? 'hidden' : g.illuminatedPct === 100 ? 'clear' : 'partial');
+        assert.equal(g.solarElevationDeg, 1.55);
+        assert.ok(Object.values(g).filter(v => typeof v === 'number').every(Number.isFinite));
+      }
+    }
+  }
+});
+
+test('partial sunlight at 120 deg is shown as partial, never a fully blocked ray', () => {
+  const partial = computeHorizonDiagram(120, 2, 'S');
+  assert.equal(partial.illuminatedPct, 76);
+  assert.equal(partial.visibility, 'partial');
+  assert.ok(partial.horizonY > partial.sunCenterY - partial.sunRadius);
+  assert.ok(partial.horizonY < partial.sunCenterY + partial.sunRadius);
+  assert.equal(computeHorizonDiagram(124, 2, 'S').visibility, 'hidden');
+  assert.equal(computeHorizonDiagram(124, 10, 'S').visibility, 'clear');
 });
 
 test('polar starfield dome is deterministic and finite', () => {
