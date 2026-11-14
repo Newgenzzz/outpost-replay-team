@@ -78,7 +78,8 @@ import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
 import { compareRuns, runExperiment, type StepRecord } from './engine/simulation';
 import { applyRunChoice, cloneRunInput, createRunInput, getRunTasks, type RunInput } from './engine/runInput';
-import { encodeSharedReplayUrl, parseSharedReplayFromUrl } from './engine/sharedReplay';
+import { encodeSharedReplayUrl, parseSharedReplayFromUrl, urlWithoutImportedReplay } from './engine/sharedReplay';
+import { MISSION_PROGRESS_KEY, parseMissionProgress, serializeMissionProgress } from './engine/missionProgress';
 import { canPowerCrop, CROP_TRIAL } from './engine/resources';
 import { environmentAtHour } from './engine/power';
 import type { MissionTaskSettings, TrainingMode } from './types';
@@ -111,7 +112,17 @@ export default function App() {
   const { t, tr, lang, setLang } = useI18n();
 
   const initialShared = useMemo(() => parseSharedReplayFromUrl(window.location.href), []);
-  const [legacyReplay, setLegacyReplay] = useState(initialShared?.legacy ?? false);
+  const importedReplayPending = useRef(Boolean(initialShared));
+  const initialSaved = useMemo(() => {
+    // A requested replay takes precedence over this browser's previous mission.
+    if (initialShared) return null;
+    try { return parseMissionProgress(window.localStorage.getItem(MISSION_PROGRESS_KEY)); }
+    catch { return null; }
+  }, [initialShared]);
+  const [missionSaveStatus, setMissionSaveStatus] = useState<'saved' | 'unavailable' | null>(initialSaved ? 'saved' : null);
+  const [legacyReplay, setLegacyReplay] = useState(initialShared?.legacy ?? initialSaved?.legacyReplay ?? false);
+
+  useLayoutEffect(() => { if (initialSaved) setLang(initialSaved.lang); }, [initialSaved, setLang]);
 
   const [trainingMode, setTrainingMode] = useState<TrainingMode>(() => {
     if (initialShared?.m) return initialShared.m;
@@ -132,15 +143,15 @@ export default function App() {
   });
 
   /** Run A — locked step by step through deterministic simulation. */
-  const [baselineInput, setBaselineInput] = useState<RunInput>(() => initialShared?.a ?? createRunInput([]));
+  const [baselineInput, setBaselineInput] = useState<RunInput>(() => initialShared?.a ?? initialSaved?.a ?? createRunInput([]));
   /** Run B — copy of Run A with one or more rewound decisions (null = no branch yet). */
-  const [branchInput, setBranchInput] = useState<RunInput | null>(() => initialShared?.b ?? null);
+  const [branchInput, setBranchInput] = useState<RunInput | null>(() => initialShared?.b ?? initialSaved?.b ?? null);
   const baselineChoices = useMemo(() => baselineInput.phases.map((p) => p.choiceIndex), [baselineInput]);
   const rewoundChoices = useMemo(() => branchInput?.phases.map((p) => p.choiceIndex) ?? null, [branchInput]);
   // Exploration unlocks draft preparations. Only Apply records them in a run.
-  const [pendingTasks, setPendingTasks] = useState<Record<number, Partial<MissionTaskSettings>>>({});
+  const [pendingTasks, setPendingTasks] = useState<Record<number, Partial<MissionTaskSettings>>>(() => initialSaved?.pendingTasks ?? {});
   const [viewStep, setViewStep] = useState(() =>
-    Math.max(1, Math.min(DECISION_COUNT, (initialShared?.b ?? initialShared?.a)?.phases.length ?? 1)),
+    initialSaved?.viewStep ?? Math.max(1, Math.min(DECISION_COUNT, (initialShared?.b ?? initialShared?.a)?.phases.length ?? 1)),
   );
 
   // Overlays & Modals
@@ -150,12 +161,13 @@ export default function App() {
   const [telemetryDrawerOpen, setTelemetryDrawerOpen] = useState<boolean>(() => Boolean(initialShared));
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [showBriefing, setShowBriefing] = useState(false);
-  const [demoStage, setDemoStage] = useState<DemoStage | null>(null);
+  const [demoStage, setDemoStage] = useState<DemoStage | null>(() => initialSaved?.demoStage ?? null);
   const overlayOpener = useRef<HTMLElement | null>(null);
   const [sensorDeckOpen, setSensorDeckOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
   const [achievementsModalOpen, setAchievementsModalOpen] = useState(false);
   const [marsModalOpen, setMarsModalOpen] = useState(false);
+  const [marsChoices, setMarsChoices] = useState<number[]>(() => initialSaved?.marsChoices ?? []);
   const [dossierMenuOpen, setDossierMenuOpen] = useState(false);
   const dossierMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -208,9 +220,10 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [achievementToast]);
 
-  const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
+  const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(() => initialSaved?.debriefStep
+    ? runExperiment(initialSaved.b ?? initialSaved.a).steps[initialSaved.debriefStep - 1] ?? null : null);
   const [trackedSample, setTrackedSample] = useState<number | null>(null);
-  const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(() => initialShared?.prediction ?? null);
+  const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(() => initialShared?.prediction ?? initialSaved?.prediction ?? null);
 
   // 2.5D Phaser World Live State
   const [ready, setReady] = useState(false);
@@ -240,7 +253,7 @@ export default function App() {
 
   // Interactive Gameplay Mechanics: Lunar Car [V], 90 K Ice Laser [Space], Hands-On Station Tasks & Science Samples
   const [controllingRover, setControllingRover] = useState(false);
-  const [calibratedTasks, setCalibratedTasks] = useState<boolean[]>([
+  const [calibratedTasks, setCalibratedTasks] = useState<boolean[]>(initialSaved?.calibratedTasks ?? [
     false,
     false,
     false,
@@ -248,14 +261,14 @@ export default function App() {
     false,
     false,
   ]);
-  const [minedCrystals, setMinedCrystals] = useState<boolean[]>([
+  const [minedCrystals, setMinedCrystals] = useState<boolean[]>(initialSaved?.minedCrystals ?? [
     false,
     false,
     false,
     false,
     false,
   ]);
-  const [collectedSamples, setCollectedSamples] = useState<boolean[]>([
+  const [collectedSamples, setCollectedSamples] = useState<boolean[]>(initialSaved?.collectedSamples ?? [
     false,
     false,
     false,
@@ -268,6 +281,38 @@ export default function App() {
   const [drillProgressPct, setDrillProgressPct] = useState(0);
   const [drillTempPct, setDrillTempPct] = useState(18);
   const [drillOverheated, setDrillOverheated] = useState(false);
+
+  const hasMissionProgress = baselineInput.phases.length > 0 || branchInput !== null || demoStage !== null ||
+    Object.keys(pendingTasks).length > 0 || calibratedTasks.some(Boolean) || minedCrystals.some(Boolean) ||
+    collectedSamples.some(Boolean) || baselineInput.scenario.stormPeakPfu !== SEP_PEAK_FLUX_PFU;
+
+  useEffect(() => {
+    try {
+      if (hasMissionProgress || marsChoices.length > 0) {
+        window.localStorage.setItem(MISSION_PROGRESS_KEY, serializeMissionProgress({
+          a: baselineInput, b: branchInput, pendingTasks, calibratedTasks, minedCrystals, collectedSamples, marsChoices,
+          prediction: shadowPrediction, viewStep, debriefStep: lastDebrief?.step ?? null,
+          demoStage, legacyReplay, lang,
+        }));
+        setMissionSaveStatus('saved');
+        if (importedReplayPending.current) {
+          const resumeUrl = urlWithoutImportedReplay(window.location.href);
+          if (resumeUrl) {
+            try {
+              window.history.replaceState(window.history.state, '', resumeUrl);
+              importedReplayPending.current = false;
+            } catch { /* Keep the original link if this browser disallows replacing it. */ }
+          }
+        }
+      } else {
+        window.localStorage.removeItem(MISSION_PROGRESS_KEY);
+        setMissionSaveStatus(null);
+      }
+    } catch {
+      setMissionSaveStatus('unavailable');
+    }
+  }, [hasMissionProgress, baselineInput, branchInput, pendingTasks, calibratedTasks, minedCrystals,
+    collectedSamples, marsChoices, shadowPrediction, viewStep, lastDebrief, demoStage, legacyReplay, lang]);
 
   const world = useRef<WorldHandle>(null);
   const pointerStarted = useRef(0);
@@ -699,7 +744,7 @@ export default function App() {
   }
 
   function handleStartTour() {
-    if (baselineInput.phases.length > 0) {
+    if (hasMissionProgress) {
       setTourConfirmOpen(true);
       return;
     }
@@ -1329,7 +1374,13 @@ export default function App() {
         className="mc-substrip"
         aria-label={tr({ en: 'Mission guide and surface conditions', az: 'Missiya bələdçisi və səth şəraiti' })}
       >
-        {!guideDismissed && !demoStage ? (
+        {missionSaveStatus === 'unavailable' ? (
+          <p className="min-w-0 flex-1 text-xs text-amber-200" role="status">
+            {lang === 'az'
+              ? 'Bu brauzerdə irəliləyiş saxlanmır. Bu vərəqi açıq saxlayın.'
+              : 'Progress cannot be saved in this browser. Keep this tab open.'}
+          </p>
+        ) : !guideDismissed && !demoStage ? (
           <div className="flex min-w-0 flex-1 items-center gap-2 text-[11px] text-[#d9eed0]">
             <Sparkles size={12} className="shrink-0 text-[#c0e6aa]" />
             <strong className="shrink-0 font-mono text-[10px] uppercase text-[#c0e6aa]">
@@ -2257,7 +2308,9 @@ export default function App() {
           callsign={commanderCallsign}
           onChangeCallsign={setCommanderCallsign}
           trainingMode={trainingMode}
-          hasMissionProgress={baselineInput.phases.length > 0}
+          hasMissionProgress={hasMissionProgress}
+          hasMarsProgress={marsChoices.length > 0}
+          missionSaveStatus={missionSaveStatus}
           onChangeTrainingMode={setTrainingMode}
           onLaunchMission={() => {
             soundFX.startAmbient();
@@ -2720,6 +2773,8 @@ export default function App() {
       {marsModalOpen && (
         <MarsBonusModal
           trainingMode={trainingMode}
+          choices={marsChoices}
+          onChangeChoices={setMarsChoices}
           onCompleteSuccess={() => awardAchievement('mars_pioneer')}
           onClose={() => setMarsModalOpen(false)}
         />

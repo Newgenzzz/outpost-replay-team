@@ -13,6 +13,8 @@ const bundle = await build({
       export * from '/src/engine/simulation.ts';
       export * from '/src/engine/runInput.ts';
       export * from '/src/engine/sharedReplay.ts';
+      export * from '/src/engine/missionProgress.ts';
+      export * from '/src/utils/decisionFeedback.ts';
       export * from '/src/engine/shadowPrediction.ts';
       export * from '/src/utils/playerFeedback.ts';
     ` : null,
@@ -22,6 +24,7 @@ const bundle = await build({
 const [{ code }] = bundle.output;
 const {
   applyRunChoice, cloneRunInput, createRunInput, encodeSharedReplayUrl,
+  parseMissionProgress, serializeMissionProgress, decisionConsequenceFeedback, urlWithoutImportedReplay,
   evaluateShadowPrediction, parseSharedReplayFromUrl, recordShadowPrediction, runExperiment, phasePreparationChanged,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
@@ -30,6 +33,76 @@ const decodePayload = (url) => JSON.parse(Buffer.from(new URL(url).searchParams.
 const choices = [2, 2, 1, 0, 0, 0];
 const allSettings = { solarCalibrated: true, icePrepared: true, eclssSealed: true, busPatched: true,
   stormClamped: true, dishAligned: true, extraIceCores: 4, fieldSamplesCount: 6, stormPeakPfu: 207 };
+
+const missionProgress = (overrides = {}) => ({
+  a: createRunInput([2, 2, 2]), b: null,
+  pendingTasks: { 4: { icePrepared: true, extraIceCores: 2 } },
+  calibratedTasks: [false, false, false, true, false, false],
+  minedCrystals: [true, false, true, false, false],
+  collectedSamples: [false, true, false, false, true, false],
+  marsChoices: [0, 1],
+  prediction: recordShadowPrediction('backup', createRunInput([2, 2, 2])),
+  viewStep: 4, debriefStep: 3, demoStage: null, legacyReplay: false, lang: 'az', ...overrides,
+});
+
+test('saved mission restores exact inputs, drafts, fieldwork, prediction and recalculated A/B results', () => {
+  const progress = missionProgress({ a: createRunInput(choices, allSettings),
+    b: applyRunChoice(createRunInput(choices, allSettings), 3, 2, allSettings), viewStep: 3 });
+  const restored = parseMissionProgress(serializeMissionProgress(progress));
+  assert.deepEqual(restored, progress);
+  assert.deepEqual(runExperiment(restored.a), runExperiment(progress.a));
+  assert.deepEqual(runExperiment(restored.b), runExperiment(progress.b));
+  assert.deepEqual(restored.pendingTasks[4], { icePrepared: true, extraIceCores: 2 });
+  assert.equal(Object.hasOwn(restored.pendingTasks[4], 'solarCalibrated'), false);
+  assert.equal(JSON.stringify(JSON.parse(serializeMissionProgress(progress))).includes('hourlyHistory'), false);
+});
+
+test('saved mission supports before-first-decision preparations and all guided experiment stages', () => {
+  const setup = missionProgress({ a: createRunInput([]), prediction: null, viewStep: 1,
+    debriefStep: null, demoStage: 'setup', pendingTasks: { 1: { solarCalibrated: true } } });
+  assert.deepEqual(parseMissionProgress(serializeMissionProgress(setup)), setup);
+  const shadow = missionProgress({ a: createRunInput([2, 2]), viewStep: 3,
+    debriefStep: null, demoStage: 'shadow', prediction: null });
+  assert.deepEqual(parseMissionProgress(serializeMissionProgress(shadow)), shadow);
+  const rewind = missionProgress({ a: createRunInput(choices), demoStage: 'rewind' });
+  assert.deepEqual(parseMissionProgress(serializeMissionProgress(rewind)), rewind);
+});
+
+test('saved missions reject corrupt, unbounded, future and invalid scoped input data', () => {
+  const good = JSON.parse(serializeMissionProgress(missionProgress()));
+  const mutate = (fn) => { const value = structuredClone(good); fn(value); return value; };
+  const invalid = [
+    { ...good, v: 2 }, { ...good, lang: 'other' }, { ...good, demoStage: 'unknown' },
+    { ...good, viewStep: 6 }, { ...good, debriefStep: 4 }, { ...good, legacyReplay: 'false' },
+    { ...good, pendingTasks: { 7: {} } }, { ...good, pendingTasks: { '01': {} } },
+    { ...good, pendingTasks: { 4: { icePrepared: 'true' } } },
+    { ...good, pendingTasks: { 4: { stormPeakPfu: 18 } } },
+    { ...good, pendingTasks: { 4: { extraIceCores: 6 } } },
+    { ...good, pendingTasks: { 4: { fieldSamplesCount: 1.5 } } },
+    { ...good, calibratedTasks: [true] }, { ...good, minedCrystals: Array(5).fill(1) },
+    { ...good, collectedSamples: null }, { ...good, score: 100 },
+    { ...good, marsChoices: [0, 1, 2, 0] }, { ...good, marsChoices: [3] }, { ...good, marsChoices: ['0'] },
+    mutate((v) => delete v.a.phases[0].tasks.busPatched),
+    mutate((v) => v.a.scenario.stormPeakPfu = -1),
+    mutate((v) => v.a.phases[0].choiceIndex = 3),
+    mutate((v) => v.prediction.context.phases.pop()),
+  ];
+  for (const value of invalid) assert.equal(parseMissionProgress(JSON.stringify(value)), null);
+  for (const raw of [null, '', '{', 'null', '[]', 'x'.repeat(32769)]) assert.equal(parseMissionProgress(raw), null);
+  assert.throws(() => serializeMissionProgress(missionProgress({ viewStep: 6 })), RangeError);
+});
+
+test('saved mission parsing detaches restored data from mutable drafts and does not serialize results', () => {
+  const progress = missionProgress();
+  const raw = serializeMissionProgress(progress);
+  const restored = parseMissionProgress(raw);
+  progress.pendingTasks[4].extraIceCores = 5;
+  progress.minedCrystals[0] = false;
+  assert.equal(restored.pendingTasks[4].extraIceCores, 2);
+  assert.equal(restored.minedCrystals[0], true);
+  assert.equal(Object.isFrozen(restored.a.phases[0].tasks), true);
+  assert.deepEqual(Object.keys(JSON.parse(raw)).sort(), ['v', ...Object.keys(restored)].sort());
+});
 
 test('v2 shared replay restores both complete input snapshots and exact computed results', () => {
   const a = createRunInput(choices, allSettings);
@@ -53,6 +126,16 @@ test('v2 shared replay restores both complete input snapshots and exact computed
   assert.equal(JSON.stringify(decodePayload(url)).includes('PRIVATE CALLSIGN'), false);
   assert.equal(new URL(url).hash, '');
   assert.equal(new URL(url).searchParams.has('old'), false);
+});
+
+test('a safely saved replay import removes only its input parameter and leaves invalid links untouched', () => {
+  const url = new URL(encodeSharedReplayUrl('https://example.com/game/', { a: createRunInput([1, 0]), b: null, m: 'cadet' }));
+  url.searchParams.set('view', 'science');
+  url.hash = 'sunlight';
+  assert.equal(urlWithoutImportedReplay(url.toString()), 'https://example.com/game/?view=science#sunlight');
+  for (const invalid of ['https://example.com/game/?m=bad&view=science#sunlight', 'https://example.com/game/?view=science', 'bad url']) {
+    assert.equal(urlWithoutImportedReplay(invalid), null);
+  }
 });
 
 test('shared replay retains phase chronology rather than flattening new preparations into D1', () => {
@@ -163,4 +246,40 @@ test('preparation markers exclude choices, storm setup, irrelevant flags and mis
   assert.equal(phasePreparationChanged(a, createRunInput([0, 0, 0, 1, 0, 0], { stormPeakPfu: 840 }), 4), false);
   assert.equal(phasePreparationChanged(a, applyRunChoice(a, 4, 1, { ...a.phases[3].tasks, icePrepared: true, extraIceCores: 5 }), 3), false);
   assert.equal(phasePreparationChanged(a, createRunInput([]), 0), false);
+});
+
+test('debrief shelter feedback reflects the recorded berm and actual dose with or without clamps', () => {
+  for (const berm of [false, true]) {
+    const doses = [];
+    for (const stormClamped of [false, true]) {
+      const result = runExperiment(createRunInput([0, berm ? 0 : 1, 1, 2, 2], { stormClamped }));
+      const step = result.steps[4];
+      assert.equal(step.choiceId, 'D5-C');
+      const feedback = decisionConsequenceFeedback(step);
+      assert.equal(feedback.warn, false);
+      assert.match(feedback.text.en, berm ? /Regolith-berm shelter/ : /Water-wall shelter/);
+      assert.match(feedback.text.az, berm ? /Reqolit səddli sığınacaq/ : /Su divarlı sığınacaq/);
+      const dose = Number.isInteger(step.delta.radiationMsv) ? String(step.delta.radiationMsv) : step.delta.radiationMsv.toFixed(1);
+      assert.ok(feedback.text.en.includes(`${dose} mSv`));
+      assert.ok(feedback.text.az.includes(`${dose} mSv`));
+      assert.match(feedback.text.en, /training assumption/);
+      assert.match(feedback.text.az, /təlim fərziyyəsi/);
+      assert.doesNotMatch(feedback.text.en, /94%/);
+      doses.push(step.delta.radiationMsv);
+    }
+    assert.ok(doses[1] < doses[0], 'the displayed recorded dose must include the clamp benefit');
+  }
+});
+
+test('debrief reports supplied backup energy and prioritizes actual low reserve over a safe promise', () => {
+  const result = runExperiment(createRunInput([0, 0, 1]));
+  const step = result.steps[2];
+  assert.equal(step.env.supplementalGenerationKwh, 18);
+  const feedback = decisionConsequenceFeedback(step);
+  assert.match(feedback.text.en, /supplied 18 kWh/);
+  assert.match(feedback.text.az, /18 kVt·s/);
+  assert.doesNotMatch(feedback.text.en, /16 kWh|heaters stayed powered|safe/);
+  const lowReserveStep = runExperiment(createRunInput([1, 0, 2])).steps[2];
+  assert.ok(lowReserveStep.env.lowPowerHours > 0);
+  assert.equal(decisionConsequenceFeedback(lowReserveStep).warn, true);
 });

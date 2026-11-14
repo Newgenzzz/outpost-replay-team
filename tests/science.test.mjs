@@ -70,7 +70,11 @@ test('DONKI flare classes remain catalog metadata, never synthetic proton flux o
 test('live, empty and failed DONKI responses are distinct and never substitute invented cached measurements', async () => {
   const now = new Date('2026-11-08T12:00Z');
   const live = await fetchLiveDonkiSpaceWeather(async (url) => {
-    assert.match(url, /DONKI\/FLR\?startDate=2026-10-09&endDate=2026-11-08/);
+    const request = new URL(url);
+    assert.equal(request.origin, 'https://ccmc.gsfc.nasa.gov');
+    assert.equal(request.pathname, '/DONKI-API/get/FLR');
+    assert.deepEqual([...request.searchParams.entries()], [['startDate', '2026-10-09'], ['endDate', '2026-11-08']]);
+    assert.equal(request.searchParams.has('api_key'), false);
     return { ok: true, json: async () => [{ flrID: 'fixture', peakTime: '2026-11-08T10:00Z', classType: 'X1.0' }] };
   }, now);
   assert.equal(live.status, 'live');

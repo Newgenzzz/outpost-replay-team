@@ -8,6 +8,8 @@ interface MissionLaunchScreenProps {
   onChangeCallsign: (name: string) => void;
   trainingMode: TrainingMode;
   hasMissionProgress: boolean;
+  hasMarsProgress: boolean;
+  missionSaveStatus: 'saved' | 'unavailable' | null;
   onChangeTrainingMode: (mode: TrainingMode) => void;
   onLaunchMission: () => void;
   onStartJudgeTour: () => void;
@@ -20,6 +22,8 @@ export function MissionLaunchScreen({
   onChangeCallsign,
   trainingMode,
   hasMissionProgress,
+  hasMarsProgress,
+  missionSaveStatus,
   onChangeTrainingMode,
   onLaunchMission,
   onStartJudgeTour,
@@ -266,6 +270,13 @@ export function MissionLaunchScreen({
               ? az ? 'Missiyanız davam edir. Davam edin və ya yeni bələdçili sınağa başlayın.' : 'Your mission is in progress. Resume it, or start a new guided experiment.'
               : az ? 'İlk dəfə oynayırsınız? Bir qərarı birlikdə yoxlayaq.' : 'New here? Start with one guided experiment.'}
           </p>
+          {missionSaveStatus && (
+            <p className={`mt-1 text-xs ${missionSaveStatus === 'saved' ? 'text-slate-300' : 'text-amber-200'}`} role="status">
+              {missionSaveStatus === 'saved'
+                ? az ? 'İrəliləyiş bu brauzerdə saxlanır. Yenilədikdən sonra davam edə bilərsiniz.' : 'Progress is saved in this browser. You can resume after refreshing.'
+                : az ? 'Bu brauzer irəliləyişi saxlaya bilmir. Bu vərəqi açıq saxlayın.' : 'This browser cannot save progress. Keep this tab open.'}
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-2.5">
             <button
               type="button"
@@ -314,7 +325,9 @@ export function MissionLaunchScreen({
               className="inline-flex items-center gap-1.5 rounded-lg border border-orange-400/40 bg-orange-500/15 px-3 py-1.5 font-semibold text-orange-200 hover:bg-orange-500/25"
             >
               <Wind size={13} />
-              {az ? 'Bonus Missiya 2: Mars Toz Fırtınası (14 dəq gecikmə)' : 'Bonus Mission 2: Mars Dust Storm (14m Delay)'}
+              {hasMarsProgress
+                ? az ? 'Mars bonus missiyasını davam etdir' : 'Resume Mars bonus mission'
+                : az ? 'Bonus Missiya 2: Mars Toz Fırtınası (14 dəq gecikmə)' : 'Bonus Mission 2: Mars Dust Storm (14m Delay)'}
             </button>
           </div>
         </div>

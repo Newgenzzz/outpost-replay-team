@@ -23,18 +23,21 @@ import { playSfx } from '../utils/soundEffects';
 
 interface MarsBonusModalProps {
   trainingMode: TrainingMode;
+  choices: number[];
+  onChangeChoices: (choices: number[]) => void;
   onCompleteSuccess: () => void;
   onClose: () => void;
 }
 
 export function MarsBonusModal({
   trainingMode,
+  choices,
+  onChangeChoices: setChoices,
   onCompleteSuccess,
   onClose,
 }: MarsBonusModalProps) {
   const { lang, tr } = useI18n();
   const az = lang === 'az';
-  const [choices, setChoices] = useState<number[]>([]);
   const [pingState, setPingState] = useState<'idle' | 'transmitting' | 'delayed'>('idle');
 
   const partial = runMarsSimulation(choices);
@@ -72,7 +75,7 @@ export function MarsBonusModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#090404]/85 p-3 sm:p-5 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
-      aria-label="Mission 2: Mars Jezero Dust Storm"
+      aria-label={az ? 'Missiya 2: Mars Yezero Toz Fırtınası' : 'Mission 2: Mars Jezero Dust Storm'}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -105,7 +108,7 @@ export function MarsBonusModal({
             type="button"
             onClick={onClose}
             className="rounded-lg border border-white/15 bg-white/5 p-1.5 text-slate-300 hover:bg-white/10 hover:text-white"
-            aria-label="Close Mars Bonus Mission"
+            aria-label={az ? 'Mars bonus missiyasını bağla' : 'Close Mars Bonus Mission'}
           >
             <X size={18} />
           </button>

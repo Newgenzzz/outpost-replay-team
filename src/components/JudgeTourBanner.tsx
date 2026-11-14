@@ -39,9 +39,9 @@ const DEMO_STAGES = {
 } as const;
 
 const TOUR_STEPS: Array<{ id: DemoStage; num: number; en: string; az: string }> = [
-  { id: 'setup', num: 1, en: 'Setup', az: 'Hazırlıq' },
-  { id: 'shadow', num: 2, en: 'Predict & Test', az: 'Proqnoz & Sınaq' },
-  { id: 'rewind', num: 3, en: 'Rewind & Compare', az: 'Geri Sar & Müqayisə' },
+  { id: 'setup', num: 1, en: 'Plan', az: 'Plan' },
+  { id: 'shadow', num: 2, en: 'Test', az: 'Sına' },
+  { id: 'rewind', num: 3, en: 'Compare', az: 'Müqayisə' },
 ];
 
 export function JudgeTourBanner({
@@ -88,7 +88,7 @@ export function JudgeTourBanner({
               key={item.id}
               role="listitem"
               aria-current={active ? 'step' : undefined}
-              className={`flex items-center gap-1 rounded-md border px-2 py-1 text-[10.5px] font-semibold ${
+              className={`flex min-w-0 flex-col items-center gap-1 rounded-md border px-1 py-1 text-[10.5px] font-semibold ${
                 active
                   ? 'border-amber-300/70 bg-amber-400/20 text-amber-100'
                   : done
@@ -107,7 +107,7 @@ export function JudgeTourBanner({
               >
                 {done ? '✓' : item.num}
               </span>
-              <span className="truncate">{az ? item.az : item.en}</span>
+              <span className="w-full text-center leading-tight">{az ? item.az : item.en}</span>
             </div>
           );
         })}
@@ -177,11 +177,6 @@ export function JudgeTourBanner({
         >
           {stage === 'rewind' ? <GitBranch size={16} /> : <ArrowRight size={16} />}
           <span>{tr(scene.action)}</span>
-          {stage === 'shadow' && (
-            <span className="rounded bg-slate-950/15 px-1.5 py-0.5 font-mono text-[10px] font-bold">
-              {az ? '+10 Elm / 19.9 kVt·s' : '+10 Sci / 19.9 kWh'}
-            </span>
-          )}
         </button>
         {stage === 'shadow' && (
           <button
@@ -190,9 +185,6 @@ export function JudgeTourBanner({
             className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/50 bg-emerald-500/15 px-3 py-2 text-sm font-semibold text-emerald-100 hover:bg-emerald-500/25"
           >
             <span>{backupLabel}</span>
-            <span className="rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-200">
-              {az ? '+16 kVt·s təhlükəsiz' : '+16 kWh safe'}
-            </span>
           </button>
         )}
         {stage === 'setup' && (

@@ -548,8 +548,8 @@ export default function DecisionCard(props: DecisionCardProps) {
                 </div>
                 <p className="mt-0.5 leading-snug text-slate-300">
                   {lang === 'az'
-                    ? 'C variantındakı bitki sınağı BKS-də 33 gün davam edən VEG-01A kahı təcrübəsinə istinad edir (təlimdə 25 günlük hazır şitillər + 5 gün).'
-                    : 'Option C crop growth cites the 33-day ISS VEG-01A lettuce trial (simplified in training to 25-day seedlings + 5 scenario days).'}
+                    ? 'VEG-01A kahısı BKS-də 33 gün yetişdi; su çatışmazlığı bitkilərə zərər verdi, ekipajın suvarması kömək etdi. C variantında da su və enerjini planlaşdırın. Oyundakı 25 + 5 günlük müddət, su sərfi və məhsuldarlıq fərziyyədir.'
+                    : 'VEG-01A lettuce grew for 33 days on the ISS; water stress harmed plants and crew watering helped. Plan water and power for option C. The game’s 25 + 5 days, water use and yield are assumed.'}
                 </p>
               </div>
             )}

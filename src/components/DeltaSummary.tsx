@@ -223,7 +223,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
                         <span className={`font-mono text-[10px] font-semibold ${value < 20 ? 'text-rose-200' : 'text-emerald-200'}`}>
                           {value < 20
                             ? (az ? '<20 kVt·s riski' : '<20 kWh brownout')
-                            : (az ? '≥20 kVt·s təhlükəsiz' : '≥20 kWh safe')}
+                            : (az ? '≥20 kVt·s ehtiyat' : '≥20 kWh reserve')}
                         </span>
                       )}
                     </div>

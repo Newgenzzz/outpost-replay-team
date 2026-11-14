@@ -2,14 +2,14 @@
 
 Updated 14 November 2026. Continue the existing game, not a new engine or roadmap.
 
-**Latest follow-up:** branch `codex/protect-progress-and-sharing`, building on verified `245d498`. The commit containing this update completes the deferred strategy-naming task plus focused Rewind & Compare, Decision Console/Debrief, and 4-tier Scientific Provenance clarity improvements (no simulation physics, equations, parameters, or score changes). See `git log -1 --oneline` for the exact commit hash. Remaining external gates below (submission rules/eligibility, real learner playtesting, license choice, approved public hosting) stay open for team review. The earlier branch/checkpoint history below is retained.
+**Latest follow-up:** independent audit on `codex/protect-progress-and-sharing`, starting from confirmed clean HEAD `6977994`. Read [INDEPENDENT_AUDIT_2026-11-14.md](INDEPENDENT_AUDIT_2026-11-14.md) for confirmed defects, fixes, current verification and limits. Added validated versioned input autosave/resume (including Mars), one-time replay-link import, readable EN/AZ guided labels, recorded-result debriefs, accurate science wording and a verified migrated DONKI endpoint. All 63 tests, typecheck, production build and diff check pass. No simulation equation, parameter, score, dependency or license changed. The commit containing this update saves the audited fixes locally; see `git log -1 --oneline`. Organizer/eligibility, learner evaluation, license and approved public-host gates remain open. Earlier verification below is historical.
 
 **Next small development task:** observe 3–5 unfamiliar students (ages 7–12) and an educator playing EN/AZ modes without guidance to identify any remaining friction, and confirm organizer rules/license/public URL before submission.
 
 ## Current state
 
 - Workspace: `/home/kanan/Desktop/outpost-replay-practice`.
-- Branch: `codex/event-first-experiment`. Preservation baseline `35f3349` retains Argon work; completed rendering/recovery checkpoint **`8ace633`** follows it. The subsequent commit containing this file saves the verified first-experiment polish and submission kit. Read `git log -2 --oneline` for its exact hash and inspect `git status` before editing.
+- Branch: `codex/protect-progress-and-sharing`. Audit baseline `6977994`; earlier preservation baseline `35f3349` retains Argon work and rendering/recovery checkpoint **`8ace633`** follows it. Inspect `git status` and `git log` before editing.
 - All earlier M0–M6, science/resource/replay corrections and existing graphics remain in ancestry. No merge, force-push, remote publication or deployment occurred.
 - The interrupted Opus geometry failure is resolved; do not resume its old terrain-fitted-ray implementation. Original interrupted files/patch were archived under `/tmp/outpost-recovery-2026-11-14/` (temporary recovery files, not the primary Git backup).
 
@@ -21,7 +21,7 @@ Updated 14 November 2026. Continue the existing game, not a new engine or roadma
 4. Launch's primary action is **Start guided experiment**; full mission, science and Mars remain available. Actual D3 battery, science and low-reserve duration are clearer in the guided result. No simulation/score/input-schema/dependency changes.
 5. SUBMISSION_KIT.md contains copy-ready project drafts and provisional recording/slide guidance, provenance, disclosure drafts, a learner-check protocol and release gates. Review it with the team; do not assert its unperformed activities as completed.
 
-## Verification actually performed
+## Historical verification before this independent audit
 
 - `npm test`: **56 passed** (27simulation,9replay,9science,11rendering). Covers conservation, crops/ice, immutable replay, unequal mission durations, Mars and all-degree horizon/model correspondence.
 - `npm run typecheck`, `npm run build`, `git diff --check`: passed. Existing large Phaser chunk warning and Three Clock deprecation remain.

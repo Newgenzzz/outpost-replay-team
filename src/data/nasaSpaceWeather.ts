@@ -95,7 +95,7 @@ export async function fetchLiveDonkiSpaceWeather(fetcher: typeof fetch = fetch, 
   try {
     const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
     const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
-    const url = 'https://api.nasa.gov/DONKI/FLR?startDate=' + fmtDate(start) + '&endDate=' + fmtDate(now) + '&api_key=DEMO_KEY';
+    const url = 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/FLR?startDate=' + fmtDate(start) + '&endDate=' + fmtDate(now);
     const res = await fetcher(url, { signal: controller.signal });
     if (!res.ok) throw new Error('DONKI unavailable');
     const data: unknown = await res.json();

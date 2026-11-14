@@ -21,7 +21,7 @@ const onlyKeys = (value: Record<string, unknown>, keys: readonly string[]) => Ob
 const validCount = (value: unknown, max: number): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max;
 const validPeak = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 5000;
 
-function validatedInput(value: unknown): RunInput {
+export function validateReplayInput(value: unknown): RunInput {
   if (!record(value) || !onlyKeys(value, ['scenario', 'phases']) || !record(value.scenario) ||
       !onlyKeys(value.scenario, ['stormPeakPfu']) || !validPeak(value.scenario.stormPeakPfu) ||
       !Array.isArray(value.phases) || value.phases.length > 6) throw new RangeError('Invalid replay input.');
@@ -39,11 +39,11 @@ function validatedInput(value: unknown): RunInput {
   return cloneRunInput(value as unknown as RunInput);
 }
 
-function validatedPrediction(value: unknown): ShadowPrediction | null {
+export function validateReplayPrediction(value: unknown): ShadowPrediction | null {
   if (value === undefined || value === null) return null;
   if (!record(value) || !onlyKeys(value, ['expected', 'context']) ||
       !['backup', 'drill', 'tie'].includes(value.expected as string)) throw new RangeError('Invalid prediction.');
-  const context = validatedInput(value.context);
+  const context = validateReplayInput(value.context);
   if (context.phases.length !== 3) throw new RangeError('Invalid prediction context.');
   return recordShadowPrediction(value.expected as ShadowPrediction['expected'], context);
 }
@@ -53,11 +53,11 @@ export function encodeSharedReplayUrl(baseUrl: string, replay: SharedReplay): st
   const base = new URL(baseUrl);
   base.search = '';
   base.hash = '';
-  const a = validatedInput(replay.a);
+  const a = validateReplayInput(replay.a);
   if (a.phases.length === 0) return base.toString();
-  const b = replay.b === null ? null : validatedInput(replay.b);
+  const b = replay.b === null ? null : validateReplayInput(replay.b);
   if (replay.m !== 'cadet' && replay.m !== 'engineer') throw new RangeError('Invalid training mode.');
-  const prediction = validatedPrediction(replay.prediction);
+  const prediction = validateReplayPrediction(replay.prediction);
   const payload = { v: 2, a, b, m: replay.m, ...(prediction ? { prediction } : {}) };
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
@@ -77,10 +77,10 @@ export function parseSharedReplayFromUrl(url: string): ParsedSharedReplay | null
     if (!record(value)) return null;
     if (value.v === 2) {
       if (!onlyKeys(value, ['v', 'a', 'b', 'm', 'prediction']) || (value.m !== 'cadet' && value.m !== 'engineer')) return null;
-      const a = validatedInput(value.a);
+      const a = validateReplayInput(value.a);
       if (a.phases.length === 0) return null;
-      const b = value.b === null || value.b === undefined ? null : validatedInput(value.b);
-      return { a, b, m: value.m, legacy: false, prediction: validatedPrediction(value.prediction) };
+      const b = value.b === null || value.b === undefined ? null : validateReplayInput(value.b);
+      return { a, b, m: value.m, legacy: false, prediction: validateReplayPrediction(value.prediction) };
     }
     if (value.v !== undefined || !onlyKeys(value, ['a', 'b', 'm', 'p'])) return null;
     const validChoices = (choices: unknown): choices is number[] => Array.isArray(choices) && choices.length <= 6 && choices.every((choice) => validCount(choice, 2));
@@ -95,4 +95,12 @@ export function parseSharedReplayFromUrl(url: string): ParsedSharedReplay | null
   } catch {
     return null;
   }
+}
+
+/** After safely saving an import, refresh must resume later edits rather than reimport the link. */
+export function urlWithoutImportedReplay(url: string): string | null {
+  if (!parseSharedReplayFromUrl(url)) return null;
+  const next = new URL(url);
+  next.searchParams.delete('m');
+  return next.toString();
 }

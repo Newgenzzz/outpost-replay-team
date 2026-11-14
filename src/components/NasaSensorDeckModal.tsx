@@ -571,8 +571,8 @@ export function NasaSensorDeckModal({
               </div>
               <p className="mt-1.5 leading-relaxed text-slate-200">
                 {az
-                  ? 'Gerçək VEG-01A təcrübəsi BKS-də 33 gün davam edib. Oyundakı D2-C tədris ssenarisi isə bunu təlim məqsədilə 25 günlük hazır şitillər + 5 günlük (30-cu gün) yığım kimi sadələşdirir və Ay üçün təsdiqləmə iddiası etmir.'
-                  : 'The archived VEG-01A payload ran for 33 days aboard the ISS (May 8 – June 10, 2014). Option D2-C adapts this as a classroom training simplification (25-day-old seedlings harvested at 30 growing days after +5 scenario days) rather than a validated lunar yield model.'}
+                  ? 'VEG-01A kahısı BKS-də 33 gün yetişdi (8 may – 10 iyun 2014). Su çatışmazlığı bitkilərə zərər verdi; ekipajın birbaşa suvarması böyüməyə kömək etdi. Bu nəticə D2-C üçün su planlamasının əhəmiyyətini göstərir. Oyundakı 25 günlük göyərti + 5 işıqlı böyümə günü, su və enerji sərfi, məhsuldarlıq fərziyyədir; Ay üçün təsdiqlənmiş bitki modeli deyil.'
+                  : 'VEG-01A lettuce grew for 33 days on the ISS (May 8 – June 10, 2014). Water stress harmed plants; direct crew watering helped growth. This finding motivates water planning for D2-C. The game’s 25-day-old greens + five powered growing days, water and power costs, and yield are assumptions, not a validated lunar crop model.'}
               </p>
               <a href={CITATIONS.ISS_VEGGIE.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-emerald-200 underline hover:text-white">
                 {CITATIONS.ISS_VEGGIE.short} <ExternalLink size={11} aria-hidden="true" />

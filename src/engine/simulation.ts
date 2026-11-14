@@ -139,8 +139,8 @@ export const RULE_LABELS: Record<RuleId, Bilingual> = {
     az: 'Sağ qalma prioriteti: həyat təminatı < 40 % → elmi qazanc yarıya enir',
   },
   doseRestriction: {
-    en: 'Dose restriction: crew ≥ 50 mSv → EVA science gains halved',
-    az: 'Doza məhdudiyyəti: ekipaj ≥ 50 mSv → EVA elmi qazancı yarıya enir',
+    en: 'Dose restriction: prior exposure ≥ 50 mSv → science gains halved',
+    az: 'Doza məhdudiyyəti: əvvəlki doza ≥ 50 mSv → elmi qazanc yarıya enir',
   },
   brownout: {
     en: 'Low battery reserve: below 20 kWh, life support runs in reduced-power mode',
