@@ -1,8 +1,10 @@
 # OUTPOST REPLAY — development handoff
 
-Prepared 9 November 2026. Read this before editing. Continue the existing game; do not restart its roadmap.
+**Updated 14 November 2026:** start with [CODEX_HANDOFF.md](CODEX_HANDOFF.md) and [SUBMISSION_KIT.md](SUBMISSION_KIT.md). The event work continues on `codex/event-first-experiment`; rendering/recovery checkpoint `8ace633` is followed by the first-experiment/submission checkpoint (obtain it with `git log -1 --oneline`). All56 tests, TypeScript and the production build pass. The former relief-fitted ray has been replaced by a separate, explicitly illustrative horizon-index diagram; mission equations are unchanged. No public release occurred.
 
-## Start here: preserved state
+The architecture and research below were prepared 9 November 2026. Preserve them; do not restart the roadmap. The branch/checkpoint statements in the next historical section describe that earlier handoff.
+
+## Historical preserved state · 9 November 2026
 
 - Workspace: `/home/kanan/Desktop/outpost-replay-practice` (practice copy). Do not modify any original Antigravity folder or other checkout.
 - Current branch at handoff preparation: `codex/final-science-audit`.

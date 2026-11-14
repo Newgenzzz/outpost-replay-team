@@ -110,14 +110,14 @@ export function MissionLaunchScreen({
               <rect x="-11" y="-34" width="9" height="22" fill="#38bdf8" opacity="0.9" />
               <rect x="2" y="-34" width="9" height="22" fill="#38bdf8" opacity="0.9" />
               <text x="-18" y="-43" fill="#fef08a" fontSize="9" fontFamily="monospace" fontWeight="bold">
-                10m · 100%
+                10 m
               </text>
             </g>
             <g transform="translate(362 146)">
               <line x1="0" y1="0" x2="0" y2="-11" stroke="#fb7185" strokeWidth="2" />
               <rect x="-7" y="-11" width="14" height="5" fill="#fb7185" opacity="0.85" />
               <text x="-14" y="-15" fill="#fda4af" fontSize="8.5" fontFamily="monospace">
-                2m · 0%
+                2 m
               </text>
             </g>
           </svg>
@@ -154,8 +154,13 @@ export function MissionLaunchScreen({
 
           <p className="mt-2 text-sm leading-relaxed text-slate-200">
             {az
-              ? 'Şeklton kraterinin kənarında 9 günlük (216 saat) ekspedisiyaya rəhbərlik edin! Bu uydurma təlimdə 72 saatlıq zəif işıq dövrü, −183 °C səth temperaturu və zərrəcik fırtınası var. Bunlar NASA-nın baza üçün ölçmələri deyil. İstənilən qərarı Zaman Maşını ilə geri sarıb A və B gedişlərini müqayisə edin!'
-              : 'Command a 9-day (216-hour) expedition on Shackleton Crater Rim! This fictional training scenario includes 72 hours of reduced light, a −183 °C surface temperature and a particle storm. These are not NASA measurements for this outpost. Explore in 2.5D, then rewind any decision to compare Run A vs. Run B!'}
+              ? 'İki astronavtı doqquz günlük Ay missiyasında qoruyun. Enerjini ekipaj üçün saxlamaq, yoxsa elmi kəşflərə sərf etmək? Proqnoz verin, qərarı sınayın, sonra bir seçimi geri sarıb nəticələri müqayisə edin.'
+              : 'Keep two astronauts safe through a nine-day lunar mission. Save energy for the crew, or spend it on science? Make a prediction, try a decision, then rewind one choice and compare the results.'}
+          </p>
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-400">
+            {az
+              ? 'Şeklton yaxınlığında uydurma təlim bazası. Missiyanın şəraiti və doza hesabları təlim modelləridir, bu bazada aparılmış NASA ölçmələri deyil.'
+              : 'Fictional training near Shackleton. Mission conditions and dose estimates are educational models, not NASA measurements at this outpost.'}
           </p>
 
           {/* Callsign + Dual-Layer Mode Picker */}
@@ -174,7 +179,7 @@ export function MissionLaunchScreen({
               />
             </label>
 
-            <div className="grid grid-cols-2 gap-2.5" role="group" aria-label="Training Mode">
+            <div className="grid grid-cols-2 gap-2.5" role="group" aria-label={az ? 'Təlim rejimi' : 'Training mode'}>
               <button
                 type="button"
                 aria-pressed={trainingMode === 'cadet'}
@@ -232,7 +237,7 @@ export function MissionLaunchScreen({
                 1
               </span>
               <span>
-                {az ? 'D1–D6 mühəndislik qərarları və 90K buz qazması' : 'Make D1–D6 choices & drill 90 K ice cores'}
+                {az ? 'Nə dəyişəcək? Proqnoz verin' : 'Predict what will change'}
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
@@ -240,7 +245,7 @@ export function MissionLaunchScreen({
                 2
               </span>
               <span>
-                {az ? '3D Şeklton krateri və 2m vs 10m şüa bucağı' : 'Inspect 3D Crater & 2m vs 10m sightline POV'}
+                {az ? 'Bir qərarı sınayın' : 'Try an engineering decision'}
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
@@ -248,13 +253,28 @@ export function MissionLaunchScreen({
                 3
               </span>
               <span>
-                {az ? 'İstənilən qərarı geri sarıb A və B gedişini müqayisə et' : 'Rewind any step to compare Run A vs Run B'}
+                {az ? 'Geri sarıb fayda və əvəzini müqayisə edin' : 'Rewind and compare the benefit and cost'}
               </span>
             </div>
           </div>
 
           {/* Primary Launch Actions */}
-          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+          <p className="mt-4 text-xs font-semibold text-[#c0e6aa]">
+            {az ? 'İlk dəfə oynayırsınız? Bir qərarı birlikdə yoxlayaq.' : 'New here? Start with one guided experiment.'}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                soundFX.startAmbient();
+                onStartJudgeTour();
+              }}
+              className="inline-flex flex-1 min-w-[220px] items-center justify-center gap-2 rounded-xl bg-[#c0e6aa] px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition hover:bg-[#d5f5c3]"
+            >
+              <Sparkles size={17} />
+              {az ? 'Bələdçili sınağa başla' : 'Start guided experiment'}
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -262,22 +282,10 @@ export function MissionLaunchScreen({
                 soundFX.startAmbient();
                 onLaunchMission();
               }}
-              className="inline-flex flex-1 min-w-[220px] items-center justify-center gap-2 rounded-xl bg-[#c0e6aa] px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition hover:bg-[#d5f5c3]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-slate-950/40 px-4 py-3.5 text-xs sm:text-sm font-bold text-slate-200 transition hover:bg-white/10"
             >
-              <Play size={17} fill="currentColor" />
-              {az ? 'Şeklton Ekspedisiyasına Başla' : 'Launch Shackleton Expedition'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.startAmbient();
-                onStartJudgeTour();
-              }}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-300/60 bg-amber-400/15 px-4 py-3.5 text-xs sm:text-sm font-bold text-amber-100 transition hover:bg-amber-400/25"
-            >
-              <Sparkles size={15} className="text-amber-300" />
-              {az ? '90-San Münsif Turu' : '90-Sec Judge Demo'}
+              <Play size={15} />
+              {az ? 'Tam 9 günlük missiyanı araşdır' : 'Explore the full 9-day mission'}
             </button>
           </div>
 

@@ -13,6 +13,8 @@ A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the 
 
 ## Run locally
 
+For presentation drafts and remaining release gates, see [SUBMISSION_KIT.md](SUBMISSION_KIT.md). Current development state and verification limits are in [CODEX_HANDOFF.md](CODEX_HANDOFF.md).
+
 From the project directory, with Node.js 22 or later and npm installed:
 
 ```sh
@@ -30,6 +32,8 @@ npm run preview   # serve the production build locally
 ```
 
 ## Play
+
+- New players can choose **Start guided experiment** on the launch screen to predict, test a decision and compare an alternative. **Explore the full 9-day mission** retains the complete mission and fieldwork. The guided result separates battery reserve, science earned and low-reserve hours during D3 from whole-mission comparison totals.
 
 - Walk with **WASD**, the arrow keys, or a click on the terrain. Use **V** to drive or leave the rover.
 - Choose **Go to station** to follow a route, then open the console with **E**. You can also choose **Open console** from the mission panel. Compare the three options and choose **Apply option** to advance. Apply stays visible while you open optional exercises, science notes, and detailed forecasts. D1 calibration can improve modeled panel pointing. At D4, a field core or three console pulses unlock the option to prepare the ice extractor and recover more water with option A. Use Rewind & Compare to isolate either setting. Field samples also have a separate collection score.

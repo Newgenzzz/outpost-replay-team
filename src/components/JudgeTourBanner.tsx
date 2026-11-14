@@ -11,10 +11,10 @@ export type DemoStage = 'setup' | 'shadow' | 'rewind';
 const DEMO_STAGES = {
   setup: {
     number: 1,
-    title: { en: 'Prepare the outpost', az: 'Bazanı hazırlayın' },
+    title: { en: 'One decision. Two possible outcomes.', az: 'Bir qərar. İki mümkün nəticə.' },
     instruction: {
-      en: 'Your crew has nine days at the lunar south pole. Start with aligned low panels and a protective regolith berm. See how that plan handles a long shadow.',
-      az: 'Ekipajın Ayın cənub qütbündə doqquz günü var. Günəşə yönəlmiş alçaq panellər və qoruyucu reqolit səddi ilə başlayın. Bu planın uzun kölgədə necə işlədiyinə baxın.',
+      en: 'How much science would you trade for more battery reserve? Start with low panels and a protective regolith berm, try a plan for the shadow, then rewind it. Other planned decisions stay fixed.',
+      az: 'Daha çox batareya ehtiyatı üçün nə qədər elmi qazancdan keçərdiniz? Alçaq panellər və qoruyucu reqolit səddi ilə başlayın, kölgə üçün bir planı sınayın, sonra geri sarın. Digər planlaşdırılmış qərarlar sabit qalır.',
     },
     action: { en: 'Apply the starting plan', az: 'İlkin planı tətbiq et' },
   },
@@ -31,8 +31,8 @@ const DEMO_STAGES = {
     number: 3,
     title: { en: 'Change one decision', az: 'Bir qərarı dəyişdirin' },
     instruction: {
-      en: 'Rewind to the shadow and try the other strategy. Both runs share the same initial reserves, sunlight, temperature, storm and other planned decisions.',
-      az: 'Kölgə mərhələsinə qayıdın və digər strategiyanı sınayın. İlkin ehtiyatlar, işıq, temperatur, fırtına və digər planlaşdırılmış qərarlar hər iki gedişdə eynidir.',
+      en: 'This is your first result. Try the other strategy with the same starting reserves, environment and other planned decisions. Compare both battery reserve and science: what did the benefit cost?',
+      az: 'Bu, ilk nəticənizdir. Eyni ilkin ehtiyatlar, mühit və digər planlaşdırılmış qərarlarla başqa strategiyanı sınayın. Həm batareyanı, həm də elmi qazancı müqayisə edin: faydanın əvəzi nə oldu?',
     },
     action: { en: 'Rewind D3 and compare', az: 'D3-ə qayıt və müqayisə et' },
   },
@@ -67,7 +67,7 @@ export function JudgeTourBanner({
       <div className="flex items-center gap-2 border-b border-white/15 pb-2">
         <Orbit size={17} className="text-amber-300" />
         <strong className="flex-1 font-mono text-xs font-semibold uppercase tracking-widest text-amber-200">
-          {t('judgeTourButton')} · {scene.number}/3
+          {az ? 'Bələdçili sınaq' : 'Guided experiment'} · {scene.number}/3
         </strong>
         <button type="button" onClick={onClose} aria-label={t('close')} className="rounded p-1.5 hover:bg-white/10">
           <X size={16} />
@@ -112,11 +112,17 @@ export function JudgeTourBanner({
           </div>
         )}
         {stage === 'rewind' && shadow && (
-          <p className="mt-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 font-mono text-xs text-amber-100">
+          <div className="mt-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
             <strong className="mb-1 block">{t('runA')} · {shadow.choiceIndex === MISSION_DEMO.branch[shadowIndex] ? backupLabel : tr(DEMO_STAGES.shadow.action)}</strong>
-            {t(`outcome.${baseline.outcome}`)} · D3 {fmt(shadow.before.powerKwh)} → {fmt(shadow.after.powerKwh)} {t('unitKwh')}
-            {' · '}{fmt(shadow.env.lowPowerHours)} {lang === 'az' ? 'saat aşağı gücdə' : 'h on low reserve'}
-          </p>
+            <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 font-mono">
+              <dt>{az ? 'D3 sonunda batareya' : 'Battery after D3'}</dt>
+              <dd className="text-right">{fmt(shadow.after.powerKwh)} {t('unitKwh')}</dd>
+              <dt>{az ? 'D3-də elmi qazanc' : 'Science earned during D3'}</dt>
+              <dd className="text-right">{fmt(shadow.after.sciencePoints - shadow.before.sciencePoints)} {az ? 'xal' : 'pts'}</dd>
+              <dt>{az ? 'D3-də aşağı ehtiyat' : 'Low reserve during D3'}</dt>
+              <dd className="text-right">{fmt(shadow.env.lowPowerHours)} {az ? 'saat' : 'h'}</dd>
+            </dl>
+          </div>
         )}
         {stage === 'rewind' && (
           <p className="mt-2 text-sm text-slate-200">
