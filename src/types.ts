@@ -95,3 +95,10 @@ export interface Citation {
   url: string;
   agency: 'NASA' | 'NASA/NOAA' | 'Peer-reviewed (NASA mission data)';
 }
+
+
+/** Optional engineering preparations recorded as mission inputs. */
+export interface MissionTaskSettings {
+  solarCalibrated: boolean;
+  icePrepared: boolean;
+}

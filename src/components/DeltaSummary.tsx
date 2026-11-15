@@ -16,8 +16,8 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
     return <p className="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-xs text-slate-400">{t('noDifference')}</p>;
   }
 
-  const inputChanges = cmp.reasons.filter((reason) => reason.kind === 'choiceChanged' || reason.kind === 'solarCalibrationChanged');
-  const downstreamEffects = cmp.reasons.filter((reason) => reason.kind !== 'choiceChanged' && reason.kind !== 'solarCalibrationChanged');
+  const inputChanges = cmp.reasons.filter((reason) => reason.kind === 'choiceChanged' || reason.kind === 'solarCalibrationChanged' || reason.kind === 'icePreparationChanged');
+  const downstreamEffects = cmp.reasons.filter((reason) => reason.kind !== 'choiceChanged' && reason.kind !== 'solarCalibrationChanged' && reason.kind !== 'icePreparationChanged');
   const lowReserveHours = (run: SimulationResult) =>
     run.steps.reduce((hours, step) => hours + step.env.lowPowerHours, 0);
   const lowReserveA = lowReserveHours(a);
@@ -34,6 +34,14 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           text: r.to
             ? lang === 'az' ? 'D1 · B gedişi panel kalibrləməsini istifadə etdi.' : 'D1 · Run B used solar calibration.'
             : lang === 'az' ? 'D1 · B gedişi panel kalibrləməsini istifadə etmədi.' : 'D1 · Run B omitted solar calibration.',
+        };
+      case 'icePreparationChanged':
+        return {
+          Icon: ArrowRightLeft,
+          cls: 'text-sky-200',
+          text: r.to
+            ? lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etdi.' : 'D4 · Run B used the prepared ice extractor.'
+            : lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etmədi.' : 'D4 · Run B omitted extractor preparation.',
         };
       case 'choiceChanged': {
         const d = MISSION_DECISIONS[r.step - 1];
@@ -89,7 +97,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
         {inputChanges.map((change) => {
           const { Icon, cls, text } = render(change);
           return (
-            <li key={change.kind === 'choiceChanged' ? change.step : 'calibration'} className="flex gap-1.5 text-xs text-slate-200">
+            <li key={change.kind === 'choiceChanged' ? change.step : change.kind} className="flex gap-1.5 text-xs text-slate-200">
               <Icon className={`h-4 w-4 shrink-0 ${cls}`} />
               {text}
             </li>

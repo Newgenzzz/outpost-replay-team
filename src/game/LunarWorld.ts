@@ -22,6 +22,7 @@ import {
   movementVector,
   terrainTraction,
   type AiCrewmateDef,
+  type CropStatus,
   type Facing,
   type Point,
   type StationNode,
@@ -49,6 +50,13 @@ interface TireTrack {
 }
 
 const NAV_BOUNDS: Rectangle = { left: 90, top: 150, right: WORLD.width - 90, bottom: WORLD.height - 70 };
+const CROP_DISPLAY = {
+  idle: { en: 'Trial inactive', az: 'Sınaq fəal deyil', text: '#b3c9ca', light: 0x9aafb2, opacity: 0.07 },
+  ready: { en: 'Tray ready', az: 'Əkin qabı hazırdır', text: '#bfe3d9', light: 0x87cebd, opacity: 0.14 },
+  growing: { en: 'Growing', az: 'Böyüyür', text: '#d3f6b6', light: 0xb9f5a7, opacity: 0.42 },
+  paused: { en: 'Growth paused', az: 'Böyümə dayandı', text: '#ffdf9f', light: 0xe7af64, opacity: 0.1 },
+  harvested: { en: 'Harvested', az: 'Məhsul yığıldı', text: '#baf5c1', light: 0x8ddeaa, opacity: 0.22 },
+} satisfies Record<CropStatus, { en: string; az: string; text: string; light: number; opacity: number }>;
 
 /** Renders the 2.5D training site and translates field input into world interactions. */
 export class LunarWorld extends Phaser.Scene {
@@ -83,7 +91,12 @@ export class LunarWorld extends Phaser.Scene {
   private solarImage!: Phaser.GameObjects.Image;
   private batteryLight!: Phaser.GameObjects.Rectangle;
   private habitatLight!: Phaser.GameObjects.Ellipse;
+  private habitatWarning!: Phaser.GameObjects.Text;
   private greenhouseLight!: Phaser.GameObjects.Ellipse;
+  private cropTitle!: Phaser.GameObjects.Text;
+  private cropStatus!: Phaser.GameObjects.Text;
+  private cropTrack!: Phaser.GameObjects.Rectangle;
+  private cropFill!: Phaser.GameObjects.Rectangle;
 
   private targetHighlight!: Phaser.GameObjects.Ellipse;
   private beacon!: Phaser.GameObjects.Container;
@@ -194,12 +207,25 @@ export class LunarWorld extends Phaser.Scene {
           .ellipse(-64, -71, 64, 32, 0x9ae4d4, 0.18)
           .setRotation(0.29);
         group.add(this.habitatLight);
+        this.habitatWarning = this.add
+          .text(building.x, building.y + 23, '', {
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '12px',
+            fontStyle: 'bold',
+            color: '#ffdfa0',
+            backgroundColor: '#302115f5',
+            padding: { x: 9, y: 5 },
+          })
+          .setOrigin(0.5)
+          .setDepth(2040)
+          .setVisible(false);
       }
       if (building.id === 'greenhouse') {
         this.greenhouseLight = this.add
           .ellipse(-13, -55, 106, 34, 0xa7dab6, 0.16)
           .setRotation(0.3);
         group.add(this.greenhouseLight);
+        this.createCropDisplay(building.x - 12, building.y + 27);
       }
 
       if (building.stationStep !== undefined) {
@@ -582,6 +608,21 @@ export class LunarWorld extends Phaser.Scene {
     const baseZoom = this.scale.width < 720 ? 0.92 : Math.min(1.04, Math.max(0.88, this.scale.height / 760));
     this.targetZoom = baseZoom + this.zoomAdjustment;
     if (this.bridge.reducedMotion) this.cameras.main.setZoom(this.targetZoom);
+  }
+
+  private createCropDisplay(x: number, y: number) {
+    const backing = this.add
+      .rectangle(0, 0, 152, 47, 0x10212c, 0.97)
+      .setStrokeStyle(1, 0x49656d, 0.9);
+    this.cropTitle = this.add
+      .text(-66, -18, '', { fontFamily: 'monospace', fontSize: '10px', color: '#a9c8c5' });
+    this.cropStatus = this.add
+      .text(-66, -5, '', { fontFamily: 'Inter, sans-serif', fontSize: '12px', fontStyle: 'bold' });
+    this.cropTrack = this.add.rectangle(-66, 15, 132, 3, 0x314950).setOrigin(0, 0.5);
+    this.cropFill = this.add.rectangle(-66, 15, 132, 3, 0x87cebd).setOrigin(0, 0.5);
+    this.add
+      .container(x, y, [backing, this.cropTitle, this.cropStatus, this.cropTrack, this.cropFill])
+      .setDepth(2040);
   }
 
   private navigationObstacles(x: number, top: number, bottom: number): Rectangle[] {
@@ -1412,10 +1453,19 @@ export class LunarWorld extends Phaser.Scene {
       this.lastSnapshot = snap;
 
       const powerFrac = Math.max(0, Math.min(1, snap.energyPercent / 100));
-      this.habitatLight.setAlpha(snap.powerLow ? 0.025 : 0.11 + powerFrac * 0.34);
-      const cropsPowered = snap.choices[1] === 2 && !snap.powerLow;
-      this.greenhouseLight.setFillStyle(cropsPowered ? 0xb9f5a7 : 0x9aafb2)
-        .setAlpha(cropsPowered ? 0.24 + powerFrac * 0.32 : 0.07);
+      this.habitatLight.setFillStyle(snap.lifeSupportLow ? 0xe7af64 : 0x9ae4d4)
+        .setAlpha(snap.powerLow ? 0.025 : 0.11 + powerFrac * 0.34);
+      this.habitatWarning
+        .setText(snap.lang === 'az' ? 'Həyat təminatı zəifləyib' : 'Life support under stress')
+        .setVisible(snap.lifeSupportLow);
+      const crop = CROP_DISPLAY[snap.cropStatus];
+      const cropProgress = Phaser.Math.Clamp(snap.cropProgress, 0, 1);
+      const progressLabel = snap.cropStatus === 'idle' ? '' : ` · ${Math.round(cropProgress * 100)}%`;
+      this.greenhouseLight.setFillStyle(crop.light).setAlpha(crop.opacity);
+      this.cropTitle.setText(snap.lang === 'az' ? 'İSTİXANA' : 'GREENHOUSE');
+      this.cropStatus.setText(`${crop[snap.lang]}${progressLabel}`).setColor(crop.text);
+      this.cropTrack.setVisible(snap.cropStatus !== 'idle');
+      this.cropFill.setFillStyle(crop.light).setScale(cropProgress, 1).setVisible(cropProgress > 0);
       this.batteryLight
         .setScale(Math.max(0.1, powerFrac), 1)
         .setFillStyle(snap.powerLow ? 0xf2916d : 0xb8e3a1);

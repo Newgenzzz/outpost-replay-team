@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import gsap from 'gsap';
 import confetti from 'canvas-confetti';
 import {
   BookOpen,
@@ -363,15 +362,13 @@ export default function PhaserLunarRPG({
 
   const activeRun = runB ?? runA;
 
-  // GSAP subtle entrance animation when active step widget changes
   useEffect(() => {
-    if (hudCardRef.current) {
-      gsap.fromTo(
-        hudCardRef.current,
-        { y: -10, opacity: 0.4 },
-        { y: 0, opacity: 1, duration: 0.35, ease: 'power2.out' },
-      );
-    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const entrance = hudCardRef.current?.animate(
+      [{ transform: 'translateY(-10px)', opacity: 0.4 }, { transform: 'translateY(0)', opacity: 1 }],
+      { duration: 350, easing: 'ease-out' },
+    );
+    return () => entrance?.cancel();
   }, [viewStep]);
 
   // Report live bonuses upward to App.tsx so HUD progress bars & radio ticker stay synced
@@ -2227,14 +2224,14 @@ export default function PhaserLunarRPG({
           if (!this.stormWaveDeflected) {
             this.stormWaveCountdown = Math.max(0, this.stormWaveCountdown - delta / 1000);
             if (playerInsideShelter) {
-              // Player dashed inside D2/D5 shelter before the wave hit -> Trigger GSAP Deflection Shockwave!
               this.stormWaveDeflected = true;
               soundFX.play('success');
-              gsap.fromTo(
-                this.cameras.main,
-                { zoom: this.cameras.main.zoom * 1.04 },
-                { zoom: this.cameras.main.zoom, duration: 0.45, ease: 'elastic.out(1, 0.3)' },
-              );
+              if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                const camera = this.cameras.main;
+                const restingZoom = camera.zoom;
+                camera.setZoom(restingZoom * 1.04);
+                this.tweens.add({ targets: camera, zoom: restingZoom, duration: 450, ease: 'Elastic.Out' });
+              }
               const deflectBurst = this.add
                 .circle(this.player.x, this.player.y, 40, 0x22d3ee, 0.65)
                 .setStrokeStyle(5, 0xffffff, 1)

@@ -17,6 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
+import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { CITATIONS, RADIATION_LIMITS } from '../data/nasaTelemetry';
@@ -28,7 +29,7 @@ import {
   runSimulation,
   type StepRecord,
 } from '../engine/simulation';
-import type { Bilingual, FlagId, MetricDelta } from '../types';
+import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings } from '../types';
 import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 
@@ -111,10 +112,10 @@ interface DecisionCardProps {
   flagsBefore: FlagId[];
   priorChoices?: number[];
   canChoose: boolean;
-  solarCalibrated: boolean;
-  solarCalibrationAvailable: boolean;
-  solarExercise?: ReactNode;
-  onChoose: (index: number, solarCalibrated: boolean) => void;
+  taskSettings: MissionTaskSettings;
+  taskAvailable: boolean;
+  taskExercise?: ReactNode;
+  onChoose: (index: number, tasks: MissionTaskSettings) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -129,9 +130,9 @@ export default function DecisionCard(props: DecisionCardProps) {
     flagsBefore,
     priorChoices = [],
     canChoose,
-    solarCalibrated,
-    solarCalibrationAvailable,
-    solarExercise,
+    taskSettings,
+    taskAvailable,
+    taskExercise,
     onChoose,
     onPrev,
     onNext,
@@ -140,8 +141,11 @@ export default function DecisionCard(props: DecisionCardProps) {
   const [inspectedChoice, setInspectedChoice] = useState<number | null>(null);
   const [hypothesis, setHypothesis] = useState<'safe' | 'drain' | null>(null);
   const [copilotEnabled, setCopilotEnabled] = useState(false);
-  const [calibrationOverride, setCalibrationOverride] = useState<boolean | null>(null);
-  const useCalibration = calibrationOverride ?? solarCalibrated;
+  const [taskOverride, setTaskOverride] = useState<boolean | null>(null);
+  const isSolar = step === 1;
+  const solarCalibrated = isSolar ? taskOverride ?? taskSettings.solarCalibrated : taskSettings.solarCalibrated;
+  const icePrepared = step === 4 ? taskOverride ?? taskSettings.icePrepared : taskSettings.icePrepared;
+  const taskEnabled = isSolar ? solarCalibrated : icePrepared;
 
   const decision = MISSION_DECISIONS[step - 1];
   const activeChoice = mode === 'branch' ? choiceB : choiceA;
@@ -152,8 +156,8 @@ export default function DecisionCard(props: DecisionCardProps) {
   const forecasts = useMemo(() => {
     const prefix = priorChoices.slice(0, step - 1);
     if (prefix.length !== step - 1) return [];
-    return decision.choices.map((_, index) => runSimulation([...prefix, index], { solarCalibrated: useCalibration }).steps[step - 1]);
-  }, [decision, priorChoices, step, useCalibration]);
+    return decision.choices.map((_, index) => runSimulation([...prefix, index], { solarCalibrated, icePrepared }).steps[step - 1]);
+  }, [decision, priorChoices, step, solarCalibrated, icePrepared]);
   const forecastStep = forecasts[inspectedIdx];
 
   const willBeSafe = (forecastStep?.env.lowPowerHours ?? 0) === 0;
@@ -273,30 +277,38 @@ export default function DecisionCard(props: DecisionCardProps) {
         </div>
       )}
 
-      {solarExercise && (
+      {taskExercise && (
         <div className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
           <details>
             <summary className="cursor-pointer font-semibold text-amber-200">
-              {lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'}
+              {isSolar
+                ? lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'
+                : lang === 'az' ? 'Buz emal qurğusunu hazırla · könüllü' : 'Prepare the ice extractor · optional'}
             </summary>
-            <div className="mt-2">{solarExercise}</div>
+            <div className="mt-2">{taskExercise}</div>
           </details>
-          {(solarCalibrationAvailable || solarCalibrated) && (
+          {(taskAvailable || taskEnabled) && (
             <label className="mt-2 flex items-center gap-2">
               <input
                 type="checkbox"
-                checked={useCalibration}
-                disabled={!canChoose}
-                onChange={(event) => setCalibrationOverride(event.target.checked)}
+                checked={taskEnabled && (isSolar || inspectedIdx === 0)}
+                disabled={!canChoose || (!isSolar && inspectedIdx !== 0)}
+                onChange={(event) => setTaskOverride(event.target.checked)}
                 className="accent-amber-300"
               />
-              {lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'}
+              {isSolar
+                ? lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'
+                : lang === 'az' ? 'A variantında hazırlanmış emal qurğusundan istifadə et' : 'Use the prepared extractor with option A'}
             </label>
           )}
           <p className="mt-1 text-slate-300">
-            {lang === 'az'
-              ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
-              : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`}
+            {isSolar
+              ? lang === 'az'
+                ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
+                : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`
+              : lang === 'az'
+                ? `Hazırlıq A variantında model üzrə buzdan su əldəetməni ${ICE_TREATMENT_RECOVERY.standard * 100}%-dən ${ICE_TREATMENT_RECOVERY.prepared * 100}%-ə artırır. Nümunə kütləsi və enerji büdcəsi eyni qalır.`
+                : `Preparation raises modeled recovery from ${ICE_TREATMENT_RECOVERY.standard * 100}% to ${ICE_TREATMENT_RECOVERY.prepared * 100}% in option A. Sample mass and power budget stay fixed.`}
           </p>
         </div>
       )}
@@ -414,7 +426,7 @@ export default function DecisionCard(props: DecisionCardProps) {
             : 'Select an option for its explanation and detailed forecast. Apply it to advance the mission.'}
         </p>
         {canChoose && (
-          <button type="button" onClick={() => onChoose(inspectedIdx, useCalibration)} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200">
+          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared })} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200">
             {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
           </button>
         )}
@@ -549,8 +561,8 @@ export default function DecisionCard(props: DecisionCardProps) {
           {forecastStep.resourceFlows.waterExtractedKg > 0 && (
             <p className="mt-2 text-xs text-sky-200">
               {lang === 'az'
-                ? `Ssenari nümunəsindən alınan təmiz su · ${fmt(forecastStep.resourceFlows.waterExtractedKg)} kq`
-                : `Treated water from the training sample · ${fmt(forecastStep.resourceFlows.waterExtractedKg)} kg`}
+                ? `Ssenari nümunəsindən alınan təmiz su · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kq`
+                : `Treated water from the training sample · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kg`}
             </p>
           )}
           {forecastStep.rulesTriggered.length > 0 && (

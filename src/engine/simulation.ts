@@ -58,6 +58,7 @@ export type Outcome = 'in-progress' | 'success' | 'warning' | 'abort';
 export interface SimulationResult {
   choices: number[];
   solarCalibrated: boolean;
+  icePrepared: boolean;
   /** history[0] = initial state, history[k] = state after decision k. */
   history: MetricState[];
   steps: StepRecord[];
@@ -135,7 +136,7 @@ function roundedResources(resources: ResourceState): ResourceState {
 
 export function runSimulation(
   choiceIndices: readonly number[],
-  { solarCalibrated = false }: { solarCalibrated?: boolean } = {},
+  { solarCalibrated = false, icePrepared = false }: { solarCalibrated?: boolean; icePrepared?: boolean } = {},
 ): SimulationResult {
   const choices = choiceIndices.slice(0, MISSION_DECISIONS.length);
   for (const [i, choiceIndex] of choices.entries()) {
@@ -156,10 +157,13 @@ export function runSimulation(
   let elapsedHours = 0;
   let doseWarningStep: number | null = null;
   let abortCause: AbortCause | null = null;
+  let appliedIcePreparation = false;
 
   for (const [i, choiceIndex] of choices.entries()) {
     const decision = MISSION_DECISIONS[i];
     const choice = decision.choices[choiceIndex];
+    const usePreparedExtractor = icePrepared && choice.id === 'D4-A';
+    appliedIcePreparation ||= usePreparedExtractor;
     const { startHour, endHour } = decision.phase;
     const phaseHours = endHour - startHour;
     const before = history[i];
@@ -194,7 +198,7 @@ export function runSimulation(
           (frame.lowPower ? K.brownoutLifeSupportPenalty : 0) +
           (frame.outage ? K.blackoutLifeSupportPenalty : 0)) / 24;
       advanceResources(resources, resourceFlows, choice, phaseHours, healthDelta,
-        frame.lowPower, frame.outage, frame.cropPowered, frame.taskPowerFraction);
+        frame.lowPower, frame.outage, frame.cropPowered, frame.taskPowerFraction, usePreparedExtractor);
 
       const stormHourDose = hourlyStormDose(choice.stormProtection, hour - startHour, flags);
       stormDoseMsv += stormHourDose;
@@ -359,6 +363,7 @@ export function runSimulation(
   return {
     choices,
     solarCalibrated: choices.length > 0 && solarCalibrated,
+    icePrepared: appliedIcePreparation,
     history,
     steps,
     final,
@@ -396,6 +401,7 @@ export function missionScore(s: MetricState, outcome: Exclude<Outcome, 'in-progr
 
 export type ComparisonReason =
   | { kind: 'solarCalibrationChanged'; from: boolean; to: boolean }
+  | { kind: 'icePreparationChanged'; from: boolean; to: boolean }
   | { kind: 'choiceChanged'; step: number; fromIndex: number; toIndex: number }
   | { kind: 'ruleAvoided'; step: number; rule: RuleId }
   | { kind: 'ruleTriggered'; step: number; rule: RuleId }
@@ -417,6 +423,7 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
   const reasons: ComparisonReason[] = [];
   const changedSteps: number[] = [];
   const calibrationChanged = n > 0 && a.solarCalibrated !== b.solarCalibrated;
+  const icePreparationChanged = n >= 4 && a.icePrepared !== b.icePrepared;
   if (calibrationChanged) {
     reasons.push({ kind: 'solarCalibrationChanged', from: a.solarCalibrated, to: b.solarCalibrated });
   }
@@ -424,9 +431,15 @@ export function compareRuns(a: SimulationResult, b: SimulationResult): RunCompar
   for (let i = 0; i < n; i++) {
     const sa = a.steps[i];
     const sb = b.steps[i];
-    if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged)) changedSteps.push(i + 1);
+    const preparationChanged = i === 3 && icePreparationChanged;
+    if (sa.choiceIndex !== sb.choiceIndex || (i === 0 && calibrationChanged) || preparationChanged) {
+      changedSteps.push(i + 1);
+    }
     if (sa.choiceIndex !== sb.choiceIndex) {
       reasons.push({ kind: 'choiceChanged', step: i + 1, fromIndex: sa.choiceIndex, toIndex: sb.choiceIndex });
+    }
+    if (preparationChanged) {
+      reasons.push({ kind: 'icePreparationChanged', from: a.icePrepared, to: b.icePrepared });
     }
   }
   for (let i = 0; i < n; i++) {

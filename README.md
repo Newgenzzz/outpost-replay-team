@@ -23,7 +23,7 @@ npm run preview   # serve the production build locally
 ## Play
 
 - Walk with **WASD**, the arrow keys, or a click on the terrain. Use **V** to drive or leave the rover.
-- Open a nearby station with **E**, or choose **Open Console** from the objective panel. Select an option to preview it, then choose **Apply option** to advance. The optional D1 calibration unlocks a run setting. Apply it with a solar choice to improve modeled pointing, or switch it off in a branch to compare the same decision with and without calibration. Field samples have a separate collection score.
+- Open a nearby station with **E**, or choose **Open Console** from the objective panel. Select an option to preview it, then choose **Apply option** to advance. D1 calibration can improve modeled panel pointing. At D4, a field core or three console pulses unlock the option to prepare the ice extractor and recover more water with option A. Use Rewind & Compare to isolate either setting. Field samples also have a separate collection score.
 - Open the tactical map with **M** and the comparison lab with **R**. **Tab** navigates controls and **Esc** closes a dialog.
 - Once Run A finishes or aborts, choose an earlier decision in **Rewind & Compare**. Try one change first. The run preserves later planned choices. If your change reaches a phase Run A never planned, choose how to handle that phase.
 - Use **EN · AZ** to switch languages. **Science & Sources** explains the datasets and assumptions behind the simulation.
