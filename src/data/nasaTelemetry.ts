@@ -48,7 +48,7 @@ export const CITATIONS: Record<string, Citation> = {
     id: 'DONKI',
     short: 'NASA CCMC DONKI · 8–14 May 2024 weekly report',
     full: 'NASA CCMC DONKI, 20240516-7D-001. Weekly Space Weather Summary for 8–14 May 2024. The GOES >10 MeV proton flux exceeded 10 pfu at 13:35 UTC on May 10.',
-    url: 'https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1',
+    url: 'https://ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1',
     agency: 'NASA',
   },
   GOES_PROTONS: {
@@ -56,7 +56,35 @@ export const CITATIONS: Record<string, Citation> = {
     short: 'NOAA SWPC · GOES proton event summary (PRF 2541)',
     full: 'NOAA Space Weather Prediction Center, PRF 2541, 13 May 2024, p. 1. The 10 MeV channel at geosynchronous orbit peaked at 207 pfu on May 10 at 17:45 UTC.',
     url: 'https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf',
-    agency: 'NASA/NOAA',
+    agency: 'NOAA',
+  },
+  DONKI_API: {
+    id: 'DONKI_API',
+    short: 'NASA CCMC DONKI · event catalog and API',
+    full: 'NASA CCMC DONKI catalogs solar flares, particle events and other space-weather activity. FLR flare classes are X-ray metadata, not a proton-flux or astronaut-dose product.',
+    url: 'https://ccmc.gsfc.nasa.gov/tools/DONKI/',
+    agency: 'NASA',
+  },
+  RADIATION_UNITS: {
+    id: 'RADIATION_UNITS',
+    short: 'NASA Space Math · Dose and Dose Equivalent',
+    full: 'NASA Space Math, Dose and Dose Equivalent. Absorbed dose (Gy) and biologically weighted dose (Sv) are distinct quantities; they require radiation-quality information to relate.',
+    url: 'https://science.nasa.gov/wp-content/uploads/2023/09/Radiation_Math.pdf',
+    agency: 'NASA',
+  },
+  MARS_2017: {
+    id: 'MARS_2017',
+    short: 'NASA · September 2017 Mars orbit/surface measurements',
+    full: 'NASA/JPL-Caltech (29 September 2017), Solar Storm’s Radiation at Martian Orbit and Surface. MAVEN measures protons in different energy bands; Curiosity RAD measures absorbed dose at the surface. This is not an ISS/Moon dose series.',
+    url: 'https://science.nasa.gov/resource/solar-storms-radiation-at-martian-orbit-and-surface/',
+    agency: 'NASA',
+  },
+  SHACKLETON_SHAPE: {
+    id: 'SHACKLETON_SHAPE',
+    short: 'Zuber et al. 2012 · Shackleton LOLA topography',
+    full: 'Zuber et al. (2012), Constraints on the volatile distribution within Shackleton crater at the lunar south pole, Nature 486, 378–381. Table 1 reports ~21 km mean rim diameter and 4.1 ± 0.05 km mean depth. The game does not load this DEM.',
+    url: 'https://ntrs.nasa.gov/citations/20120013758',
+    agency: 'Peer-reviewed (NASA mission data)',
   },
   BVAD: {
     id: 'BVAD',
@@ -206,9 +234,9 @@ export interface SepSample {
   hour: number;
   /** ≥10 MeV integral proton flux, particle flux units (pfu = p·cm⁻²·s⁻¹·sr⁻¹). */
   protonFluxPfu: number;
-  /** Derived: EVA-suit / unshielded dose rate, mSv/hr. */
+  /** Classroom estimate using an assumed coefficient, not transported crew dose (mSv/h). */
   unshieldedDoseMsvPerHr: number;
-  /** Derived: inside habitat (× 0.25), mSv/hr. */
+  /** Classroom estimate with assumed habitat transmission ×0.25 (mSv/h). */
   shieldedDoseMsvPerHr: number;
 }
 

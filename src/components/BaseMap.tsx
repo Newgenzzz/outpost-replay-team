@@ -273,6 +273,34 @@ export function BaseMap(props: BaseMapProps) {
           </span>
         </button>
         <div className="p-1.5">{renderSchematicSvg(false)}</div>
+        {/* 1-Click Fast-Deploy Sector Strip right on the main screen radar */}
+        <div className="grid grid-cols-6 gap-1 border-t border-white/10 px-2 py-1.5">
+          {STATIONS.map((st) => {
+            const done = st.decisionId <= completedCount;
+            const current = st.decisionId === activeStep;
+            return (
+              <button
+                key={st.decisionId}
+                type="button"
+                onClick={() => onNavigateStation(st, true)}
+                title={
+                  lang === 'az'
+                    ? `D${st.decisionId} (${st.roomName.az}) sektoruna ani keçid`
+                    : `Instant fast-deploy to D${st.decisionId} (${st.roomName.en})`
+                }
+                className={`rounded py-0.5 font-mono text-[9px] font-bold transition ${
+                  current
+                    ? 'border border-[#c0e6aa] bg-[#c0e6aa]/25 text-[#ecfccb]'
+                    : done
+                      ? 'border border-emerald-400/35 bg-emerald-950/45 text-emerald-200 hover:bg-emerald-900/60'
+                      : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/15'
+                }`}
+              >
+                D{st.decisionId}
+              </button>
+            );
+          })}
+        </div>
         <div className="base-map-legend">
           <span className="inline-flex items-center gap-1">
             <i className="inline-block h-2 w-2 rounded-full bg-[#ecfccb]" />

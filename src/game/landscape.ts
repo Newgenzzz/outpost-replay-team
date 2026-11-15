@@ -63,9 +63,9 @@ export function terrain(): SvgAsset {
     svg: `<svg xmlns="http://www.w3.org/2000/svg" width="1840" height="1120" viewBox="0 0 1840 1120" fill="none">
       <defs>
         <radialGradient id="ground" cx=".34" cy=".26" r=".88">
-          <stop stop-color="#a79d8b"/>
-          <stop offset=".50" stop-color="#777879"/>
-          <stop offset="1" stop-color="#435360"/>
+          <stop stop-color="#afa48e"/>
+          <stop offset=".50" stop-color="#63737c"/>
+          <stop offset="1" stop-color="#2d465c"/>
         </radialGradient>
         <linearGradient id="crater" x1=".1" y1=".1" x2=".7" y2="1">
           <stop stop-color="#142330"/>
@@ -78,36 +78,72 @@ export function terrain(): SvgAsset {
           <stop offset="1" stop-color="#424b54"/>
         </linearGradient>
         <linearGradient id="sunlit-ridge" x1="0" y1="0" x2=".85" y2="1">
-          <stop stop-color="#a89e8a"/>
-          <stop offset=".6" stop-color="#878074"/>
-          <stop offset="1" stop-color="#626569"/>
+          <stop stop-color="#c0b39a"/>
+          <stop offset=".6" stop-color="#8d8c7f"/>
+          <stop offset="1" stop-color="#586570"/>
         </linearGradient>
         <linearGradient id="ridge-cliff" x1="0" y1="0" x2="0" y2="1">
-          <stop stop-color="#4e5861"/>
-          <stop offset=".55" stop-color="#283846"/>
-          <stop offset="1" stop-color="#172634"/>
+          <stop stop-color="#526978"/>
+          <stop offset=".55" stop-color="#253e53"/>
+          <stop offset="1" stop-color="#10253b"/>
         </linearGradient>
         <radialGradient id="cold-trap" cx=".55" cy=".55" r=".62">
-          <stop stop-color="#3b4b57"/>
-          <stop offset=".58" stop-color="#303f4d"/>
-          <stop offset="1" stop-color="#222f3c"/>
+          <stop stop-color="#365268"/>
+          <stop offset=".58" stop-color="#243d52"/>
+          <stop offset="1" stop-color="#112438"/>
         </radialGradient>
+        <linearGradient id="space-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop stop-color="#02060d"/>
+          <stop offset=".68" stop-color="#061220"/>
+          <stop offset="1" stop-color="#0e2235"/>
+        </linearGradient>
+        <linearGradient id="sun-shaft" x1="0.2" y1="0" x2="0.65" y2="1">
+          <stop stop-color="#fef08a" stop-opacity=".22"/>
+          <stop offset=".5" stop-color="#fde047" stop-opacity=".08"/>
+          <stop offset="1" stop-color="#fde047" stop-opacity="0"/>
+        </linearGradient>
       </defs>
 
       <!-- Base Shackleton Regolith -->
       <path fill="url(#ground)" d="M0 0h1840v1120H0z"/>
-      <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".09"/>
-      <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 139l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#465661" opacity=".19"/>
+      <path d="M0 590 196 606 318 584 536 594 694 571 914 592 1085 562 1266 583 1448 552 1692 582 1840 555v62l-164 30-220-37-160 41-192-21-184 25-221-24-153 28-204-20-137 23L0 637Z" fill="#cec0a9" opacity=".11"/>
+      <path d="M0 691 166 654 281 670 319 724 259 757 109 784 0 813Zm615 35 125-50 174 12 55 43-37 42-157-14-131 30ZM936 205l181-19 128 26 100-18 159 28-58 56-174-17-119 24-118-42-114 26Z" fill="#3a4c58" opacity=".24"/>
 
-      <!-- Far Northern Space-Horizon Rim Silhouette -->
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78V0H0Z" fill="#08131e"/>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44 615 68 681 71 765 92 882 70 915 72 985 52 1045 61 1071 73 1185 72 1245 86 1300 67 1370 69 1470 58 1510 46 1602 69 1685 61 1840 78" stroke="#ded0b4" stroke-width="2.5" opacity=".56"/>
-      <path d="M0 118 109 80 138 87 165 58 224 75 295 73 360 82 454 71 493 59 515 60 545 44l-58 52-93 20-190-10-96 26L0 137Z" fill="#455260" opacity=".57"/>
-      <g fill="#e8f0ec" opacity=".65">
-        <circle cx="95" cy="28" r="1.3"/><circle cx="242" cy="36" r="1.6"/><circle cx="430" cy="22" r="1.1"/>
-        <circle cx="670" cy="34" r="1.5"/><circle cx="885" cy="26" r="1.2"/><circle cx="1115" cy="31" r="1.7"/>
-        <circle cx="1365" cy="24" r="1.2"/><circle cx="1630" cy="29" r="1.5"/><circle cx="1775" cy="38" r="1.1"/>
+      <!-- Subtle Topographic Contour Lines across the Plateau -->
+      <g stroke="#d8cbb3" stroke-width="1.1" stroke-dasharray="8 6" opacity=".18" fill="none">
+        <path d="M35 535 Q 360 565 735 505 T 1520 515 L 1810 495"/>
+        <path d="M45 645 Q 480 615 920 640 T 1790 610"/>
+        <path d="M85 885 Q 520 845 940 895"/>
       </g>
+
+      <!-- Far Northern Space-Horizon Rim Silhouette, Starfield, Grazing Sun & Crescent Earth (Framed in visible viewport y=0..205) -->
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152V0H0Z" fill="url(#space-sky)"/>
+      <!-- Distant secondary lunar mountain range -->
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152 L1840 198 1715 178 1595 188 1460 172 1325 192 1190 182 1035 168 910 188 785 196 645 178 535 162 415 186 265 178 135 194 0 212Z" fill="#2c3d4b" opacity=".82"/>
+      ${Array.from({ length: 120 }, (_, i) => {
+        const sx = (((Math.sin(i * 91.7 + 4) * 43758.5453) % 1) + 1) % 1 * 1820 + 10;
+        const sy = (((Math.sin(i * 47.3 + 9) * 24631.193) % 1) + 1) % 1 * 132 + 6;
+        const sr = (0.75 + (i % 5) * 0.38).toFixed(1);
+        const col = i % 6 === 0 ? '#7dd3fc' : i % 4 === 0 ? '#fef08a' : '#f8fafc';
+        return `<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${sr}" fill="${col}" opacity="${(0.5 + (i % 4) * 0.15).toFixed(2)}"/>`;
+      }).join('')}
+      <!-- 1.55 deg Grazing South-Polar Horizon Sun, Lens Flare & Diagonal Light Shafts -->
+      <polygon points="555,112 180,490 695,485" fill="url(#sun-shaft)"/>
+      <g transform="translate(555 112)">
+        <ellipse cx="0" cy="0" rx="135" ry="44" fill="#fde047" opacity=".2"/>
+        <ellipse cx="0" cy="0" rx="68" ry="24" fill="#fef08a" opacity=".38"/>
+        <line x1="-165" y1="0" x2="165" y2="0" stroke="#fef9c3" stroke-width="1.8" opacity=".68"/>
+        <line x1="-75" y1="-22" x2="75" y2="22" stroke="#fef08a" stroke-width="1" opacity=".35"/>
+        <circle cx="0" cy="0" r="15" fill="#fffbeb"/>
+      </g>
+      <!-- Crescent Blue-Marble Earth hanging in the Polar Sky -->
+      <g transform="translate(1245 84)">
+        <circle cx="0" cy="0" r="32" fill="#38bdf8" opacity=".16"/>
+        <circle cx="0" cy="0" r="22" fill="#082f49"/>
+        <path d="M-6 -21 A22 22 0 0 1 -6 21 A15 21 0 0 0 -6 -21Z" fill="#0ea5e9"/>
+        <path d="M3 -15 A17 17 0 0 1 9 12 A13 16 0 0 0 3 -15Z" fill="#e0f2fe" opacity=".82"/>
+      </g>
+      <path d="M0 192 95 152 142 164 198 126 268 148 345 142 425 156 495 134 555 112 628 144 712 148 795 168 885 142 948 146 1015 118 1085 138 1155 148 1235 142 1310 158 1390 132 1475 136 1555 114 1635 142 1735 134 1840 152" stroke="#fde68a" stroke-width="2.8" opacity=".76"/>
 
       <!-- ZONE 1: NW ELEVATED SUNLIT SHACKLETON RIM CREST (+2 ELEVATION, D1 SOLAR) -->
       <path d="M40 468 118 480 195 496 278 489 420 502 482 494 562 486 615 476 663 434 705 398 694 330 715 165 618 154 510 132 401 147 310 136 195 140 132 167 40 205Z" fill="url(#sunlit-ridge)"/>
@@ -130,7 +166,8 @@ export function terrain(): SvgAsset {
       <path d="M1035 675 1108 652 1185 622 1300 615 1388 628 1465 618 1558 632 1612 655 1695 668" stroke="#a1a8a6" stroke-width="2.5" opacity=".42"/>
       <path d="m1181 628 15 21m85-31 21 25m121-18 11 26m112-17-12 25m75-5-21 26m76-10 8 26m67 59-24 7m45 51-22 12m9 63-21 1" stroke="#536778" stroke-width="3" opacity=".65"/>
       <path d="m1027 864 31 38 60 28 66 63 103 19 88-14 126 20 71-13 136-45-12 19-103 41-89 14-128-15-98 16-90-11-82-39-73-55Z" fill="#819095" opacity=".25"/>
-      <path d="m1138 759 57-17 56 12 50-16m78 31 42-14 54 15 39-9m-305 147 48-26 75 11 55 27m65-20 58-18 62-6" stroke="#89969c" stroke-width="1.3" opacity=".27"/>
+      <path d="m1138 759 57-17 56 12 50-16m78 31 42-14 54 15 39-9m-305 147 48-26 75 11 55 27m65-20 58-18 62-6" stroke="#7dd3fc" stroke-width="1.6" opacity=".36"/>
+      <ellipse cx="1370" cy="855" rx="250" ry="95" fill="#0ea5e9" opacity=".08"/>
 
       <!-- Ambient Impact Craters (placed outside main walkways) -->
       ${IMPACT_CRATERS.map(({ x, y, radius }) => depression(x, y, radius)).join('')}

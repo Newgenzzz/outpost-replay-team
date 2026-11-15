@@ -27,8 +27,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: SunDim,
     title: { en: 'Solar Vanguard', az: 'Günəş Qabaqcılı' },
     description: {
-      en: 'Erected the 10 m VSAT Vertical Solar Mast on Shackleton Rim crest to harvest 40% grazing light during polar shadows.',
-      az: 'Qütb kölgəsində 40% üfüqi işıq toplamaq üçün Şeklton kənarında 10 m-lik şaquli günəş dirəyini qurdunuz.',
+      en: 'Selected a 10 m mast; the training scenario assumes 40% nominal output in shadow before pointing losses.',
+      az: '10 m dirək seçdiniz; təlimdə kölgə zamanı istiqamət itkilərindən əvvəl nominal gücün 40%-i fərz edilir.',
     },
     hint: {
       en: 'Deploy the 10 m VSAT solar mast at Decision 1.',
@@ -55,8 +55,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: ShieldCheck,
     title: { en: 'Storm Sentinel', az: 'Fırtına Qalxanı' },
     description: {
-      en: 'Sheltered the crew behind a dense regolith berm during the May 2024 X5.8 solar superstorm (94% radiation blocked).',
-      az: '11 May 2024 X5.8 Günəş superfırtınasında reqolit səddi ilə radiasiyanın 94%-ni dəf etdiniz.',
+      en: 'Used the berm in the fictional lunar storm (assumed 6% storm-dose transmission).',
+      az: 'Uydurma Ay fırtınasında reqolit səddindən istifadə etdiniz (fərz edilən 6% doza keçiriciliyi).',
     },
     hint: {
       en: 'Build the Regolith Berm at Decision 2 and shelter in the bunker at Decision 5.',
@@ -69,8 +69,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: Sparkles,
     title: { en: 'Shackleton Geologist', az: 'Şeklton Geoloqu' },
     description: {
-      en: 'Surveyed the lunar regolith and discovered NASA field science sample nodes across the polar plateau.',
-      az: 'Qütb yaylasında NASA elmi sahə nümunələrini aşkar etdiniz.',
+      en: 'Surveyed the lunar regolith and discovered fictional science sample nodes across the polar plateau.',
+      az: 'Qütb yaylasında uydurma elmi sahə nümunələrini aşkar etdiniz.',
     },
     hint: {
       en: 'Explore the map on foot or by rover to discover lunar rock samples.',
@@ -87,10 +87,24 @@ export const ACHIEVEMENTS: Achievement[] = [
       az: 'Deterministik zaman maşınından istifadə edərək keçmiş qərarları geri sardınız və paralel zaman xətlərini müqayisə etdiniz.',
     },
     hint: {
-      en: 'Open Rewind & Compare [Tab] and branch any past decision to spawn Run B.',
-      az: 'Geri Sar və Müqayisə [Tab] pəncərəsini açın və qərarlardan birini dəyişərək B gedişi yaradın.',
+      en: 'Open Rewind & Compare [R] and branch any past decision to spawn Run B.',
+      az: 'Geri Sar və Müqayisə [R] pəncərəsini açın və qərarlardan birini dəyişərək B gedişi yaradın.',
     },
     category: 'temporal',
+  },
+  {
+    id: 'mars_pioneer',
+    icon: SunDim,
+    title: { en: 'Jezero Dust Pioneer', az: 'Yezero Toz Pioneri' },
+    description: {
+      en: 'Survived a 3-Sol Mars global dust storm and 14-minute Earth radio delay using autonomous MOXIE & power triage.',
+      az: 'Avtonom MOXIE və enerji qərarları ilə 3-Solluq Mars toz fırtınasından və 14 dəqiqəlik rabitə gecikməsindən sağ çıxdınız.',
+    },
+    hint: {
+      en: 'Complete Bonus Mission 2: Mars Jezero Dust Storm from the Mission Control bar.',
+      az: 'İdarəetmə panelindən Bonus Missiya 2: Mars Yezero Toz Fırtınasını uğurla tamamlayın.',
+    },
+    category: 'science',
   },
   {
     id: 'master_commander',

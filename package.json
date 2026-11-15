@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/simulation.test.mjs",
+    "test": "node tests/simulation.test.mjs && node tests/replay.test.mjs && node tests/science.test.mjs && node tests/rendering.test.mjs && node tests/audio.test.mjs && node tests/missionAudio.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

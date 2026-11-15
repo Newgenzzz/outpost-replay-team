@@ -4,8 +4,9 @@ import { LUNAR_PLANNING_SITES, LUNAR_SITE_SOURCE } from '../data/lunarSiteIntell
 import { GAME_CONSTANTS } from '../data/nasaTelemetry';
 import { estimateSitePower } from '../engine/sitePowerPlanning';
 import { useI18n } from '../i18n/LanguageContext';
+import { Shackleton3DHologram } from './ShackletonHologram';
 
-export default function LunarSiteIntelligence() {
+export default function LunarSiteIntelligence({ hide3D = false }: { hide3D?: boolean }) {
   const { lang, t, tr } = useI18n();
   const [reserve, setReserve] = useState(35);
   const [evidence, setEvidence] = useState(0);
@@ -21,13 +22,16 @@ export default function LunarSiteIntelligence() {
   const { panelHeightMeters, startYear, endYear, url } = LUNAR_SITE_SOURCE;
 
   return (
-    <details className="rounded-lg border border-sky-400/25 bg-sky-950/35 px-3 py-2">
+    <details open={hide3D || undefined} className="rounded-lg border border-sky-400/25 bg-sky-950/35 px-3 py-2">
       <summary className="cursor-pointer text-xs font-semibold text-sky-200">
         <Sun className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-        {az ? 'Ay məkanlarının təhlili · Günəş enerjisi planı' : 'Lunar Site Intelligence · Solar power planning'}
+        {az
+          ? 'Təlim Hesablaması · Ay Məkanları üzrə Batareya Planlayıcısı (NASA LOLA Tədqiqatı və Təlim Yükü)'
+          : 'Educational Calculation · Lunar Site Battery Planner (NASA LOLA Research vs. Training Load)'}
       </summary>
 
       <div className="mt-3 space-y-3 text-xs text-slate-300">
+        {!hide3D && <Shackleton3DHologram compact />}
         <div className="rounded-lg border border-white/15 bg-slate-950/50 p-3">
           <div className="flex flex-wrap gap-1.5" role="group" aria-label={az ? 'Elmi sübutun yolunu izlə' : 'Trace the evidence'}>
             {(az ? ['1 · Ölçmələr', '2 · Tədqiqat modeli', '3 · Sizin qərarınız'] : ['1 · Measurements', '2 · Research model', '3 · Your decision']).map((label, index) => (

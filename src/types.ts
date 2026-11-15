@@ -1,6 +1,8 @@
 /** Shared domain types for Outpost Replay. */
 
 export type Lang = 'en' | 'az';
+export type TrainingMode = 'cadet' | 'engineer';
+export type StormPresetId = 'may2024' | 'sept2017' | 'quiet' | 'live';
 
 /** Every learner-facing string in the data layer is bilingual. */
 export interface Bilingual {
@@ -36,6 +38,21 @@ export interface ResourceState {
   eclssHealthPct: number;
 }
 
+export interface HourlyTelemetryPoint {
+  hour: number;
+  powerKwh: number;
+  lifeSupportPct: number;
+  radiationMsv: number;
+  sciencePoints: number;
+  oxygenKg: number;
+  waterKg: number;
+  foodKg: number;
+  surfaceTempK: number;
+  sunlightPct: number;
+  lowPower: boolean;
+  outage: boolean;
+}
+
 export type AbortCause = 'oxygen' | 'water' | 'food' | 'equipment';
 
 export interface ConditionalEffect {
@@ -50,6 +67,9 @@ export interface ConditionalEffect {
 export interface Choice {
   id: string;
   label: Bilingual;
+  /** Kid-friendly summary shown in Junior Cadet (Ages 7–12) mode. */
+  cadetLabel?: Bilingual;
+  cadetSummary?: Bilingual;
   /** Deterministic base changes applied when this choice is made. */
   effects: MetricDelta;
   resourceEffects?: Partial<Pick<ResourceState, 'oxygenKg' | 'waterKg' | 'foodKg'>>;
@@ -82,7 +102,9 @@ export interface NasaDataTrigger {
 export interface Decision {
   id: 1 | 2 | 3 | 4 | 5 | 6;
   title: Bilingual;
+  cadetTitle?: Bilingual;
   context: Bilingual;
+  cadetContext?: Bilingual;
   phase: { startHour: number; endHour: number; label: Bilingual };
   nasaDataTrigger: NasaDataTrigger | null;
   choices: [Choice, Choice, Choice];
@@ -93,12 +115,18 @@ export interface Citation {
   short: string;
   full: string;
   url: string;
-  agency: 'NASA' | 'NASA/NOAA' | 'Peer-reviewed (NASA mission data)';
+  agency: 'NASA' | 'NOAA' | 'NASA/NOAA' | 'Peer-reviewed (NASA mission data)';
 }
 
-
-/** Optional engineering preparations recorded as mission inputs. */
+/** Optional engineering preparations and field discoveries recorded as mission inputs. */
 export interface MissionTaskSettings {
   solarCalibrated: boolean;
   icePrepared: boolean;
+  eclssSealed?: boolean;
+  busPatched?: boolean;
+  extraIceCores?: number;
+  stormClamped?: boolean;
+  dishAligned?: boolean;
+  fieldSamplesCount?: number;
+  stormPeakPfu?: number;
 }

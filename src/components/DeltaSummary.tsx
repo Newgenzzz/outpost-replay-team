@@ -1,19 +1,54 @@
-import { ArrowRightLeft, Droplet, GitCompareArrows, Lightbulb, ShieldAlert, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRightLeft, Droplet, GitCompareArrows, Lightbulb, ShieldAlert, ShieldCheck, Sparkles, Utensils, Wind } from 'lucide-react';
 import { useI18n } from '../i18n/LanguageContext';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, compareRuns, type ComparisonReason, type SimulationResult } from '../engine/simulation';
+import type { Bilingual, TrainingMode } from '../types';
 import { OutcomeBadge } from './MetricGauges';
 import { ABORT_CAUSES } from './MissionResults';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 
-export default function DeltaSummary({ a, b }: { a: SimulationResult; b: SimulationResult }) {
+const DECISION_SCIENCE_BRIDGE: Record<number, Bilingual> = {
+  1: {
+    en: 'NASA context: LRO/LOLA illumination studies (Mazarico et al. 2011; Gläser et al. 2018) motivate mast-height & site storage planning; the 15% vs 40% shadow factors are scenario assumptions.',
+    az: 'NASA konteksti: LRO/LOLA işıqlanma tədqiqatları (Mazarico və b. 2011; Gläser və b. 2018) dirək hündürlüyü və baza yerini əsaslandırır; 15% və 40% kölgə əmsalları təlim fərziyyəsidir.',
+  },
+  2: {
+    en: 'NASA context: NASA BVAD (0.82 kg O₂/crew-day), LRO/CRaTER shielding context, and OSDR VEG-01A (33-day ISS lettuce water-stress trial) inform habitat upgrades; ×0.06 berm factor, +3 kg O₂ ISRU yield, and 25+5 d crop costs are assumptions.',
+    az: 'NASA konteksti: NASA BVAD (0.82 kq O₂/nəfər-gün), LRO/CRaTER mühit konteksti və OSDR VEG-01A (33 günlük BKS kahı sınağı) quraşdırmanı əsaslandırır; ×0.06 sədd, +3 kq O₂ və 25+5 gün bitki dəyərləri fərziyyədir.',
+  },
+  3: {
+    en: 'NASA context: LRO/LOLA & Diviner polar studies (~38 K Cabeus reference) frame the 72 h shadow & heating demand; the 90 K curve and 18 kWh backup fuel cell are scenario assumptions.',
+    az: 'NASA konteksti: LRO/LOLA və Diviner qütb tədqiqatları (~38 K Kabeus istinadı) 72 saatlıq kölgə və qızdırma yükünü izah edir; 90 K əyrisi və 18 kVt·s ehtiyat yanacaq elementi ssenari fərziyyəsidir.',
+  },
+  4: {
+    en: 'NASA context: LCROSS Cabeus water-ice estimate (5.6 ± 2.9% by mass) supplies the extraction feedstock fraction; batch mass (20 kg + cores) and 60%/75% recovery efficiency are classroom assumptions.',
+    az: 'NASA konteksti: LCROSS Kabeus su-buzu qiymətləndirməsi (kütləcə 5.6 ± 2.9%) emal xammalı payını verir; partiya kütləsi (20 kq + nüvələr) və 60%/75% emal səmərəliliyi təlim fərziyyəsidir.',
+  },
+  5: {
+    en: 'NASA context: NASA CCMC DONKI (20240516-7D-001 / Alert #30944) & NOAA GOES (207 pfu May 10, 2024 near-Earth peak) anchor the warning; the 48 h pulse, 0.015 mSv·h⁻¹·pfu⁻¹ scale, shielding multipliers, and 50 mSv rule (vs NASA-STD-3001 600 mSv career limit) are assumptions.',
+    az: 'NASA konteksti: NASA CCMC DONKI (20240516-7D-001 / #30944) və NOAA GOES (10 may 2024 Yerə yaxın 207 pfu piki) xəbərdarlığı əsaslandırır; 48 s əyri, 0.015 əmsalı, qalxan vuruqları və 50 mSv həddi (NASA-STD-3001 600 mSv həddindən ayrı) fərziyyədir.',
+  },
+  6: {
+    en: 'NASA context: NASA BVAD crew consumables and NASA-STD-3001 exposure principles frame close-out trade-offs between crew margin and final science return.',
+    az: 'NASA konteksti: NASA BVAD sərfiyyat göstəriciləri və NASA-STD-3001 radiasiya prinsipləri son gündə ekipaj ehtiyatı ilə elm balansı arasındakı seçimi izah edir.',
+  },
+};
+
+export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
+  a: SimulationResult;
+  b: SimulationResult;
+  trainingMode?: TrainingMode;
+}) {
   const { t, tr, lang } = useI18n();
   const az = lang === 'az';
   const cmp = compareRuns(a, b);
   const firstChange = cmp.firstDivergence;
   if (firstChange === null) {
-    return <p className="rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-300">{t('noDifference')}</p>;
+    return <p className="rounded-xl border border-slate-700 bg-slate-950/50 p-3 text-sm text-slate-300">{a.elapsedHours === b.elapsedHours
+      ? t('noDifference')
+      : az ? `Ortaq mərhələlərdə girişlər eynidir. A gedişi ${a.elapsedHours}, B gedişi ${b.elapsedHours} saata çatıb. Qrafikdə eyni saatları müqayisə edin.`
+        : `Inputs match at the shared phases. Run A reached hour ${a.elapsedHours} and Run B reached hour ${b.elapsedHours}. Compare matching hours in the charts.`}</p>;
   }
 
   const decision = MISSION_DECISIONS[firstChange - 1];
@@ -37,6 +72,10 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
   ];
   const waterDifference = b.resources.waterKg - a.resources.waterKg;
   const finalWaterDelta = Math.sign(waterDifference) * Math.round(Math.abs(waterDifference) * 100) / 100;
+  const oxygenDifference = b.resources.oxygenKg - a.resources.oxygenKg;
+  const finalOxygenDelta = Math.sign(oxygenDifference) * Math.round(Math.abs(oxygenDifference) * 100) / 100;
+  const foodDifference = b.resources.foodKg - a.resources.foodKg;
+  const finalFoodDelta = Math.sign(foodDifference) * Math.round(Math.abs(foodDifference) * 100) / 100;
   const finalChanges = METRICS.map((metric) => ({
     label: t(metric.labelKey), Icon: metric.icon, value: cmp.finalDelta[metric.key],
     unit: metric.key === 'lifeSupportPct' ? (az ? 'faiz b.' : 'pp') : t(metric.unitKey),
@@ -45,6 +84,24 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
   if (finalWaterDelta !== 0) {
     finalChanges.push({ label: az ? 'Su ehtiyatı' : 'Water reserve', Icon: Droplet,
       value: finalWaterDelta, unit: waterUnit, higherIsBetter: true, digits: 2 });
+  }
+  if (finalOxygenDelta !== 0) {
+    finalChanges.push({ label: az ? 'Oksigen ehtiyatı' : 'Oxygen reserve', Icon: Wind,
+      value: finalOxygenDelta, unit: waterUnit, higherIsBetter: true, digits: 2 });
+  }
+  if (finalFoodDelta !== 0) {
+    finalChanges.push({ label: az ? 'Qida ehtiyatı' : 'Food reserve', Icon: Utensils,
+      value: finalFoodDelta, unit: waterUnit, higherIsBetter: true, digits: 2 });
+  }
+  const unchangedNotes: string[] = [];
+  if (sameEndpoint && finalOxygenDelta === 0) {
+    unchangedNotes.push(`O₂ ${fmt(b.resources.oxygenKg)} ${waterUnit}`);
+  }
+  if (sameEndpoint && finalFoodDelta === 0) {
+    unchangedNotes.push(`${az ? 'Qida' : 'Food'} ${fmt(b.resources.foodKg)} ${waterUnit}`);
+  }
+  if (sameEndpoint && finalWaterDelta === 0) {
+    unchangedNotes.push(`H₂O ${fmt(b.resources.waterKg)} ${waterUnit}`);
   }
 
   const stepLabel = (s: number | null) => (s === null ? t('never') : t('atStep', { step: s }));
@@ -66,6 +123,12 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           text: r.to
             ? lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etdi.' : 'D4 · Run B used the prepared ice extractor.'
             : lang === 'az' ? 'D4 · B gedişi hazırlanmış buz emal qurğusundan istifadə etmədi.' : 'D4 · Run B omitted extractor preparation.',
+        };
+      case 'stationTaskChanged':
+        return {
+          Icon: Sparkles,
+          cls: 'text-emerald-200',
+          text: tr(r.label),
         };
       case 'choiceChanged': {
         const d = MISSION_DECISIONS[r.step - 1];
@@ -105,23 +168,41 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           </p>
           <h3 className="mt-1 text-xl font-semibold leading-tight text-white">D{firstChange} · {tr(decision.title)}</h3>
         </div>
-        {sameEndpoint && cmp.scoreDelta !== null && (
-          <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${deltaTone(cmp.scoreDelta, true)}`}>
-            {t('score')} {signed(cmp.scoreDelta)}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {a.outcome !== b.outcome && (
+            <span className="rounded-full border border-amber-300/45 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-100">
+              {t(`outcome.${a.outcome}`)} → {t(`outcome.${b.outcome}`)}
+            </span>
+          )}
+          {sameEndpoint && cmp.scoreDelta !== null && (
+            <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${deltaTone(cmp.scoreDelta, true)}`}>
+              {t('score')} {signed(cmp.scoreDelta)}
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-sm text-slate-200">
-        {az
+        {a.input.scenario.stormPeakPfu !== b.input.scenario.stormPeakPfu
+          ? az ? 'Fırtına parametrləri fərqlidir. Bu müqayisə yalnız bir qərarın təsirini təcrid etmir.'
+            : 'Storm settings differ. This comparison does not isolate the effect of a single decision.'
+          : az
           ? 'Hər iki gedişdə ilkin ehtiyatlar, işıq, temperatur və fırtına cədvəli eynidir.'
           : 'Both runs share the same starting reserves and schedule for sunlight, temperature, and the storm.'}
       </p>
+      {cmp.changedSteps.length > 1 && (
+        <p className="text-xs text-amber-100">
+          {az
+            ? `Girişlər ${cmp.changedSteps.map((step) => `D${step}`).join(', ')} mərhələlərində fərqlənir. Bir neçə mərhələ dəyişdirilib.`
+            : `Inputs differ at ${cmp.changedSteps.map((step) => `D${step}`).join(', ')}. More than one phase changed.`}
+        </p>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         {comparison.map(({ label, run, phase }, index) => {
           const calibration = firstChange === 1 && a.solarCalibrated !== b.solarCalibrated;
           const preparation = phase.choiceId === 'D4-A' && a.icePrepared !== b.icePrepared;
           const value = showWaterYield ? phase.resourceFlows.waterExtractedKg : phase.after[primaryKey];
+          const choice = decision.choices[phase.choiceIndex];
           return (
             <article key={label} className={`flex flex-col gap-2 rounded-xl border p-3 ${index === 0
               ? 'border-[#546879] bg-[#16242f]' : 'border-[#668f82] bg-[#193433]'}`}>
@@ -131,8 +212,10 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
               </div>
               {run.abortCause && <p className="text-xs font-semibold text-rose-200">{tr(ABORT_CAUSES[run.abortCause])}</p>}
               <p className="flex items-start gap-2 text-sm font-medium text-slate-100">
-                <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs text-slate-200">{CHOICE_LETTERS[phase.choiceIndex]}</span>
-                {tr(decision.choices[phase.choiceIndex].label)}
+                <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs text-slate-200">
+                  {az ? 'Var.' : 'Opt'} {CHOICE_LETTERS[phase.choiceIndex]}
+                </span>
+                <span>{tr(trainingMode === 'cadet' ? choice.cadetLabel ?? choice.label : choice.label)}</span>
               </p>
               {calibration && <p className="text-xs text-amber-100">{run.solarCalibrated
                 ? az ? 'Kalibrləmə tətbiq edildi' : 'Calibration applied'
@@ -140,23 +223,121 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
               {preparation && <p className="text-xs text-sky-100">{run.icePrepared
                 ? az ? 'Hazırlanmış qurğu' : 'Prepared extractor'
                 : az ? 'Standart qurğu' : 'Standard extractor'}</p>}
-              {samePhaseEnd && (
-                <div className="mt-auto border-t border-white/15 pt-2">
-                  <p className="text-xs text-slate-300">{phaseLabel} · {az ? `Saat ${phase.endHour}` : `Hour ${phase.endHour}`}</p>
-                  <p className="font-mono text-2xl font-semibold tracking-tight text-white">
-                    {fmt(value, showWaterYield ? 2 : 1)} <span className="text-sm text-slate-300">{phaseUnit}</span>
-                  </p>
-                </div>
-              )}
+              {samePhaseEnd && (() => {
+                const maxScale = showWaterYield
+                  ? Math.max(0.5, phaseA.resourceFlows.waterExtractedKg, phaseB.resourceFlows.waterExtractedKg)
+                  : primaryKey === 'radiationMsv'
+                    ? 60
+                    : 100;
+                const pct = Math.min(100, Math.max(4, Math.round((value / maxScale) * 100)));
+                const isRisk =
+                  !showWaterYield &&
+                  ((primaryKey === 'powerKwh' && value < 20) ||
+                    (primaryKey === 'lifeSupportPct' && value < 40) ||
+                    (primaryKey === 'radiationMsv' && value >= 50));
+                const barCls = isRisk
+                  ? 'bg-rose-400'
+                  : index === 0
+                    ? 'bg-amber-300'
+                    : 'bg-emerald-400';
+                return (
+                  <div className="mt-auto border-t border-white/15 pt-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-xs text-slate-300">{phaseLabel} · {az ? `Saat ${phase.endHour}` : `Hour ${phase.endHour}`}</p>
+                      {!showWaterYield && primaryKey === 'powerKwh' && (
+                        <span className={`font-mono text-[10px] font-semibold ${value < 20 ? 'text-rose-200' : 'text-emerald-200'}`}>
+                          {value < 20
+                            ? (az ? '<20 kVt·s riski' : '<20 kWh brownout')
+                            : (az ? '≥20 kVt·s ehtiyat' : '≥20 kWh reserve')}
+                        </span>
+                      )}
+                      {!showWaterYield && primaryKey === 'radiationMsv' && (
+                        <span className={`font-mono text-[10px] font-semibold ${value >= 50 ? 'text-rose-200' : 'text-emerald-200'}`}>
+                          {value >= 50
+                            ? (az ? '≥50 mSv məhdudiyyət həddi' : '≥50 mSv warning limit')
+                            : (az ? '<50 mSv təhlükəsiz hədd' : '<50 mSv below warning')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-mono text-2xl font-semibold tracking-tight text-white">
+                      {fmt(value, showWaterYield ? 2 : 1)} <span className="text-sm text-slate-300">{phaseUnit}</span>
+                    </p>
+                    <div className="relative mt-1.5 h-2 w-full overflow-hidden rounded-full bg-black/45">
+                      <div className={`h-full rounded-full transition-all ${barCls}`} style={{ width: `${pct}%` }} />
+                      {!showWaterYield && primaryKey === 'powerKwh' && (
+                        <span
+                          aria-hidden="true"
+                          title={az ? '20 kVt·s həddi' : '20 kWh brownout threshold'}
+                          className="absolute bottom-0 top-0 w-0.5 bg-white/80"
+                          style={{ left: '20%' }}
+                        />
+                      )}
+                      {!showWaterYield && primaryKey === 'radiationMsv' && (
+                        <span
+                          aria-hidden="true"
+                          title={az ? '50 mSv təlim xəbərdarlıq həddi' : '50 mSv classroom warning threshold'}
+                          className="absolute bottom-0 top-0 w-0.5 bg-white/80"
+                          style={{ left: '83.3%' }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </article>
           );
         })}
       </div>
 
+      {sameEndpoint ? finalChanges.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-slate-200">
+            {trainingMode === 'cadet'
+              ? az ? 'Bütün missiya: B nəticəsi A ilə müqayisədə' : 'Whole mission: B compared with A'
+              : t('deltaFinal')}
+            {' · '}{az ? `Saat ${a.elapsedHours}` : `Hour ${a.elapsedHours}`}
+          </p>
+          <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            {finalChanges.map(({ label, Icon, value, unit, higherIsBetter, digits }) => {
+              const isBenefit = higherIsBetter ? value > 0 : value < 0;
+              return (
+                <li key={label} className={`flex min-w-0 flex-col justify-between rounded-lg border px-2.5 py-2 sm:min-w-[168px] sm:flex-[1_1_168px] ${deltaTone(value, higherIsBetter)}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex items-center gap-1 text-xs leading-snug"><Icon size={13} className="shrink-0" aria-hidden="true" />{label}</span>
+                    <span className="shrink-0 whitespace-nowrap rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider">
+                      {isBenefit ? (az ? 'Fayda' : 'Benefit') : (az ? 'İtki' : 'Cost')}
+                    </span>
+                  </div>
+                  <strong className="mt-1 whitespace-nowrap font-mono text-sm">{value > 0 ? '+' : ''}{fmt(value, digits)} {unit}</strong>
+                </li>
+              );
+            })}
+          </ul>
+          {unchangedNotes.length > 0 && (
+            <p className="mt-1.5 text-[11px] text-slate-300">
+              {az ? 'Hər iki gedişdə eyni qalıb: ' : 'Unchanged across both runs: '}
+              {unchangedNotes.join(' · ')}
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="rounded-lg bg-white/5 p-2 text-sm text-slate-200">
+          {az
+            ? `A gedişi ${a.elapsedHours}, B gedişi isə ${b.elapsedHours} saat davam etdi. Eyni saatdakı nəticələri qrafikdən müqayisə edin.`
+            : `Run A reached hour ${a.elapsedHours} and Run B reached hour ${b.elapsedHours}. Compare their values at matching times in the charts.`}
+        </p>
+      )}
+
       <div className="flex gap-2 rounded-lg border border-amber-200/25 bg-[#29352c] px-3 py-2.5 text-sm text-[#f0efde]">
         <Lightbulb size={17} className="mt-0.5 shrink-0 text-amber-200" aria-hidden="true" />
         <div>
+          <p className="mb-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-200">
+            {az ? 'ÖYRƏN · Mühəndislik prinsipi' : 'LEARN · Engineering principle'}
+          </p>
           <p>{tr(ENGINEERING_LESSONS[firstChange - 1])}</p>
+          {DECISION_SCIENCE_BRIDGE[firstChange] && (
+            <p className="mt-1 text-xs text-sky-100/90">{tr(DECISION_SCIENCE_BRIDGE[firstChange])}</p>
+          )}
           {sameEndpoint && lowReserveA !== lowReserveB && (
             <p className="mt-0.5 text-xs text-amber-100">
               {az
@@ -166,26 +347,6 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
           )}
         </div>
       </div>
-
-      {sameEndpoint ? finalChanges.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-200">{t('deltaFinal')} · {az ? `Saat ${a.elapsedHours}` : `Hour ${a.elapsedHours}`}</p>
-          <ul className="grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
-            {finalChanges.map(({ label, Icon, value, unit, higherIsBetter, digits }) => (
-              <li key={label} className={`flex min-w-0 flex-1 flex-col rounded-lg border px-2.5 py-1.5 ${deltaTone(value, higherIsBetter)}`}>
-                <span className="flex items-center gap-1 text-xs"><Icon size={13} className="shrink-0" aria-hidden="true" />{label}</span>
-                <strong className="mt-0.5 whitespace-nowrap font-mono text-sm">{value > 0 ? '+' : ''}{fmt(value, digits)} {unit}</strong>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="rounded-lg bg-white/5 p-2 text-sm text-slate-200">
-          {az
-            ? `A gedişi ${a.elapsedHours}, B gedişi isə ${b.elapsedHours} saat davam etdi. Eyni saatdakı nəticələri qrafikdən müqayisə edin.`
-            : `Run A reached hour ${a.elapsedHours} and Run B reached hour ${b.elapsedHours}. Compare their values at matching times in the charts.`}
-        </p>
-      )}
 
       {cmp.reasons.length > 0 && (
         <details className="text-xs text-sky-100">

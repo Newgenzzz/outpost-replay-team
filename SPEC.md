@@ -29,7 +29,7 @@ Shackleton Rim Survival is a fictional nine-day exercise with a two-person crew.
 - **Crew.** Initial stores are 18 kg oxygen, 16 kg water and 14 kg food. NASA’s BVAD oxygen reference supplies the modeled crew demand of 1.64 kg/day. Net water demand depends on recycling and available power. Life support is the minimum of equipment health and the limiting consumable reserve relative to a two-day target. Low power and outages reduce equipment health over time. A run stops when a crew store or equipment health reaches zero.
 - **Ice and food.** D4 can process a fictional batch of regolith using the published LCROSS Cabeus ice estimate as an analog. The sample mass and extraction efficiency are scenario inputs. Treated water scales with task power delivered. A D2 crop tray begins with 25 days of prior growth and requires five more supported days, with hourly water and electricity use. The modeled harvest adds fresh greens, a small ration-equivalent credit and science.
 - **Radiation.** A fixed 48-hour training pulse uses the published GOES peak of 207 pfu from May 2024. The engine integrates the scripted flux curve, applies a classroom flux-to-dose conversion, and accounts for time and shielding. The 50 mSv warning is a scenario threshold. See [NASA_SCIENCE.md](NASA_SCIENCE.md) for provenance and limitations.
-- **Outcome.** Completion with sufficient power, life support of at least 40%, and no dose warning counts as success. Other completed runs finish with warnings. Equipment or consumable depletion triggers an immediate abort. The score is a classroom trade-off among science, reserves and modeled risk.
+- **Outcome.** Completion with sufficient power, life support of at least 40%, and no dose warning counts as success. Other completed runs finish with warnings. Equipment or consumable depletion triggers an immediate abort. The score is a classroom trade-off among science, reserves and modeled risk. The existing weighted formula and safety multiplier are rounded, then clamped to 0–100. Science awards are committed at phase completion after delivered-power and safety gates; hourly records retain the last committed award until then.
 
 ## Replay contract
 
@@ -42,3 +42,9 @@ The separate Lunar Site Intelligence exercise calculates long-term planning esti
 ## Validation
 
 `npm test` runs the Node test suite against the bundled TypeScript engine. Coverage includes resource and energy accounting across all 729 paths, replay determinism, growth conditions, phased radiation, mission transitions and the shared demo fixture. `npm run build` type-checks the source and creates the static output in `dist/`.
+
+## M3 accounting contract
+
+All five field cores are accepted: each adds 3 kg of icy regolith to D4-A’s 20 kg batch. The feed is not pure water. Treated water is feed mass × 0.056 × recovery × delivered task-power fraction. Core settings do not affect other decisions. Sample counts are cumulative inputs; only newly applied samples can earn phase credit, subject to science gates and the 100-point limit.
+
+Battery ledgers explicitly identify curtailed generation, unserved demand and the cap on discretionary load shedding. Maintenance requests a 10 kWh reduction, but only 6 kWh of discretionary daily load can be shed; essential loads remain. Existing oxygen, net water/recycling, food and greenhouse equations are retained and checked by conservation and boundary tests.

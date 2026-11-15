@@ -1,7 +1,7 @@
 import { useI18n } from '../i18n/LanguageContext';
 import type { SimulationResult } from '../engine/simulation';
 import { OutcomeBadge } from './MetricGauges';
-import { fmt } from './metricMeta';
+import { CHOICE_LETTERS, fmt } from './metricMeta';
 
 export const ABORT_CAUSES = {
   oxygen: { en: 'Oxygen reserve depleted', az: 'Oksigen ehtiyatı tükəndi' },
@@ -27,8 +27,31 @@ export default function MissionResults({ a, b }: { a: SimulationResult; b: Simul
               <span className="font-mono text-xs text-slate-300">{fmt(run.elapsedHours)} / 216 h</span>
             </div>
             {run.abortCause && <p className="mt-2 text-xs font-semibold text-rose-200">{tr(ABORT_CAUSES[run.abortCause])}</p>}
+            {run.steps.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center gap-1 font-mono text-[10px]">
+                {run.steps.map((step) => {
+                  const otherStep = b && runs.length === 2 ? runs[1 - index].steps[step.step - 1] : undefined;
+                  const diff = otherStep !== undefined && otherStep.choiceIndex !== step.choiceIndex;
+                  return (
+                    <span
+                      key={step.step}
+                      className={`rounded border px-1.5 py-0.5 ${
+                        diff
+                          ? 'border-amber-300/60 bg-amber-400/20 font-bold text-amber-100'
+                          : 'border-white/10 bg-white/5 text-slate-300'
+                      }`}
+                    >
+                      D{step.step}·{CHOICE_LETTERS[step.choiceIndex]}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
               {[
+                [lang === 'az' ? 'Batareya' : 'Battery', `${fmt(run.final.powerKwh)} ${t('unitKwh')}`],
+                [lang === 'az' ? 'Radiasiya' : 'Radiation', `${fmt(run.final.radiationMsv)} mSv`],
+                [lang === 'az' ? 'Elm' : 'Science', `${fmt(run.final.sciencePoints)} ${t('unitPts')}`],
                 ['O₂', `${fmt(oxygenKg)} ${kg}`],
                 ['H₂O', `${fmt(waterKg)} ${kg}`],
                 [lang === 'az' ? 'Qida' : 'Food', `${fmt(foodKg)} ${kg}`],
