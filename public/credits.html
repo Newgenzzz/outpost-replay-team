@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="OUTPOST REPLAY credits, AI assistance, NASA sources and third-party software notices." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23cbd5e1'/%3E%3Ccircle cx='11' cy='12' r='3' fill='%2394a3b8'/%3E%3Ccircle cx='20' cy='20' r='4' fill='%2394a3b8'/%3E%3C/svg%3E" />
+    <title>Credits &amp; sources · OUTPOST REPLAY</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101f29; color: #e2e8f0; }
+      body { max-width: 48rem; margin: auto; padding: 1.5rem; line-height: 1.65; }
+      h1, h2 { color: #d5f5c3; line-height: 1.25; }
+      h1 { font-size: 1.8rem; } h2 { margin-top: 2rem; font-size: 1.2rem; }
+      a { color: #9de2f5; text-underline-offset: .2em; overflow-wrap: anywhere; }
+      a:focus-visible { outline: 3px solid #d5f5c3; outline-offset: 4px; }
+      li + li { margin-top: .65rem; } strong { color: white; }
+      .note { border-left: 3px solid #d5f5c3; padding-left: 1rem; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="./">Return to OUTPOST REPLAY</a>
+      <h1>Credits &amp; sources</h1>
+      <p>OUTPOST REPLAY by Team Brochachos, for NASA Space Apps Challenge 2026.</p>
+      <p class="note">Independent educational project; not endorsed or scientifically validated by NASA.
+        The outpost, mission timeline and resource forecasts are educational models.</p>
+    </header>
+    <main>
+      <h2>NASA data and scientific references</h2>
+      <p>The game separates observations, published research, engineering references and training assumptions.
+        Open <strong>Science</strong> (<strong>Elm</strong> in Azerbaijani) or <strong>Rewind &amp; Compare → Mission science and assumptions → Citations</strong>
+        for the full in-game reference list.</p>
+      <ul>
+        <li><a href="https://ccmc.gsfc.nasa.gov/DONKI/view/Alert/30944/1">NASA DONKI notification 20240516-7D-001</a>:
+          archived May 2024 space-weather context for the shielding lesson. Optional recent flare records are a separate catalog;
+          they do not alter mission outcomes or supply crew-dose measurements.</li>
+        <li><a href="https://osdr.nasa.gov/bio/repo/data/payloads/VEG-01A">NASA OSDR VEG-01A lettuce trial</a>:
+          the ISS water-stress finding motivates crop-water planning. The game's crop duration, costs and yield are assumptions.</li>
+        <li><a href="https://ntrs.nasa.gov/citations/20170007365">NASA LRO/LOLA-derived illumination research, Gläser et al.</a>:
+          two published site-planning rows support the sunlight/storage comparison. The 3D crater is procedural teaching art,
+          not a NASA elevation dataset; its visibility index does not drive mission power.</li>
+        <li><a href="https://ntrs.nasa.gov/citations/20180001338">NASA life-support baseline document (BVAD)</a>:
+          reference crew oxygen consumption. <a href="https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/">ISS water-recovery research</a>
+          is shown separately from the game's simplified recycler.</li>
+        <li><a href="https://ntrs.nasa.gov/api/citations/20250006445/downloads/SMD-LUN-102_RevA_authors.pdf#page=15">LCROSS Cabeus ice estimate</a>:
+          a reference fraction for fictional extraction feedstock, not an ice measurement at this outpost.</li>
+        <li><a href="https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf">NOAA GOES May 2024 proton peak</a>:
+          the default scenario reuses the 207 pfu near-Earth peak only. Its lunar timing, shielding and flux-to-dose conversion are assumptions.
+          NOAA is a separate agency; this is not counted as an additional NASA dataset.</li>
+      </ul>
+      <p>No RadLab dosimetry series, Mars Trek terrain, or raw LOLA/Diviner raster is bundled. Mars mission values are teaching scenarios.
+        The model is unsuitable for operational mission planning or astronaut exposure forecasts.</p>
+
+      <h2>AI assistance, procedural media &amp; data separation</h2>
+      <p>Based on repository records, AI-assisted programming, debugging, testing and documentation involved:</p>
+      <ul>
+        <li><strong>OpenAI Codex:</strong> verified across Git commits (<code>fd05999</code>–<code>80ae256</code>, <code>codex/*</code> branches), scientific/accounting/rendering audits, test suites, adaptive audio integration and release documentation.</li>
+        <li><strong>Google Antigravity &amp; Gemini:</strong> verified in the M0 Antigravity checkpoint (<code>86eda74</code>), the Argon checkpoint (<code>35f3349</code>), submission drafts and interface/science polish.</li>
+        <li><strong>Anthropic Claude (via Google Antigravity):</strong> verified in handoff and implementation documentation (<code>5df32e9</code>, <code>CLAUDE_HANDOFF.md</code>, <code>SUBMISSION_KIT.md</code>).</li>
+        <li><strong>ChatGPT (team confirmation required):</strong> used in the team’s broader challenge research/drafting workflow; the exact scope and whether any code or copy originated there require team confirmation before submission.</li>
+      </ul>
+      <p>All AI-assisted output was reviewed against automated tests and primary source citations. Tool assistance does not validate the educational model or establish measured learning gains.</p>
+      <p><strong>Procedural code graphics &amp; music vs. AI-generated media:</strong> Sprites, 2.5D terrain illustrations, 3D crater teaching geometry, interface SVGs and adaptive Web Audio music/effects are generated procedurally by application source code. <strong>No standalone AI-generated raster images, voice recordings, music tracks or video files</strong>, and no external image packs, agency emblems or font files are shipped in the build. Audio represents music, suit/equipment vibration and radio cues; sound does not travel through lunar vacuum. If any AI-generated visuals or audio are later added to external pitch slides or videos, explicit per-item labeling and tool disclosure are required under NASA Space Apps rules.</p>
+
+      <h2>Evidence-based development timeline &amp; eligibility notice</h2>
+      <p class="note"><strong>Pre-event development disclosure:</strong> Git history shows substantial code existed before November 14, 2026. Team Brochachos does not claim the entire codebase was written during November 14–15 and seeks written organizer confirmation regarding pre-event code eligibility.</p>
+      <ul>
+        <li><strong>A. Pre-event practice &amp; preparation (before Nov 14, 2026):</strong> Initial unversioned <code>outpost-replay-practice</code> prototype prior to Nov 6 (exact original dates, authors and tools require team confirmation), followed by commits <code>fd05999</code>–<code>09e9e10</code> (Nov 6–9) establishing the deterministic 216-hour engine, 6 lunar decisions, Mars bonus, M0–M6 scientific/accounting/rendering audits and mast-height lesson.</li>
+        <li><strong>B. Reused prototype &amp; asset cleanup:</strong> The event submission continues directly from the team’s <code>outpost-replay-practice</code> repository rather than an empty repository on Nov 14. Nine unverified inherited SVGs formerly in <code>public/assets/</code> and legacy GSAP code were removed during pre-event M0/cleanup passes.</li>
+        <li><strong>C. Transition checkpoint (<code>35f3349</code>, Nov 14 12:50 +0400):</strong> Preserved uncommitted Gemini Argon edits (sightline/POV, 2.5D horizon graphics, 1-click prediction). <code>IMPLEMENTATION_LOG.md</code> dates an earlier log entry as Nov 11; exact pre-event vs. Nov 14 authorship split requires team confirmation.</li>
+        <li><strong>D. Official hackathon weekend (Nov 14–15, 2026 · <code>8ace633</code>–HEAD):</strong> Horizon teaching diagram &amp; chunk retry recovery (<code>8ace633</code>), guided experiment onboarding (<code>6dd15f6</code>), mission-progress protection &amp; clipboard fallback (<code>245d498</code>), strategy clarity &amp; 4-tier provenance (<code>4ad8352</code>), 2.5D mountain horizon cross-section &amp; optional 3D toggle (<code>4aec310</code>, <code>6977994</code>), browser save/resume, OSDR VEG-01A crop integration &amp; migrated live DONKI API (<code>d1c4fc2</code>), simplified Cadet choices &amp; Benefit/Cost comparison (<code>8804322</code>), procedural adaptive Web Audio soundtrack (<code>be768ff</code>), and Nov 15 Science navigation/clarity, credits &amp; timeline updates.</li>
+      </ul>
+
+      <h2>Software and licensing status</h2>
+      <p>The build includes React, Phaser, Three.js, React Three Fiber/Drei, Recharts, Lucide icons and other dependencies.
+        Lucide's notice also credits Feather. Full package license texts are in
+        <a href="./THIRD_PARTY_NOTICES.txt">Third-party software notices</a>.</p>
+      <p>Those notices apply to third-party software. A project-wide license and inherited code/art provenance remain subject
+        to team rights-holder approval; this page grants no license for team materials. The source repository retains
+        <strong>ATTRIBUTION.md</strong> and <strong>NASA_SCIENCE.md</strong> with the detailed ledger.</p>
+      <p>Progress and audio preferences are stored in this browser. Reloading can resume saved inputs; changing browsers
+        or moving from the local preview to a public URL does not transfer that storage.</p>
+    </main>
+  </body>
+</html>

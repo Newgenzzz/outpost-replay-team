@@ -14,6 +14,8 @@ A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the 
 
 ## Run locally
 
+For the current release candidate, see [the verified release review and NASA source map](RELEASE_CANDIDATE_2026-11-15.md), [Cloudflare Pages Direct Upload instructions](CLOUDFLARE_DIRECT_UPLOAD.md), and the [27-second gameplay storyboard](DEMO_27_SECONDS.md). Publication and team licensing remain subject to the listed confirmations. The built launch screen links to credits, AI assistance and bundled software notices.
+
 For presentation drafts and remaining release gates, see [SUBMISSION_KIT.md](SUBMISSION_KIT.md). Current development state and verification limits are in [CODEX_HANDOFF.md](CODEX_HANDOFF.md).
 
 From the project directory, with Node.js 22 or later and npm installed:
@@ -52,7 +54,7 @@ npm run preview   # serve the production build locally
 - Fieldwork and console exercises prepare drafts. **Apply** records the selected phase's settings; discoveries do not rewrite earlier results. Rewinding copies the complete run, and editing one phase preserves other recorded phases. Sample bonuses are credited once, at the phase where their count is first applied.
 - **Share Replay URL** on the Flight Certificate includes both runs' complete scenario and per-phase settings. Version 2 links reproduce those inputs; older links show a warning because omitted preparations must use defaults. Callsigns are excluded.
 - Storm selections in the science deck preview a scenario. **Start new experiment with selected storm** clears A/B and starts with that peak; simply inspecting a different storm leaves the current experiment unchanged.
-- Use **EN · AZ** to switch languages. **Science & Sources** explains the datasets and assumptions behind the simulation.
+- Use **EN · AZ** to switch languages. Open **Science** (**Elm** in Azerbaijani) to explore the sunlight experiment, NASA/NOAA references, DONKI space-weather catalog, OSDR research, educational calculations and the optional 3D crater demonstration.
 
 ## Demo for judges
 
@@ -61,7 +63,7 @@ Use [JUDGE_DEMO.md](JUDGE_DEMO.md) for the timed three-minute rehearsal.
 1. Select **Start guided experiment** on the launch screen. Open **Compare lunar sites** and expand the planning exercise under Sunlight. At 35 kWh, the Shackleton study point covers its longest modeled shadow and Connecting Ridge C1 falls short despite higher average illumination. Close the panel and choose **Start the shadow test**.
 2. Ask a judge to choose **Keep drilling** or **Use backup fuel cells** for Run A. The banner shows the real result. Keeping the drill running during the modeled shadow leaves **19.9 kWh** at hour 120.
 3. Select **Rewind & try the other plan** to try the other strategy. Both runs reach hour 216 with just one choice changed. Backup fuel cells leave **43.9 kWh** at hour 120 and the crew finishes successfully, with fewer science points. Open **Decisions and downstream effects** or inspect the power and life-support graphs to discuss the trade-off.
-4. If time allows, record a prediction before choosing a plan; its feedback remains available below the comparison. Open **Science & Sources** and use **Trace the evidence** in the Sunlight planner to show which data was observed, what was derived, and what the exercise assumes.
+4. If time allows, record a prediction before choosing a plan; its feedback remains available below the comparison. Open **Science** (**Elm** in Azerbaijani) and use **Trace the evidence** in the Sunlight planner to show which data was observed, what was derived, and what the exercise assumes.
 
 Allow two to three minutes to talk through the planning exercise and mission comparison. **Load Demo Preset** opens the finished comparison directly.
 

@@ -439,27 +439,32 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
   );
 
   return (
-    <div className="rounded-xl border border-sky-400/35 bg-[#07131d] p-3.5 sm:p-4 shadow-inner">
+    <div className="rounded-xl border border-sky-400/35 bg-[#07131d] p-3 sm:p-3.5 shadow-inner">
       {/* Primary Opening Question & Action Prompt */}
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2.5">
         <div className="min-w-0 flex-1">
           <span className="inline-flex items-center gap-1.5 rounded border border-sky-400/35 bg-sky-500/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-200">
             {az
               ? 'GÜNƏŞ VƏ RELYEF TƏCRÜBƏSİ · SXEMATİK MODEL (NASA DEM DEYİL)'
               : 'SUNLIGHT & TERRAIN EXPERIMENT · ILLUSTRATIVE MODEL (NOT A NASA DEM)'}
           </span>
-          <h3 className="mt-1.5 flex items-start gap-2 text-base sm:text-lg font-bold leading-snug text-white">
-            <HelpCircle size={20} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
+          <h3 className="mt-1 flex items-start gap-2 text-sm sm:text-base font-bold leading-snug text-white">
+            <HelpCircle size={18} className="mt-0.5 shrink-0 text-amber-300" aria-hidden="true" />
             <span>
               {az
                 ? 'Günəş dağın arxasında gizlənib. Günəş panellərimizin daha çox işıq almasına kömək edə bilərsən?'
                 : 'The Sun is hiding behind a mountain. Can you help our solar panels receive more sunlight?'}
             </span>
           </h3>
-          <p className="mt-1 text-xs leading-relaxed text-slate-200">
+          <p className="mt-0.5 text-[11px] leading-snug text-slate-200">
             {az
-              ? 'Nə etməli: 1) Panelləri 128° dağ silsiləsinin üzərinə qaldırmaq üçün dirək hündürlüyünü 2 m-dən 10 m-ə keçir. 2) Hündürlüyün nə vaxt kömək etdiyini görmək üçün Günəş bucağı sürgüsünü (0°–360°) hərəkət etdir.'
-              : 'What to do: 1) Switch the mast from 2 m to 10 m to lift the panels over the mountain ridge at 128°. 2) Sweep the Sun angle slider (0°–360°) to see when height helps.'}
+              ? 'Nə öyrədir: 1.55° Günəş bucağında silsilələr uzun kölgə salır — paneli qaldırmaq (2 m → 10 m) kömək edir, hündür zirvədə isə batareya lazımdır.'
+              : 'What this teaches: At 1.55° Sun elevation, crater ridges cast long shadows — raising panels (2 m → 10 m) helps until taller peaks need battery reserves.'}
+          </p>
+          <p className="mt-0.5 text-[11px] leading-snug text-sky-100">
+            {az
+              ? 'Necə sınamalı: 1) Aşağıda 2 m və ya 10 m seçin. 2) 360° Günəş sürgüsünü (və ya Günəşi fırlat) hərəkət etdirin.'
+              : 'How to try: 1) Pick 2 m or 10 m below. 2) Drag the 360° Sun slider (or click Animate Sun) across the ridges.'}
           </p>
         </div>
 
@@ -636,7 +641,7 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
           <circle cx={sunX} cy={sunY} r="44" fill={`url(#${uid}-glow)`} />
           <circle cx={sunX} cy={sunY} r="17" fill="#fef08a" stroke="#facc15" strokeWidth="1.5" />
           <text x={sunX} y={sunY - 26} textAnchor="middle" fill="#fde047" fontSize="10" fontFamily="monospace" fontWeight="bold">
-            1.55° SUN
+            {az ? '1.55° GÜNƏŞ' : '1.55° SUN'}
           </text>
 
           {/* Ghost 10m vs 2m comparison ray (dashed) */}
@@ -812,13 +817,21 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
             className="mt-1.5 w-full accent-amber-300"
           />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={az ? 'Sxematik nöqtələr' : 'Illustrative test points'}>
+          <span className="text-[11px] font-medium text-slate-300">
+            {az ? 'Sxematik nöqtə:' : 'Test point:'}
+          </span>
           {(['S', 'C1'] as const).map((id) => (
             <button
               key={id}
               type="button"
               aria-pressed={activeSite === id}
               onClick={() => setActiveSite(id)}
+              title={
+                az
+                  ? `Sxematik krater kənarı nöqtəsi ${id} (NASA koordinatı deyil)`
+                  : `Illustrative crater-rim test point ${id} (not a NASA study coordinate)`
+              }
               className={`rounded-lg border px-2.5 py-1.5 font-mono text-xs font-semibold ${
                 activeSite === id
                   ? 'border-sky-300 bg-sky-500/25 text-white'
@@ -873,16 +886,18 @@ export function Shackleton3DHologram({ compact = false, active = true }: { compa
           type="button"
           aria-expanded={show3DScene}
           onClick={() => setShow3DScene((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-sky-400/35 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-500/20"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-sky-400/35 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-500/20"
         >
-          <Box size={14} className="text-sky-300" />
+          <Box size={14} className="text-sky-300" aria-hidden="true" />
           {show3DScene
-            ? az ? '3D Krater Relyefini Gizlət' : 'Hide 3D Crater Relief'
-            : az ? '3D Krater Relyefini Araşdır (İstəyə bağlı)' : 'Explore 3D Crater Relief (Optional)'}
+            ? az ? 'İstəyə bağlı 3D Krater Nümayişini Bağla' : 'Hide Optional 3D Crater Demonstration'
+            : az ? 'İstəyə bağlı 3D Krater Nümayişini Aç' : 'Open Optional 3D Crater Demonstration'}
         </button>
-        <span className="text-[11px] text-slate-400">
-          {az ? 'Bədii 3D baxış · ayrıca prosedural relyef' : 'Optional 3D relief viewer · illustrative surface'}
-        </span>
+        <p className="min-w-0 flex-1 text-[11px] leading-snug text-slate-300">
+          {az
+            ? 'İstəyə bağlı 3D vizualizasiya: Cənub qütbü krater kənarı, 2 m / 10 m günəş dirəyi, baza günbəzi və soyuq tələ dibinin prosedural 3D modelini fırladın (sxematik təlim təsviridir, NASA yüksəklik xəritəsi deyil).'
+            : 'Optional 3D visualization: Orbit a procedural 3D model of the south-polar crater rim, 2 m / 10 m solar mast, habitat dome, and cold-trap floor (illustrative teaching art, not a NASA elevation dataset).'}
+        </p>
       </div>
 
       {show3DScene && (

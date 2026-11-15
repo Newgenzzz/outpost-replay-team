@@ -247,7 +247,10 @@ export const STRINGS = {
 
   // Championship Tools & Modals
   judgeTourButton: { en: 'Guided Demo', az: 'Bələdçili Demo' },
-  sensorDeckButton: { en: 'Science & Sources', az: 'Elm və mənbələr' },
+  sensorDeckButton: {
+    en: 'Science & Sources: Sunlight experiment, NASA data, DONKI, OSDR, calculations & optional 3D view',
+    az: 'Elm və Mənbələr: Günəş təcrübəsi, NASA məlumatları, DONKI, OSDR, hesablamalar və istəyə bağlı 3D',
+  },
   exportCertificateButton: { en: 'Flight Certificate', az: 'Uçuş Sertifikatı' },
   achievementsButton: { en: 'Honors & Badges', az: 'Medallar və Nailiyyətlər' },
   samplesButton: { en: 'Field Samples', az: 'Sahə Nümunələri' },

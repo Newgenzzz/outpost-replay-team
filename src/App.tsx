@@ -1238,7 +1238,7 @@ export default function App() {
             <span>{lang === 'az' ? 'Münsif Demo' : 'Judge Demo'}</span>
           </button>
 
-          {/* Procedural 3D teaching scene, published references and DONKI catalog */}
+          {/* Science section: sunlight experiment, NASA references, DONKI, OSDR, calculations & optional 3D */}
           <button
             type="button"
             className="text-button text-button--sensor"
@@ -1249,8 +1249,8 @@ export default function App() {
             }}
             title={t('sensorDeckButton')}
           >
-            <Activity size={13} className="text-cyan-300" />
-            <span>{lang === 'az' ? 'Elm / 3D' : 'Science / 3D'}</span>
+            <Activity size={13} className="text-cyan-300" aria-hidden="true" />
+            <span>{lang === 'az' ? 'Elm' : 'Science'}</span>
           </button>
 
           {/* Rewind & Counterfactual Comparison Lab [R] */}
@@ -1827,18 +1827,19 @@ export default function App() {
                 closeAllModals();
                 setSensorDeckOpen(true);
               }}
-              className="mt-2 flex w-full items-center justify-between rounded-lg border border-cyan-400/35 bg-cyan-950/45 px-2.5 py-1.5 text-left text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-300/65 hover:bg-cyan-900/55"
+              title={t('sensorDeckButton')}
+              className="mt-2 flex w-full items-center justify-between gap-2 rounded-lg border border-cyan-400/35 bg-cyan-950/45 px-2.5 py-1.5 text-left text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-300/65 hover:bg-cyan-900/55"
             >
               <span className="inline-flex items-center gap-1.5">
-                <Orbit size={13} className="shrink-0 text-cyan-300" />
+                <Orbit size={13} className="shrink-0 text-cyan-300" aria-hidden="true" />
                 <span>
                   {lang === 'az'
-                    ? 'Günəş Dağ Arxasında · 2m/10m'
-                    : 'Sun Behind Mountain · 2m vs 10m'}
+                    ? 'Elm · Günəş Təcrübəsi (2m və 10m)'
+                    : 'Science · Sunlight Experiment (2m vs 10m)'}
                 </span>
               </span>
-              <span className="rounded border border-cyan-300/35 bg-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-200">
-                2D/3D LAB
+              <span className="shrink-0 rounded border border-cyan-300/35 bg-cyan-400/20 px-1.5 py-0.5 font-mono text-[9px] text-cyan-200">
+                {lang === 'az' ? 'ELM' : 'SCIENCE'}
               </span>
             </button>
 
@@ -2002,8 +2003,8 @@ export default function App() {
             className="sightline-mini-card hidden lg:flex"
             title={
               lang === 'az'
-                ? 'Dağ üfüqü və 2m/10m günəş sınağını açın'
-                : 'Open mountain horizon & 2m vs 10m sunlight lab'
+                ? 'Elm bölməsini açın: Günəş təcrübəsi (2m və 10m), NASA məlumatları və istəyə bağlı 3D krater'
+                : 'Open Science: Sunlight experiment (2m vs 10m), NASA data & optional 3D crater'
             }
           >
             <div className="sightline-mini-header">
@@ -2066,8 +2067,8 @@ export default function App() {
             <div className="sightline-mini-footer">
               <span>
                 {lang === 'az'
-                  ? '2m və 10m günəş sınağı'
-                  : 'Test 2m vs 10m sunlight lab'}
+                  ? 'Elm: 2m və 10m günəş təcrübəsi'
+                  : 'Science: 2m vs 10m sunlight lab'}
               </span>
               <span className="font-mono text-cyan-300">→</span>
             </div>

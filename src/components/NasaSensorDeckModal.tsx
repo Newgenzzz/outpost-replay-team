@@ -55,11 +55,36 @@ interface NasaSensorDeckModalProps {
 }
 
 const TABS = [
-  { id: 'lola', icon: SunDim, label: { en: 'Sunlight Lab', az: 'Günəş Sınağı' } },
-  { id: 'diviner', icon: Snowflake, label: { en: 'Diviner Temp', az: 'Diviner Temp' } },
-  { id: 'lcross', icon: Droplet, label: { en: 'LCROSS Ice', az: 'LCROSS Buzu' } },
-  { id: 'donki', icon: Zap, label: { en: 'DONKI & Radiation', az: 'DONKI və Radiasiya' } },
-  { id: 'bvad', icon: HeartPulse, label: { en: 'BVAD & OSDR', az: 'BVAD və OSDR' } },
+  {
+    id: 'lola',
+    icon: SunDim,
+    label: { en: 'Sunlight Experiment', az: 'Günəş Təcrübəsi' },
+    sub: { en: '2m/10m · LOLA calc · Optional 3D', az: '2m/10m · LOLA hesabı · İstəyə bağlı 3D' },
+  },
+  {
+    id: 'diviner',
+    icon: Snowflake,
+    label: { en: 'Cold Traps (Diviner)', az: 'Soyuq Tələlər (Diviner)' },
+    sub: { en: 'NASA temperature & heaters', az: 'NASA temperaturu və qızdırıcı' },
+  },
+  {
+    id: 'lcross',
+    icon: Droplet,
+    label: { en: 'Water Ice (LCROSS)', az: 'Su Buzu (LCROSS)' },
+    sub: { en: 'Cabeus ice data & water calc', az: 'Kabeus buzu və su hesabı' },
+  },
+  {
+    id: 'donki',
+    icon: Zap,
+    label: { en: 'DONKI Space Weather', az: 'DONKI Kosmik Hava' },
+    sub: { en: 'Flares, GOES peak & shielding', az: 'Alışmalar, GOES piki və qalxan' },
+  },
+  {
+    id: 'bvad',
+    icon: HeartPulse,
+    label: { en: 'OSDR Plants & Crew', az: 'OSDR Bitki və Ekipaj' },
+    sub: { en: 'ISS lettuce & BVAD O₂/H₂O', az: 'BKS kahısı və BVAD O₂/H₂O' },
+  },
 ] as const;
 
 const tooltipStyle = {
@@ -176,37 +201,50 @@ export function NasaSensorDeckModal({
       }}
     >
       <div className="relative max-h-[93dvh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-sky-400/35 bg-[#10202b] p-4 shadow-2xl scrollbar-thin sm:p-6">
-        <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3.5">
-          <div>
+        <header className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-3.5">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[#c0e6aa]">
               <Database size={15} aria-hidden="true" />
               {az ? 'MÜŞAHİDƏ · NƏŞR EDİLMİŞ MODEL · TƏLİM FƏRZİYYƏSİ' : 'OBSERVATION · PUBLISHED MODEL · TRAINING ASSUMPTION'}
             </div>
             <h2 id="science-deck-title" className="mt-1 text-lg sm:text-xl font-semibold text-white">{title}</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-300">
+              {az
+                ? 'Buraya daxildir: (1) İnteraktiv günəş təcrübəsi və istəyə bağlı 3D krater nümayişi, (2) NASA soyuq tələ və su buzu məlumatları, (3) DONKI kosmik havası, (4) OSDR bitki və ekipaj tədqiqatı, (5) təlim hesablamaları.'
+                : 'Includes: (1) Interactive sunlight experiment & optional 3D crater demo, (2) NASA cold-trap & water-ice data, (3) DONKI space weather, (4) OSDR plant & crew research, and (5) educational calculations.'}
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10"
           >
             <X size={15} aria-hidden="true" /> {t('close')}
           </button>
         </header>
 
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {TABS.map(({ id, icon: Icon, label }) => (
+        <div
+          className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5"
+          role="group"
+          aria-label={az ? 'Elm bölmələri' : 'Science activities'}
+        >
+          {TABS.map(({ id, icon: Icon, label, sub }) => (
             <button
               key={id}
               type="button"
               aria-pressed={activeTab === id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition ${
+              className={`flex flex-col items-start gap-0.5 rounded-lg border px-2.5 py-2 text-left text-xs transition ${
                 activeTab === id
                   ? 'border-[#c0e6aa] bg-[#214237] text-white'
                   : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
               }`}
             >
-              <Icon size={14} aria-hidden="true" /> {tr(label)}
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Icon size={14} className="shrink-0" aria-hidden="true" />
+                <span>{tr(label)}</span>
+              </span>
+              <span className="text-[10px] leading-snug opacity-80">{tr(sub)}</span>
             </button>
           ))}
         </div>
@@ -220,7 +258,10 @@ export function NasaSensorDeckModal({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <section className="rounded-xl border border-emerald-400/25 bg-emerald-400/5 p-4">
-            <h3 className="text-sm font-semibold text-emerald-200">{references.title}</h3>
+            <span className="inline-block rounded border border-emerald-300/35 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider text-emerald-200">
+              {az ? 'NASA VƏ NƏŞR EDİLMİŞ ELM · REAL MƏNBƏLƏR' : 'NASA & PUBLISHED SCIENCE · REAL REFERENCES'}
+            </span>
+            <h3 className="mt-1.5 text-sm font-semibold text-emerald-200">{references.title}</h3>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-200">{references.body}</p>
             <ul className="mt-3 space-y-1">
               {references.sources.map((source) => (
@@ -238,7 +279,12 @@ export function NasaSensorDeckModal({
             </ul>
           </section>
           <section className="rounded-xl border border-amber-400/25 bg-amber-400/5 p-4">
-            <h3 className="text-sm font-semibold text-amber-200">{az ? 'Təlim modeli' : 'Training model'}</h3>
+            <span className="inline-block rounded border border-amber-300/35 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[9.5px] font-bold uppercase tracking-wider text-amber-200">
+              {az ? 'TƏLİM FƏRZİYYƏLƏRİ · UYDURMA OYUN MODELİ' : 'EDUCATIONAL ASSUMPTIONS · FICTIONAL GAME MODEL'}
+            </span>
+            <h3 className="mt-1.5 text-sm font-semibold text-amber-200">
+              {az ? 'Təlim simulyasiyası bundan necə istifadə edir' : 'How the training simulation uses this'}
+            </h3>
             <p className="mt-1.5 text-xs leading-relaxed text-slate-200">{model}</p>
           </section>
         </div>

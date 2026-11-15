@@ -77,7 +77,7 @@ Facility readouts visualize the selected simulation snapshot. The shade layer fo
 
 The optional ridge investigation reuses the fictional Laser Altimetry Marker and its existing field-point award. Logging it on the map unlocks a question about local terrain, the visible horizon, and illumination. It collects no real altimetry or solar measurement. The explanation links to the existing NASA LOLA reference and the Sunlight planner. The planner's **Trace the evidence** controls distinguish laser return-time measurements from the research illumination models and the exercise's own load, storage, and lighting assumptions.
 
-Open **Science & Sources** in the game to see how the published values relate to the scenario. The end-of-mission Evidence panel lists the training equations and source links. The code separates the power budget, resource ledger, and deterministic mission calculation under `src/engine/`.
+Open **Science** (**Elm** in Azerbaijani) in the game to see how the published values relate to the scenario. The end-of-mission Evidence panel lists the training equations and source links. The code separates the power budget, resource ledger, and deterministic mission calculation under `src/engine/`.
 
 ## M3 engineering accounting clarification
 

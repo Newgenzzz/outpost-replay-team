@@ -22,10 +22,12 @@ export default function LunarSiteIntelligence({ hide3D = false }: { hide3D?: boo
   const { panelHeightMeters, startYear, endYear, url } = LUNAR_SITE_SOURCE;
 
   return (
-    <details className="rounded-lg border border-sky-400/25 bg-sky-950/35 px-3 py-2">
+    <details open={hide3D || undefined} className="rounded-lg border border-sky-400/25 bg-sky-950/35 px-3 py-2">
       <summary className="cursor-pointer text-xs font-semibold text-sky-200">
         <Sun className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-        {az ? 'Ay məkanlarının təhlili · Günəş enerjisi planı' : 'Lunar Site Intelligence · Solar power planning'}
+        {az
+          ? 'Təlim Hesablaması · Ay Məkanları üzrə Batareya Planlayıcısı (NASA LOLA Tədqiqatı və Təlim Yükü)'
+          : 'Educational Calculation · Lunar Site Battery Planner (NASA LOLA Research vs. Training Load)'}
       </summary>
 
       <div className="mt-3 space-y-3 text-xs text-slate-300">

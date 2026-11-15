@@ -176,6 +176,9 @@ export function MissionLaunchScreen({
             {az
               ? 'Şeklton yaxınlığında uydurma təlim bazası. Missiyanın şəraiti və doza hesabları təlim modelləridir, bu bazada aparılmış NASA ölçmələri deyil.'
               : 'Fictional training near Shackleton. Mission conditions and dose estimates are educational models, not NASA measurements at this outpost.'}
+            {' '}<a href="./credits.html" target="_blank" rel="noreferrer" className="text-sky-200 underline underline-offset-2">
+              {az ? 'Kreditlər və AI istifadəsi (EN)' : 'Credits & AI assistance'}
+            </a>
           </p>
 
           {/* Callsign + Dual-Layer Mode Picker */}
@@ -321,8 +324,8 @@ export function MissionLaunchScreen({
             >
               🛰️{' '}
               {az
-                ? 'Günəş Dağ Arxasında (2m/10m) və NASA Arxivləri →'
-                : 'Sun Behind Mountain (2m vs 10m) & NASA Archives →'}
+                ? 'Elm: Günəş Təcrübəsi (2m/10m), NASA Məlumatları və İstəyə Bağlı 3D →'
+                : 'Science: Sunlight Experiment (2m vs 10m), NASA Data & Optional 3D →'}
             </button>
 
             <button
