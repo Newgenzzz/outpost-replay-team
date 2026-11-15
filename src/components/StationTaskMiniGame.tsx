@@ -47,7 +47,7 @@ export default function StationTaskMiniGame({
   // D6: Ka-Band Earth Dish Frequency Slider (target 68)
   const [dishFreq, setDishFreq] = useState(26);
 
-  // Auto-credit D4 calibration if player already mined >= 1 crystal in the world with Lunar Car!
+  // A field core also unlocks D4 extractor preparation.
   useEffect(() => {
     if (step === 4 && minedCount > 0 && !completed) {
       onComplete(4);
@@ -81,7 +81,9 @@ export default function StationTaskMiniGame({
         {completed ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-200">
             <CheckCircle2 size={12} />
-            {lang === 'az' ? 'KALİBRLƏNDİ ✓' : 'CALIBRATED ✓'}
+            {step === 4
+              ? lang === 'az' ? 'HAZIRLANDI ✓' : 'PREPARED ✓'
+              : lang === 'az' ? 'KALİBRLƏNDİ ✓' : 'CALIBRATED ✓'}
           </span>
         ) : (
           <span className="font-mono text-[10px] text-amber-200/90">
@@ -300,8 +302,8 @@ export default function StationTaskMiniGame({
             </strong>
             <p className="mt-0.5 text-[11px] text-slate-400">
               {lang === 'az'
-                ? `Çöldə qazılan kristallar: ${minedCount}/5 — və ya konsoldan 3 lazer impulsu vurun.`
-                : `Surface crystals mined with Car: ${minedCount}/5 — or fire 3 thermal pulses here.`}
+                ? 'Qurğunu hazırlamaq üçün sahədən bir buz nüvəsi toplayın və ya konsolda üç lazer impulsu verin.'
+                : 'Collect one field core or fire three laser pulses here to prepare the extractor.'}
             </p>
           </div>
           <div className="flex items-center gap-2.5">

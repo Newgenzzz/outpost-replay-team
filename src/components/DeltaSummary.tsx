@@ -27,7 +27,8 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
   const showWaterYield = fmt(waterA, 2) !== fmt(waterB, 2);
   const waterUnit = lang === 'az' ? 'kq' : 'kg';
   const phaseUnit = showWaterYield ? waterUnit : t('unitKwh');
-  const finalWaterDelta = Math.round((b.resources.waterKg - a.resources.waterKg) * 100) / 100;
+  const waterDifference = b.resources.waterKg - a.resources.waterKg;
+  const finalWaterDelta = Math.sign(waterDifference) * Math.round(Math.abs(waterDifference) * 100) / 100;
 
   const stepLabel = (s: number | null) => (s === null ? t('never') : t('atStep', { step: s }));
 

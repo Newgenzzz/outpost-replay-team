@@ -31,8 +31,8 @@ npm run preview   # serve the production build locally
 ## Demo for judges
 
 1. Select **Guided Demo**. Open **Compare lunar sites** and expand the planning exercise under Sunlight. At 35 kWh, the Shackleton study point covers its longest modeled shadow and Connecting Ridge C1 falls short despite higher average illumination. Close the panel and apply the fictional mission’s starting plan.
-2. Select **Simulate Run A**. Show how running the drilling operation during the modeled shadow drops the battery to **19.9 kWh** by hour 120.
-3. Select **Rewind D3 and compare**. Both runs reach hour 216, and only the shadow decision changes. Backup fuel cells bring the hour-120 battery to **43.9 kWh** and turn mission warnings into success. Point out the cost in science return, then open **Decisions and downstream effects** or inspect the power and life-support graphs.
+2. Ask a judge to choose **Keep drilling** or **Use backup fuel cells** for Run A. The banner shows the real result. Keeping the drill running during the modeled shadow leaves **19.9 kWh** at hour 120.
+3. Select **Rewind D3 and compare** to try the other strategy. Both runs reach hour 216 with just one choice changed. Backup fuel cells leave **43.9 kWh** at hour 120 and the crew finishes successfully, with fewer science points. Open **Decisions and downstream effects** or inspect the power and life-support graphs to discuss the trade-off.
 4. If time allows, open **Science & Sources** and show which data was observed, what was derived, and what the exercise assumes.
 
 Allow two to three minutes to talk through the planning exercise and mission comparison. **Load Demo Preset** opens the finished comparison directly.

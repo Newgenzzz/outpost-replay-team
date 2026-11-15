@@ -26,6 +26,7 @@ import {
   SEP_STORM_DOSE_UNSHIELDED_MSV,
   TALL_MAST_SHADOW_OUTPUT_FACTOR,
 } from '../data/nasaTelemetry';
+import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import LunarSiteIntelligence from './LunarSiteIntelligence';
 
 interface NasaSensorDeckModalProps {
@@ -130,8 +131,8 @@ export function NasaSensorDeckModal({ onClose }: NasaSensorDeckModalProps) {
       ? `Uydurma baza səthi kölgədə ${LRO_SHADOW.minSurfaceTempK} K-ə (təxminən ${LRO_SHADOW.minSurfaceTempC} °C) qədər soyuyur. Model bunu qızdırıcının enerji tələbini artırmaq üçün istifadə edir.`
       : `The simulated outpost surface cools to ${LRO_SHADOW.minSurfaceTempK} K (about ${LRO_SHADOW.minSurfaceTempC} °C) in shadow. Colder surface conditions increase heater demand in the model.`,
     lcross: az
-      ? 'Təlimdə Kabeus göstəricisi ssenaridəki buzlu qrunt nümunəsinə tətbiq edilir. Çıxarılan suyun miqdarı emal edilən kütlədən, buz payından və emalın səmərəliliyindən asılıdır.'
-      : 'The exercise applies the Cabeus estimate to a fictional batch of icy soil. Water yield depends on how much material is processed, its ice fraction, and the recovery efficiency.',
+      ? `Təlimdə Kabeus göstəricisi uydurma buzlu qrunt nümunəsinə tətbiq edilir. Suyun çıxarılması üçün qəbul edilən səmərəlilik standart qurğuda ${ICE_TREATMENT_RECOVERY.standard * 100}%, hazırlanmış qurğuda ${ICE_TREATMENT_RECOVERY.prepared * 100}%-dir. Qurğuya verilən enerji azaldıqda çıxarılan su da azalır.`
+      : `The exercise applies the Cabeus estimate to a fictional batch of icy soil. Assumed recovery is ${ICE_TREATMENT_RECOVERY.standard * 100}% with the standard extractor and ${ICE_TREATMENT_RECOVERY.prepared * 100}% with the prepared extractor. Yield falls if the extractor receives less power.`,
     donki: az
       ? `Ay üçün 48 saatlıq uydurma fırtına Yer yaxınlığında ölçülmüş pik dəyərindən istifadə edir. ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ təlim əmsalı ilə tam məruzqalma təxminən ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv hesablanır (fon xaric). Modeldə dozanın keçən payı skafandr üçün ${SHIELDING.evaSuit * 100}%, yaşayış modulu üçün ${SHIELDING.habitat * 100}%, su divarı üçün ${SHIELDING.waterWall * 100}%, reqolit səddi üçün ${SHIELDING.regolithBerm * 100}%-dir. Həqiqi dozanı proqnozlaşdırmaq üçün zərrəciklərin spektri və radiasiyanın materialda yayılması hesablanmalıdır.`
       : `The fictional 48-hour lunar storm borrows the observed near-Earth peak. Its classroom scale of ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹ gives about ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv for full exposure before background. Assumed transmission is ${SHIELDING.evaSuit * 100}% in a suit, ${SHIELDING.habitat * 100}% in the habitat, ${SHIELDING.waterWall * 100}% behind a water wall, and ${SHIELDING.regolithBerm * 100}% behind a berm. Predicting real crew dose requires particle spectra and radiation transport through the actual shielding.`,
@@ -167,7 +168,6 @@ export function NasaSensorDeckModal({ onClose }: NasaSensorDeckModalProps) {
           </div>
           <button
             type="button"
-            autoFocus
             onClick={onClose}
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-slate-200 hover:bg-white/10"
           >

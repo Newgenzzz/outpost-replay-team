@@ -63,7 +63,7 @@ export interface Choice {
   setsFlags?: FlagId[];
   conditionals?: ConditionalEffect[];
   causeAndEffectExplanation: Bilingual;
-  nasaSourceCitation: string;
+  nasaSourceCitation: Bilingual;
   copilotRecommendation?: boolean;
   copilotBadge?: Bilingual;
   copilotTip?: Bilingual;
