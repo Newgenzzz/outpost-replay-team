@@ -108,7 +108,7 @@ export const STRINGS = {
   deltaTitle: { en: 'Why the outcome changed', az: 'Nəticə niyə dəyişdi' },
   deltaSameOutcome: { en: 'What changed between runs', az: 'Gedişlər arasında nə dəyişdi' },
   deltaFinal: { en: 'Final Δ (B − A)', az: 'Yekun Δ (B − A)' },
-  noDifference: { en: 'Run B is identical to Run A — pick a different option on any step.', az: 'B Gedişi A Gedişi ilə eynidir — istənilən addımda fərqli seçim edin.' },
+  noDifference: { en: 'Run B matches Run A. Open a decision below, change one option or preparation setting, then Apply to compare the results.', az: 'B gedişi A gedişi ilə eynidir. Aşağıdan qərar açın, bir variantı və ya hazırlıq parametrini dəyişin, sonra nəticələri müqayisə etmək üçün Tətbiq et düyməsini basın.' },
   reasonChoice: { en: 'Decision {step}: “{from}” → “{to}”', az: '{step}-ci qərar: “{from}” → “{to}”' },
   reasonRuleAvoided: { en: 'Step {step}: Run B avoided — {rule}', az: '{step}-ci addım: B Gedişi qaçdı — {rule}' },
   reasonRuleTriggered: { en: 'Step {step}: Run B triggered — {rule}', az: '{step}-ci addım: B Gedişində baş verdi — {rule}' },
@@ -188,7 +188,7 @@ export const STRINGS = {
     az: '4 İnteraktiv Nöqtə: Klikləyin [1] Günəş Zirvəsi · [2] Yaşayış Günbəzi · [3] Krater Roveri · [4] Fırtına Sığınacağı',
   },
   howItWorksMoon: { en: 'How It Works on the Moon', az: 'Ayda Necə İşləyir' },
-  realNasaMeasurement: { en: 'Real NASA Physical Measurement', az: 'Real NASA Fiziki Ölçməsi' },
+  realNasaMeasurement: { en: 'Published scientific reference', az: 'Nəşr edilmiş elmi mənbə' },
   whyItMattersSurvival: { en: 'Why It Matters for Astronaut Survival', az: 'Astronavtların Sağ Qalması Üçün Niyə Vacibdir' },
 
   // Badges & Classroom Tour Bar
@@ -217,10 +217,10 @@ export const STRINGS = {
   ruleWarningHazard: { en: 'Flight Rule Hazard Triggered', az: 'Uçuş Qaydası Təhlükəsi Yarandı' },
 
   // Live NASA Surface Physics HUD
-  livePhysicsTitle: { en: 'Live NASA Surface Physics · Shackleton Rim', az: 'Canlı NASA Səth Fizikası · Şeklton Kənarı' },
-  lolaSunLabel: { en: 'LOLA Solar Elevation', az: 'LOLA Günəş Bucağı' },
-  divinerTempLabel: { en: 'Diviner Temp', az: 'Diviner Temperaturu' },
-  donkiFluxLabel: { en: 'DONKI Proton Flux', az: 'DONKI Proton Axını' },
+  livePhysicsTitle: { en: 'Simulated conditions · Shackleton rim', az: 'Model şəraiti · Şeklton kənarı' },
+  lolaSunLabel: { en: 'Scenario sunlight', az: 'Ssenari işıqlanması' },
+  divinerTempLabel: { en: 'Scenario temperature', az: 'Ssenari temperaturu' },
+  donkiFluxLabel: { en: 'Training proton flux', az: 'Təlim proton axını' },
   crewMassBalanceLabel: { en: 'Crew Consumables', az: 'Ekipaj Sərfi' },
 
   // Quick Guided Onboarding
@@ -247,7 +247,10 @@ export const STRINGS = {
 
   // Championship Tools & Modals
   judgeTourButton: { en: 'Guided Demo', az: 'Bələdçili Demo' },
-  sensorDeckButton: { en: 'Science & Sources', az: 'Elm və mənbələr' },
+  sensorDeckButton: {
+    en: 'Science & Sources: Sunlight experiment, NASA data, DONKI, OSDR, calculations & optional 3D view',
+    az: 'Elm və Mənbələr: Günəş təcrübəsi, NASA məlumatları, DONKI, OSDR, hesablamalar və istəyə bağlı 3D',
+  },
   exportCertificateButton: { en: 'Flight Certificate', az: 'Uçuş Sertifikatı' },
   achievementsButton: { en: 'Honors & Badges', az: 'Medallar və Nailiyyətlər' },
   samplesButton: { en: 'Field Samples', az: 'Sahə Nümunələri' },

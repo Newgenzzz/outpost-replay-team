@@ -6,34 +6,48 @@ import {
   Bot,
   CheckCircle2,
   FlaskConical,
+  GraduationCap,
   HeartPulse,
   HelpCircle,
   Info,
   Radio,
+  Rocket,
   Satellite,
   ShieldAlert,
+  Snowflake,
+  Sparkles,
   SunDim,
   Volume2,
+  Wrench,
   Zap,
 } from 'lucide-react';
 import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
-import { CITATIONS, GAME_CONSTANTS, RADIATION_LIMITS } from '../data/nasaTelemetry';
+import {
+  CITATIONS,
+  DOSE_COEFF_MSV_PER_HR_PER_PFU,
+  GAME_CONSTANTS,
+  MAY_2024_PROTON_EVENT,
+  RADIATION_LIMITS,
+  SHIELDING,
+} from '../data/nasaTelemetry';
 import { soundFX } from '../utils/soundEffects';
 import {
   METRIC_KEYS,
   RULE_LABELS,
   previewChoiceEffects,
-  runSimulation,
+  runExperiment,
   type StepRecord,
 } from '../engine/simulation';
-import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings } from '../types';
+import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings, TrainingMode } from '../types';
 import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 import { ShadowPredictionInput } from './ShadowPrediction';
+import { ABORT_CAUSES } from './MissionResults';
 import type { ShadowPrediction, ShadowStrategy } from '../engine/shadowPrediction';
+import { applyRunChoice, type RunInput } from '../engine/runInput';
 
 const CREW_ADVISORY: Record<number, { speaker: Bilingual; tip: Bilingual }> = {
   1: {
@@ -80,6 +94,151 @@ const CREW_ADVISORY: Record<number, { speaker: Bilingual; tip: Bilingual }> = {
   },
 };
 
+const STATION_BONUS_META: Record<
+  number,
+  { title: Bilingual; badge: Bilingual; detail: Bilingual }
+> = {
+  1: {
+    title: {
+      en: 'Hands-On Station Task · Solar Mast Pointing Lock',
+      az: 'Praktiki Stansiya Tapşırığı · Günəş Dirəyi Yönəltmə Kilidi',
+    },
+    badge: {
+      en: `≤${CALIBRATED_INCIDENCE_LIMIT_DEG}° Sun Lock`,
+      az: `≤${CALIBRATED_INCIDENCE_LIMIT_DEG}° Günəş Kilidi`,
+    },
+    detail: {
+      en: `Caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° to boost harvested solar power across the mission.`,
+      az: `Missiya boyu daha çox günəş enerjisi toplamaq üçün panelin yönəlmə xətasını ${CALIBRATED_INCIDENCE_LIMIT_DEG}° həddində saxlayır.`,
+    },
+  },
+  2: {
+    title: {
+      en: 'Hands-On Station Task · ECLSS Water Loop Seal',
+      az: 'Praktiki Stansiya Tapşırığı · Həyat Təminatı Su Dövrü Kipləşdirməsi',
+    },
+    badge: {
+      en: '+4 pp H₂O Recovery',
+      az: '+4 faiz b. H₂O Bərpası',
+    },
+    detail: {
+      en: 'Adds 4 percentage points to water recovery during D2, except during an outage. This is a classroom bonus, separate from NASA’s 98% ISS demonstration.',
+      az: 'Enerji kəsintisi olmadıqda D2-də su bərpasını 4 faiz bəndi artırır. Bu təlim bonusu NASA-nın BKS-dəki 98% nümayişindən ayrıdır.',
+    },
+  },
+  3: {
+    title: {
+      en: 'Hands-On Station Task · HVDC Feeder Patch',
+      az: 'Praktiki Stansiya Tapşırığı · Yüksək Gərginlikli Şin Birləşməsi',
+    },
+    badge: {
+      en: '+1.8 kWh Saved',
+      az: '+1.8 kVt·s Qənaət',
+    },
+    detail: {
+      en: 'Bypasses resistive feeder losses during the 72-hour crater shadow, saving 1.8 kWh of battery reserve.',
+      az: '72 saatlıq krater kölgəsi zamanı naqil itkilərini azaldaraq 1.8 kVt·saat batareya ehtiyatına qənaət edir.',
+    },
+  },
+  4: {
+    title: {
+      en: 'Hands-On Station Task · Cryo-Extractor Pre-Heat',
+      az: 'Praktiki Stansiya Tapşırığı · Buz Emal Qurğusunun Hazırlığı',
+    },
+    badge: {
+      en: `${ICE_TREATMENT_RECOVERY.standard * 100}% → ${ICE_TREATMENT_RECOVERY.prepared * 100}% Ice Yield`,
+      az: `${ICE_TREATMENT_RECOVERY.standard * 100}% → ${ICE_TREATMENT_RECOVERY.prepared * 100}% Su Çıxımı`,
+    },
+    detail: {
+      en: `Raises clean water recovery from ${ICE_TREATMENT_RECOVERY.standard * 100}% to ${ICE_TREATMENT_RECOVERY.prepared * 100}% in Option A (plus +3 kg icy regolith feedstock per mined 90K basin core).`,
+      az: `A variantında təmiz su çıxımını ${ICE_TREATMENT_RECOVERY.standard * 100}%-dən ${ICE_TREATMENT_RECOVERY.prepared * 100}%-ə qaldırır (üstəlik qazılan hər 90K buz nümunəsi üçün +3 kq xammal).`,
+    },
+  },
+  5: {
+    title: {
+      en: 'Hands-On Station Task · Storm Bulkhead Clamp',
+      az: 'Praktiki Stansiya Tapşırığı · Fırtına Qapısı Germetik Kilidi',
+    },
+    badge: {
+      en: '−15% Storm Dose',
+      az: '−15% Fırtına Dozası',
+    },
+    detail: {
+      en: 'Assumes 15% less storm dose while sheltered. It does not reduce outside exposure or background dose; this is not a tested shielding measurement.',
+      az: 'Sığınacaqda fırtına dozasının 15% azalması fərz edilir. Çöldəki və fon dozası azalmır; bu, sınaqdan keçirilmiş qalxan ölçməsi deyil.',
+    },
+  },
+  6: {
+    title: {
+      en: 'Hands-On Station Task · Ka-Band Earth Dish Lock',
+      az: 'Praktiki Stansiya Tapşırığı · Ka-Diapazon Yer Antenası Kilidi',
+    },
+    badge: {
+      en: '+4 Science Pts',
+      az: '+4 Elm Xalı',
+    },
+    detail: {
+      en: 'Locks high-gain Earth telemetry alignment, adding +4 bonus science points on final downlink.',
+      az: 'Yüksək güclü Yer telemetriya xəttini dəqiq yönəldərək yekun ötürmədə +4 bonus elm xalı gətirir.',
+    },
+  },
+};
+
+function CrewAvatar({ step }: { step: number }) {
+  if (step === 4) {
+    // Stylized 2.5D Lunar Rover SVG
+    return (
+      <svg
+        viewBox="0 0 48 48"
+        aria-hidden="true"
+        className="h-11 w-11 shrink-0 rounded-xl border border-sky-400/50 bg-[#0c1a24] p-1"
+      >
+        <circle cx="24" cy="24" r="20" fill="#102636" />
+        <line x1="26" y1="20" x2="26" y2="10" stroke="#fde047" strokeWidth="2" />
+        <circle cx="26" cy="9" r="3" fill="#38bdf8" />
+        <polygon points="29,9 43,4 43,14" fill="#38bdf8" opacity="0.28" />
+        <rect x="11" y="20" width="24" height="10" rx="3" fill="#cbd5e1" stroke="#38bdf8" strokeWidth="1.2" />
+        <rect x="14" y="22" width="10" height="5" rx="1" fill="#0ea5e9" opacity="0.7" />
+        <circle cx="15" cy="33" r="4.5" fill="#1e293b" stroke="#94a3b8" strokeWidth="1.5" />
+        <circle cx="31" cy="33" r="4.5" fill="#1e293b" stroke="#94a3b8" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (step === 3 || step === 5 || step === 6) {
+    // Mission Control CapCom Dish & Waveform SVG
+    return (
+      <svg
+        viewBox="0 0 48 48"
+        aria-hidden="true"
+        className="h-11 w-11 shrink-0 rounded-xl border border-amber-400/45 bg-[#121e28] p-1"
+      >
+        <circle cx="24" cy="24" r="20" fill="#132330" />
+        <path d="M14 33 C14 23, 25 16, 33 16" fill="none" stroke="#c0e6aa" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="23" y1="24" x2="31" y2="15" stroke="#fde047" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="32" cy="14" r="2.6" fill="#fde047" />
+        <path d="M28 9 A10 10 0 0 1 39 20" fill="none" stroke="#38bdf8" strokeWidth="1.6" strokeLinecap="round" />
+        <rect x="18" y="33" width="12" height="4" rx="1.5" fill="#64748b" />
+      </svg>
+    );
+  }
+  // Artemis Astronaut Helmet (Eng. Leyla) SVG
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      aria-hidden="true"
+      className="h-11 w-11 shrink-0 rounded-xl border border-emerald-400/45 bg-[#0e2028] p-1"
+    >
+      <circle cx="24" cy="24" r="20" fill="#122934" />
+      <line x1="34" y1="15" x2="34" y2="8" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="34" cy="7.5" r="2" fill="#34d399" />
+      <rect x="12" y="12" width="24" height="24" rx="11" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="1.4" />
+      <rect x="15" y="16" width="18" height="13" rx="6" fill="#f59e0b" stroke="#fef08a" strokeWidth="1" />
+      <path d="M18 19 Q24 16 30 19" fill="none" stroke="#fef9c3" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+      <rect x="16" y="34" width="16" height="4" rx="2" fill="#38bdf8" opacity="0.8" />
+    </svg>
+  );
+}
+
 function DeltaChips({ delta, size = 'sm' }: { delta: MetricDelta; size?: 'sm' | 'xs' }) {
   const { t } = useI18n();
   const entries = METRIC_KEYS.filter((k) => (delta[k] ?? 0) !== 0);
@@ -108,14 +267,18 @@ function DeltaChips({ delta, size = 'sm' }: { delta: MetricDelta; size?: 'sm' | 
 interface DecisionCardProps {
   step: number;
   mode: 'baseline' | 'branch';
+  trainingMode?: TrainingMode;
+  onToggleTrainingMode?: () => void;
   choiceA: number | undefined;
   choiceB: number | undefined;
   record: StepRecord | undefined;
   flagsBefore: FlagId[];
-  priorChoices?: number[];
+  runInput: RunInput;
   canChoose: boolean;
   taskSettings: MissionTaskSettings;
   taskAvailable: boolean;
+  minedCount?: number;
+  collectedSamplesCount?: number;
   taskExercise?: ReactNode;
   shadowPrediction: ShadowPrediction | null;
   onChoose: (index: number, tasks: MissionTaskSettings, prediction: ShadowStrategy | null) => void;
@@ -127,42 +290,88 @@ export default function DecisionCard(props: DecisionCardProps) {
   const {
     step,
     mode,
+    trainingMode = 'cadet',
+    onToggleTrainingMode,
     choiceA,
     choiceB,
     record,
     flagsBefore,
-    priorChoices = [],
+    runInput,
     canChoose,
     taskSettings,
     taskAvailable,
+    minedCount,
+    collectedSamplesCount,
     taskExercise,
     onChoose,
     onPrev,
     onNext,
   } = props;
   const { lang, t, tr } = useI18n();
+  const isCadet = trainingMode === 'cadet';
   const [inspectedChoice, setInspectedChoice] = useState<number | null>(null);
   const [hypothesis, setHypothesis] = useState<'safe' | 'drain' | null>(null);
-  const [copilotEnabled, setCopilotEnabled] = useState(false);
+  const [copilotEnabled, setCopilotEnabled] = useState(isCadet);
   const [taskOverride, setTaskOverride] = useState<boolean | null>(null);
   const [shadowGuess, setShadowGuess] = useState<ShadowStrategy | null>(props.shadowPrediction?.expected ?? null);
-  const isSolar = step === 1;
-  const solarCalibrated = isSolar ? taskOverride ?? taskSettings.solarCalibrated : taskSettings.solarCalibrated;
-  const icePrepared = step === 4 ? taskOverride ?? taskSettings.icePrepared : taskSettings.icePrepared;
-  const taskEnabled = isSolar ? solarCalibrated : icePrepared;
+
+  const currentStepDefault =
+    step === 1
+      ? taskSettings.solarCalibrated
+      : step === 2
+        ? Boolean(taskSettings.eclssSealed)
+        : step === 3
+          ? Boolean(taskSettings.busPatched)
+          : step === 4
+            ? taskSettings.icePrepared
+            : step === 5
+              ? Boolean(taskSettings.stormClamped)
+              : Boolean(taskSettings.dishAligned);
+
+  const stepTaskEnabled = taskOverride ?? currentStepDefault;
+
+  const effectiveTasks: MissionTaskSettings = useMemo(
+    () => ({
+      ...taskSettings,
+      solarCalibrated: step === 1 ? stepTaskEnabled : taskSettings.solarCalibrated,
+      eclssSealed: step === 2 ? stepTaskEnabled : taskSettings.eclssSealed,
+      busPatched: step === 3 ? stepTaskEnabled : taskSettings.busPatched,
+      icePrepared: step === 4 ? stepTaskEnabled : taskSettings.icePrepared,
+      stormClamped: step === 5 ? stepTaskEnabled : taskSettings.stormClamped,
+      dishAligned: step === 6 ? stepTaskEnabled : taskSettings.dishAligned,
+      extraIceCores: minedCount ?? taskSettings.extraIceCores ?? 0,
+      fieldSamplesCount: collectedSamplesCount ?? taskSettings.fieldSamplesCount ?? 0,
+    }),
+    [taskSettings, step, stepTaskEnabled, minedCount, collectedSamplesCount],
+  );
 
   const decision = MISSION_DECISIONS[step - 1];
   const activeChoice = mode === 'branch' ? choiceB : choiceA;
   const trigger = decision.nasaDataTrigger;
   const advisory = CREW_ADVISORY[step] ?? CREW_ADVISORY[1];
+  const stationMeta = STATION_BONUS_META[step] ?? STATION_BONUS_META[1];
 
   const inspectedIdx = inspectedChoice ?? activeChoice ?? 0;
+  const earlierSamples = Math.max(0, ...runInput.phases.slice(0, step - 1).map(p => p.tasks.fieldSamplesCount));
+  const newSamples = Math.max(0, (collectedSamplesCount ?? 0) - earlierSamples);
   const forecasts = useMemo(() => {
-    const prefix = priorChoices.slice(0, step - 1);
-    if (prefix.length !== step - 1) return [];
-    return decision.choices.map((_, index) => runSimulation([...prefix, index], { solarCalibrated, icePrepared }).steps[step - 1]);
-  }, [decision, priorChoices, step, solarCalibrated, icePrepared]);
+    const prefix = { ...runInput, phases: runInput.phases.slice(0, step - 1) };
+    if (prefix.phases.length !== step - 1) return [];
+    return decision.choices.map((_, index) => {
+      const result = runExperiment(applyRunChoice(
+        prefix, step, index,
+        {
+          ...effectiveTasks,
+          icePrepared: step === 4 ? index === 0 && stepTaskEnabled : effectiveTasks.icePrepared,
+        },
+      ));
+      const phase = result.steps[step - 1];
+      return phase ? { ...phase, abortCause: result.abortCause } : undefined;
+    });
+  }, [decision, runInput, step, effectiveTasks, stepTaskEnabled]);
+
   const forecastStep = forecasts[inspectedIdx];
+  const ledgerRecord = forecastStep ?? record;
   const conditionals = previewChoiceEffects(step, inspectedIdx, flagsBefore).conditionals;
   const kg = lang === 'az' ? 'kq' : 'kg';
   const pp = lang === 'az' ? 'faiz b.' : 'pp';
@@ -171,523 +380,923 @@ export default function DecisionCard(props: DecisionCardProps) {
   const hypothesisMatches =
     hypothesis !== null ? (hypothesis === 'safe' && willBeSafe) || (hypothesis === 'drain' && !willBeSafe) : null;
 
-  return (
-    <section className="flex min-h-0 flex-col">
-      <div className="decision-scroll min-h-0 overflow-y-auto px-1 pb-4 scrollbar-thin" tabIndex={0} role="region"
-        aria-label={lang === 'az' ? 'Qərar variantları və proqnozlar' : 'Decision options and forecasts'}>
-      <div className="flex flex-col gap-3 px-1">
-      <header className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-sky-300">
-            {t('decision')} {decision.id} / 6 · {tr(decision.phase.label)}
-            {mode === 'branch' && (
-              <span className="ml-2 rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-fuchsia-200">{t('runB')}</span>
-            )}
-          </p>
-          <h2 className="mt-0.5 text-xl font-semibold text-slate-50">{tr(decision.title)}</h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => {
-              soundFX.play('uiClick');
-              setCopilotEnabled((v) => !v);
-            }}
-            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
-              copilotEnabled
-                ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-200'
-                : 'border-slate-700 bg-slate-900/60 text-slate-400 hover:text-slate-200'
-            }`}
-            aria-pressed={copilotEnabled}
-          >
-            <Bot size={13} className={copilotEnabled ? 'text-emerald-300' : 'text-slate-400'} />
-            <span>
-              {copilotEnabled
-                ? lang === 'az'
-                  ? 'CapCom Köməkçisi: Açıq'
-                  : 'Hints on'
-                : lang === 'az'
-                  ? 'Köməkçi: Qapalı'
-                  : 'Hints off'}
-            </span>
-          </button>
-          <button
-            onClick={onPrev}
-            disabled={step === 1}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> {t('prev')}
-          </button>
-          <button
-            onClick={onNext}
-            disabled={activeChoice === undefined}
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
-          >
-            {step === 6 ? t('viewResults') : t('next')} <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </header>
+  const displayedTitle = isCadet && decision.cadetTitle ? decision.cadetTitle : decision.title;
+  const displayedContext = isCadet && decision.cadetContext ? decision.cadetContext : decision.context;
 
-      <div className="rounded-lg border border-[#55706d] bg-[#1a2d34] px-3 py-2.5">
-        <h3 className="text-sm font-semibold text-[#d6edc7]">
-          {lang === 'az' ? 'Variantları müqayisə edin' : 'Compare your options'}
-        </h3>
-        <p className="mt-0.5 text-sm leading-snug text-slate-200">{tr(advisory.tip)}</p>
-      </div>
-
-      {step === 3 && (mode === 'baseline' || props.shadowPrediction) && <ShadowPredictionInput value={shadowGuess} onChange={setShadowGuess}
-        locked={mode === 'branch' || !canChoose} />}
-
-      <p className="text-xs text-slate-300">
-        {lang === 'az'
-          ? 'Model üzrə mərhələnin əvvəlindən sonuna dəyişiklik. Mühit və əvvəlki qərarlar nəzərə alınır. Həyat təminatındakı dəyişiklik faiz bəndi ilə göstərilir.'
-          : 'Modeled change from the start to the end of this phase, including the environment and earlier decisions. Life support changes are in percentage points (pp).'}
-      </p>
-      <div className="grid gap-2.5 md:grid-cols-3">
-        {decision.choices.map((c, i) => {
-          const forecast = forecasts[i];
-          const isA = choiceA === i;
-          const isB = mode === 'branch' && choiceB === i;
-          const selected = mode === 'branch' ? isB : isA;
-          const inspected = inspectedIdx === i;
-
-          return (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={inspected}
-              onClick={() => setInspectedChoice(i)}
-              className={`relative flex flex-col gap-2 rounded-xl border p-3.5 text-left transition ${
-                inspected
-                  ? 'border-sky-300 bg-sky-950/45 ring-1 ring-sky-400/60'
-                  : 'border-slate-700 bg-slate-950/50 hover:border-sky-400 hover:bg-slate-800/60'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-md text-xs font-bold ${
-                    selected
-                      ? 'bg-amber-400 text-slate-950'
-                      : 'bg-slate-800 text-slate-200'
-                  }`}
-                >
-                  {CHOICE_LETTERS[i]}
-                </span>
-                <span className="flex items-center gap-1">
-                  {isA && (
-                    <span className="rounded bg-slate-200 px-1.5 text-[10px] font-bold text-slate-900">
-                      {t('runA')}
-                    </span>
-                  )}
-                  {isB && (
-                    <span className="rounded border border-dashed border-fuchsia-300 px-1.5 text-[10px] font-bold text-fuchsia-200">
-                      {t('runB')}
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              <span className="text-sm font-semibold leading-snug text-white">{tr(c.label)}</span>
-              {forecast && (
-                <span className="mt-auto grid w-full gap-1 border-t border-white/10 pt-2 text-[12px]">
-                  {METRICS.map((metric) => (
-                    <span key={metric.key} className="flex items-center justify-between gap-2">
-                      <span className="text-slate-300">{t(metric.labelKey)}</span>
-                      <span className={`shrink-0 rounded px-1 font-mono tabular-nums ${deltaTone(forecast.delta[metric.key], metric.higherIsBetter)}`}>
-                        {signed(forecast.delta[metric.key])}{' '}
-                        {metric.key === 'lifeSupportPct' ? pp : t(metric.unitKey)}
-                      </span>
-                    </span>
-                  ))}
-                  {step === 4 && i === 0 && (
-                    <span className="flex items-center justify-between gap-2 text-sky-200">
-                      {lang === 'az' ? 'Təmiz su' : 'Treated water'}
-                      <span className="shrink-0 font-mono font-semibold">{fmt(forecast.resourceFlows.waterExtractedKg, 2)} {kg}</span>
-                    </span>
-                  )}
-                </span>
-              )}
-
-              {/* Plain-Language Copilot Guidance */}
-              {copilotEnabled && c.copilotTip && (
-                <p className="mt-0.5 border-t border-white/10 pt-1 text-[10.5px] italic leading-tight text-slate-300">
-                  💡 {tr(c.copilotTip)}
-                </p>
-              )}
-
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-        <div className="flex items-center justify-between">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
-            <Info className="h-3.5 w-3.5" /> {t('causeEffect')} ({CHOICE_LETTERS[inspectedIdx]})
-          </p>
-        </div>
-        <p className="mt-1.5 text-sm leading-relaxed text-slate-200">
-          {tr(decision.choices[inspectedIdx].causeAndEffectExplanation)}
-        </p>
-        {conditionals.map(({ flag, active, note }) => (
-          <p key={flag} className={`mt-2 text-xs ${active ? 'text-emerald-200' : 'text-slate-300'}`}>
-            {t('ifEarlier')} ({active ? t('active') : t('inactive')}) · {tr(note)}
-          </p>
-        ))}
-        <p className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-400">
-          <BookMarked className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
-            {lang === 'az' ? 'Elmi istinad' : 'Scientific reference'} · {tr(decision.choices[inspectedIdx].nasaSourceCitation)}
-          </span>
-        </p>
-      </div>
-
-      {taskExercise && (isSolar || step === 4) && (
-        <div className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
-          <details>
-            <summary className="cursor-pointer font-semibold text-amber-200">
-              {isSolar
-                ? lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'
-                : lang === 'az' ? 'Buz emal qurğusunu hazırla · könüllü' : 'Prepare the ice extractor · optional'}
-            </summary>
-            <div className="mt-2">{taskExercise}</div>
-          </details>
-          {(taskAvailable || taskEnabled) && (
-            <label className="mt-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={taskEnabled && (isSolar || inspectedIdx === 0)}
-                disabled={!canChoose || (!isSolar && inspectedIdx !== 0)}
-                onChange={(event) => setTaskOverride(event.target.checked)}
-                className="accent-amber-300"
-              />
-              {isSolar
-                ? lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'
-                : lang === 'az' ? 'A variantında hazırlanmış emal qurğusundan istifadə et' : 'Use the prepared extractor with option A'}
-            </label>
-          )}
-          <p className="mt-1 text-slate-300">
-            {isSolar
-              ? lang === 'az'
-                ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
-                : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`
-              : lang === 'az'
-                ? `Hazırlıq A variantında model üzrə buzdan su əldəetməni ${ICE_TREATMENT_RECOVERY.standard * 100}%-dən ${ICE_TREATMENT_RECOVERY.prepared * 100}%-ə artırır. Nümunə kütləsi və enerji büdcəsi eyni qalır.`
-                : `Preparation raises modeled recovery from ${ICE_TREATMENT_RECOVERY.standard * 100}% to ${ICE_TREATMENT_RECOVERY.prepared * 100}% in option A. Sample mass and power budget stay fixed.`}
-          </p>
-        </div>
-      )}
-
-      {taskExercise && !isSolar && step !== 4 && (
-        <details className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs">
-          <summary className="cursor-pointer font-semibold text-amber-200">
-            {lang === 'az' ? 'Stansiya məşqi · könüllü' : 'Station exercise · optional'}
-          </summary>
-          <div className="mt-2">{taskExercise}</div>
-        </details>
-      )}
-
-      {step === 1 && <LunarSiteIntelligence />}
-      <details className="rounded-lg border border-slate-600 bg-slate-950/45 p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-200">
-          {lang === 'az' ? 'Ssenari və elmi mənbələr' : 'Scenario background and science'}
-        </summary>
-        <div className="mt-2 grid gap-2">
-        {/* RPG Crew Radio Comms Banner */}
-        <div className="flex items-center gap-3 rounded-xl border border-sky-500/30 bg-slate-950/75 p-2.5">
-          <img
-            src={step === 4 ? `${import.meta.env.BASE_URL}assets/rover_viper.svg` : `${import.meta.env.BASE_URL}assets/astronaut_companion.svg`}
-            alt=""
-            className="h-12 w-12 shrink-0 rounded-xl border border-sky-400/50 bg-slate-900 p-1"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-300">
-                <Radio className="h-3 w-3 text-emerald-400" />
-                {tr(advisory.speaker)}
-              </p>
-              <button
-                type="button"
-                onClick={() => soundFX.speakRadio(tr(advisory.tip), lang)}
-                className="inline-flex items-center gap-1 rounded border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-200 hover:bg-sky-500/20"
-                title={lang === 'az' ? 'Radio məsləhətinə qulaq asın' : 'Listen to the crew advisory'}
-              >
-                <Volume2 size={11} className="text-sky-300" />
-                <span className="hidden sm:inline">
-                  {lang === 'az' ? 'Rabitəni Dinlə' : 'Radio Call'}
-                </span>
-              </button>
-            </div>
-            <p className="mt-0.5 text-xs italic leading-relaxed text-slate-200">{tr(advisory.tip)}</p>
-          </div>
-        </div>
-
-        <p className="text-sm leading-relaxed text-slate-300">{tr(decision.context)}</p>
-
-        {trigger && (
-          <div
-            className={`rounded-xl border p-3 ${
-              trigger.source === 'LRO_SHADOW'
-                ? 'border-amber-500/40 bg-amber-500/10'
-                : 'border-rose-500/40 bg-rose-500/10'
-            }`}
-          >
-            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-              <Satellite className="h-3.5 w-3.5" /> {t('nasaDataTrigger')}
+  // Keep the full crew/science briefing available after the Cadet choice cards.
+  const briefingContent = (
+    <>
+      <div className="flex items-start gap-3">
+        <CrewAvatar step={step} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="flex items-center gap-1.5 font-mono text-[10.5px] font-bold uppercase tracking-wider text-sky-300">
+              <Radio className="h-3 w-3 text-emerald-400" />
+              {tr(advisory.speaker)}
             </p>
+            <button
+              type="button"
+              onClick={() => soundFX.speakRadio(tr(advisory.tip), lang)}
+              className="inline-flex items-center gap-1 rounded-md border border-sky-400/35 bg-sky-500/15 px-2 py-0.5 text-[10.5px] font-medium text-sky-100 hover:bg-sky-500/25"
+              title={lang === 'az' ? 'Radio məsləhətinə qulaq asın' : 'Listen to the crew radio call'}
+            >
+              <Volume2 size={11} className="text-sky-300" />
+              <span>{lang === 'az' ? 'Rabitəni Dinlə' : 'Radio Call'}</span>
+            </button>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed text-[#d9eed0]">{tr(advisory.tip)}</p>
+        </div>
+      </div>
+
+      {!isCadet && (
+        <p className="border-t border-white/10 pt-2 text-sm leading-relaxed text-slate-200">
+          {tr(displayedContext)}
+        </p>
+      )}
+
+      {trigger && (
+        <div
+          className={`rounded-xl border px-3 py-2 ${
+            trigger.source === 'LRO_SHADOW'
+              ? 'border-amber-400/45 bg-amber-500/12'
+              : 'border-rose-400/50 bg-rose-500/12'
+          }`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p
-              className={`mt-1 flex items-center gap-1.5 text-sm font-semibold ${
+              className={`flex items-center gap-1.5 text-xs font-bold ${
                 trigger.source === 'LRO_SHADOW' ? 'text-amber-200' : 'text-rose-200'
               }`}
             >
               {trigger.source === 'LRO_SHADOW' ? <SunDim className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-              {tr(trigger.headline)}
+              {trigger.source === 'DONKI_SEP'
+                ? lang === 'az' ? `Təlim fırtınası · ssenari piki ${runInput.scenario.stormPeakPfu} pfu`
+                  : `Training storm · scenario peak ${runInput.scenario.stormPeakPfu} pfu`
+                : tr(trigger.headline)}
             </p>
-            <p className="mt-1 text-xs text-slate-300">{tr(trigger.detail)}</p>
-            <p className="mt-1.5 text-[10px] text-slate-400">
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-slate-300">
+              <Satellite className="h-3 w-3" /> {t('nasaDataTrigger')}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-slate-200">{tr(trigger.detail)}</p>
+          {!isCadet && (
+            <p className="mt-1 text-[10px] text-slate-400">
               {t('source')}: {trigger.citationIds.map((id) => CITATIONS[id]?.short).join(' · ')}
             </p>
-          </div>
-        )}
+          )}
         </div>
-      </details>
+      )}
 
-      {/* Deterministic forecast for the selected option. */}
-      {forecastStep && (
-        <details className="rounded-xl border border-sky-500/35 bg-slate-950/70 p-3">
-          <summary className="cursor-pointer text-sm font-semibold text-sky-200">
-            {lang === 'az' ? 'Ətraflı proqnoz' : 'Detailed forecast'} · {CHOICE_LETTERS[inspectedIdx]}
-          </summary>
+      {step === 2 && (
+        <div className="rounded-lg border border-emerald-400/30 bg-emerald-950/30 px-3 py-2 text-[11px] text-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              {lang === 'az' ? 'NASA OSDR ARXİVİ · VEG-01A (BKS)' : 'NASA OSDR ARCHIVE · VEG-01A (ISS)'}
+            </span>
+            <span className="font-mono text-[10px] text-emerald-200">2014-05-08 → 2014-06-10 · 33 d</span>
+          </div>
+          <p className="mt-0.5 leading-snug text-slate-300">
+            {lang === 'az'
+              ? 'VEG-01A kahısı BKS-də 33 gün yetişdi; su çatışmazlığı bitkilərə zərər verdi, ekipajın suvarması kömək etdi. C variantında da su və enerjini planlaşdırın. Oyundakı 25 + 5 günlük müddət, su sərfi və məhsuldarlıq fərziyyədir.'
+              : 'VEG-01A lettuce grew for 33 days on the ISS; water stress harmed plants and crew watering helped. Plan water and power for option C. The game’s 25 + 5 days, water use and yield are assumed.'}
+          </p>
+        </div>
+      )}
 
-          <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {/* Power Forecast */}
-            <div className="rounded-lg border border-amber-400/25 bg-amber-500/10 p-2">
-              <div className="flex items-center justify-between text-[10px] text-amber-200">
-                <span className="flex items-center gap-1">
-                  <Zap className="h-3 w-3" /> {t('power')}
-                </span>
-                <span className="font-mono font-bold text-amber-300">
-                  {signed(forecastStep.delta.powerKwh)} {t('unitKwh')}
-                </span>
-              </div>
-              <div className="mt-1 font-mono text-xs font-semibold text-white">
-                {fmt(forecastStep.before.powerKwh)} →{' '}
-                <span
-                  className={forecastStep.after.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh ? 'text-rose-400 font-bold' : 'text-amber-200'}
-                >
-                  {fmt(forecastStep.after.powerKwh)}
-                </span>{' '}
-                <small className="text-slate-400">{t('unitKwh')}</small>
-              </div>
+      {step === 5 && (
+        <div className="rounded-lg border border-cyan-400/35 bg-cyan-950/30 px-3 py-2.5 text-[11px] text-slate-200">
+          <div className="mb-2 flex flex-wrap items-center gap-1 rounded-md border border-cyan-300/30 bg-slate-950/65 px-2 py-1 font-mono text-[9.5px] font-semibold text-cyan-100">
+            {lang === 'az'
+              ? '1. NASA DONKI / NOAA Müşahidəsi → 2. Fırtına Xəbərdarlığı → 3. Qalxan Qərarı → 4. Model Doza Nəticəsi → 5. Geri Sar və Müqayisə Et [R]'
+              : '1. NASA DONKI / NOAA Observation → 2. Storm Warning → 3. Shielding Decision → 4. Modeled Dose Outcome → 5. Rewind & Compare [R]'}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+              {lang === 'az'
+                ? 'NASA DONKI HƏFTƏLİK XÜLASƏSİ (8–14 MAY 2024) · 20240516-7D-001'
+                : 'NASA DONKI WEEKLY SUMMARY (MAY 8–14, 2024) · 20240516-7D-001'}
+            </span>
+            <span className="font-mono text-[10px] text-cyan-100">
+              {MAY_2024_PROTON_EVENT.activeRegion} · Alert #30944
+            </span>
+          </div>
+          <p className="mt-1 rounded border border-amber-300/30 bg-amber-950/40 px-2 py-1 text-[10.5px] leading-snug text-amber-100">
+            {lang === 'az'
+              ? `Diqqət: 20240516-7D-001 8–14 May 2024 həftəlik kosmik hava xülasəsidir (müşahidə olunmuş astronavt dozası deyil). GOES (${MAY_2024_PROTON_EVENT.peakPfu} pfu) Yerə yaxın zərrəcik axınıdır, Ay səthi dozası deyil.`
+              : `Provenance note: 20240516-7D-001 is a weekly space-weather summary covering May 8–14, 2024 — not an observed astronaut radiation dose. NOAA GOES (${MAY_2024_PROTON_EVENT.peakPfu} pfu) measured near-Earth proton flux, not lunar surface dose.`}
+          </p>
+
+          {/* Interactive Shielding Comparison Selector (synced with A/B/C choices) */}
+          <div className="mt-2">
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
+              <span>
+                {lang === 'az'
+                  ? '3. Qərarı Yoxla · Ay Qalxanı və 48 Saatlıq Model Dozası'
+                  : '3. Test Decision · Shielding & Modeled 48 h Lunar Dose'}
+              </span>
+              <span className="font-mono text-cyan-200">
+                {lang === 'az' ? 'Ssenari piki:' : 'Scenario peak:'} {runInput.scenario.stormPeakPfu} pfu
+              </span>
             </div>
-
-            {/* Life Support Forecast */}
-            <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-2">
-              <div className="flex items-center justify-between text-[10px] text-emerald-200">
-                <span className="flex items-center gap-1">
-                  <HeartPulse className="h-3 w-3" /> {t('lifeSupport')}
-                </span>
-                <span className="font-mono font-bold text-emerald-300">
-                  {signed(forecastStep.delta.lifeSupportPct)} {pp}
-                </span>
-              </div>
-              <div className="mt-1 font-mono text-xs font-semibold text-white">
-                {fmt(forecastStep.before.lifeSupportPct)}% →{' '}
-                <span
-                  className={forecastStep.after.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct ? 'text-rose-400 font-bold' : 'text-emerald-200'}
-                >
-                  {fmt(forecastStep.after.lifeSupportPct)}%
-                </span>
-              </div>
+            <div className="grid gap-1.5 sm:grid-cols-3">
+              {([
+                {
+                  idx: 0,
+                  name: lang === 'az' ? 'A: Çöl (EVA + Modul)' : 'A: EVA + Habitat',
+                  factor: `24h ×${SHIELDING.evaSuit.toFixed(2)} + 24h ×${SHIELDING.habitat.toFixed(2)}`,
+                },
+                {
+                  idx: 1,
+                  name: lang === 'az' ? 'B: Yaşayış Modulu' : 'B: Habitat Inside',
+                  factor: `48h ×${SHIELDING.habitat.toFixed(2)} (${Math.round(SHIELDING.habitat * 100)}%)`,
+                },
+                {
+                  idx: 2,
+                  name: flagsBefore.includes('regolithBerm')
+                    ? lang === 'az'
+                      ? 'C: Sığınacaq + D2 Səddi'
+                      : 'C: Shelter + D2 Berm'
+                    : lang === 'az'
+                      ? 'C: Su Divarlı Sığınacaq'
+                      : 'C: Water-Wall Shelter',
+                  factor: flagsBefore.includes('regolithBerm')
+                    ? `48h ×${SHIELDING.regolithBerm.toFixed(2)} (${Math.round(SHIELDING.regolithBerm * 100)}%)`
+                    : `48h ×${SHIELDING.waterWall.toFixed(2)} (${Math.round(SHIELDING.waterWall * 100)}%)`,
+                },
+              ] as const).map((tier) => {
+                const f = forecasts[tier.idx];
+                const dose = f?.delta.radiationMsv ?? 0;
+                const totalDose = f?.after.radiationMsv;
+                const active = inspectedIdx === tier.idx;
+                const pctOfMax = Math.min(100, Math.round((dose / Math.max(1, forecasts[0]?.delta.radiationMsv ?? 45)) * 100));
+                return (
+                  <button
+                    key={tier.idx}
+                    type="button"
+                    onClick={() => setInspectedChoice(tier.idx)}
+                    className={`rounded-md border p-2 text-left transition ${
+                      active
+                        ? 'border-sky-300 bg-sky-950/60 ring-1 ring-sky-400/50'
+                        : 'border-white/10 bg-slate-950/60 hover:border-sky-400/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 text-[10.5px] font-semibold text-white">
+                      <span className="truncate">{tier.name}</span>
+                      <span className="shrink-0 font-mono text-amber-200">+{fmt(dose)} mSv</span>
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className={`h-full rounded-full ${
+                          dose >= 25 ? 'bg-rose-400' : dose >= 8 ? 'bg-amber-300' : 'bg-emerald-400'
+                        }`}
+                        style={{ width: `${Math.max(4, pctOfMax)}%` }}
+                      />
+                    </div>
+                    <span className="mt-1 block font-mono text-[9.5px] text-slate-400">{tier.factor}</span>
+                    {totalDose !== undefined && (
+                      <span
+                        className={`mt-0.5 block font-mono text-[9.5px] font-semibold ${
+                          totalDose >= RADIATION_LIMITS.missionWarningMsv ? 'text-rose-200' : 'text-emerald-200'
+                        }`}
+                      >
+                        {lang === 'az'
+                          ? `Cəmi: ${fmt(totalDose)} / ${RADIATION_LIMITS.missionWarningMsv} mSv`
+                          : `Total: ${fmt(totalDose)} / ${RADIATION_LIMITS.missionWarningMsv} mSv`}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Radiation Forecast */}
-            <div
-              className={`rounded-lg border p-2 ${
-                forecastStep.after.radiationMsv >= RADIATION_LIMITS.missionWarningMsv
-                  ? 'border-rose-400/40 bg-rose-500/15'
-                  : 'border-slate-700 bg-slate-900/60'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[10px] text-slate-300">
-                <span className="flex items-center gap-1">
-                  <ShieldAlert className="h-3 w-3" /> {t('radiation')}
-                </span>
-                <span className="font-mono font-bold text-rose-300">
-                  {signed(forecastStep.delta.radiationMsv)} {t('unitMsv')}
-                </span>
+          {ledgerRecord && (() => {
+            const totalAfter = ledgerRecord.after.radiationMsv;
+            const hitsWarning = totalAfter >= RADIATION_LIMITS.missionWarningMsv;
+            const prepNotes: string[] = [];
+            if (inspectedIdx === 2 && flagsBefore.includes('regolithBerm')) {
+              prepNotes.push(lang === 'az' ? 'D2 reqolit səddi aktivdir (×0.06)' : 'D2 regolith berm active (×0.06)');
+            }
+            if (stepTaskEnabled) {
+              prepNotes.push(
+                lang === 'az'
+                  ? 'D5 germetik kilid aktivdir (sığınacaqda −15% fırtına dozası)'
+                  : 'D5 bulkhead clamp active (−15% sheltered storm dose)',
+              );
+            }
+            return (
+              <div
+                className={`mt-2 rounded-md border px-2.5 py-2 text-[10.5px] leading-snug ${
+                  hitsWarning
+                    ? 'border-rose-400/45 bg-rose-950/35 text-rose-100'
+                    : 'border-emerald-400/35 bg-emerald-950/30 text-emerald-100'
+                }`}
+              >
+                <p className="font-semibold">
+                  {hitsWarning
+                    ? lang === 'az'
+                      ? `4. Nəticə (${CHOICE_LETTERS[inspectedIdx]} variantı): Cəmi doza ${fmt(totalAfter)} mSv (≥ ${RADIATION_LIMITS.missionWarningMsv} mSv təlim həddi) — 9-cu gündə (D6) elm xalı qazancı −50% məhdudlaşdırılır.`
+                      : `4. Outcome (Option ${CHOICE_LETTERS[inspectedIdx]}): Cumulative dose reaches ${fmt(totalAfter)} mSv (≥ ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning) — triggers the Day 9 (D6) −50% science restriction.`
+                    : lang === 'az'
+                      ? `4. Nəticə (${CHOICE_LETTERS[inspectedIdx]} variantı): Cəmi doza ${fmt(totalAfter)} mSv (< ${RADIATION_LIMITS.missionWarningMsv} mSv təlim həddi) — 9-cu gündə (D6) elm məhdudiyyətindən yayınır.`
+                      : `4. Outcome (Option ${CHOICE_LETTERS[inspectedIdx]}): Cumulative dose stays at ${fmt(totalAfter)} mSv (< ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning) — avoids the Day 9 (D6) science restriction.`}
+                </p>
+                {prepNotes.length > 0 && (
+                  <p className="mt-0.5 font-mono text-[10px] text-sky-200">{prepNotes.join(' · ')}</p>
+                )}
+                <p className="mt-1 text-slate-200">
+                  {lang === 'az'
+                    ? '5. Geri Sar və Müqayisə Et [R]: Seçimi tətbiq edin, sonra D5-i (və ya D2 + D5-i) geri sarıb qalxanın toplam dozanı və D6 elmini necə dəyişdiyini müqayisə edin.'
+                    : '5. Rewind & Compare [R]: Apply a choice, then rewind D5 (or D2 + D5) to compare how shielding changes cumulative dose and D6 science while all other inputs stay fixed.'}
+                </p>
               </div>
-              <div className="mt-1 font-mono text-xs font-semibold text-white">
-                {fmt(forecastStep.before.radiationMsv)} →{' '}
-                <span
-                  className={
-                    forecastStep.after.radiationMsv >= RADIATION_LIMITS.missionWarningMsv
-                      ? 'text-rose-400 font-bold'
-                      : 'text-slate-200'
+            );
+          })()}
+
+          {/* Explicit 4-Category Scientific Separation */}
+          <div className="mt-2 grid gap-1.5 rounded-md border border-white/10 bg-slate-950/60 p-2 text-[10px] text-slate-300 sm:grid-cols-2">
+            <div>
+              <strong className="text-cyan-200">
+                {lang === 'az' ? '1. Müşahidə (NASA/NOAA): ' : '1. Observed (NASA/NOAA): '}
+              </strong>
+              {lang === 'az'
+                ? `${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu; Yerə yaxın pik ${MAY_2024_PROTON_EVENT.peakPfu} pfu (${MAY_2024_PROTON_EVENT.peakUtc}).`
+                : `${MAY_2024_PROTON_EVENT.onsetUtc} >${MAY_2024_PROTON_EVENT.onsetThresholdPfu} pfu; near-Earth peak ${MAY_2024_PROTON_EVENT.peakPfu} pfu (${MAY_2024_PROTON_EVENT.peakUtc}).`}
+            </div>
+            <div>
+              <strong className="text-sky-200">
+                {lang === 'az' ? '2. Nəşr Standartı (NASA-STD-3001): ' : '2. Published (NASA-STD-3001): '}
+              </strong>
+              {lang === 'az'
+                ? `Karyera həddi <${RADIATION_LIMITS.careerLimitMsv} mSv · ALARA prinsipi; FLR alışması dozaya çevrilmir.`
+                : `Career limit <${RADIATION_LIMITS.careerLimitMsv} mSv · ALARA shielding principle; FLR flares do not convert to dose.`}
+            </div>
+            <div>
+              <strong className="text-amber-200">
+                {lang === 'az' ? '3. Təlim Fərziyyəsi: ' : '3. Educational Assumption: '}
+              </strong>
+              {lang === 'az'
+                ? `${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ əmsalı + qalxan vuruqları (×1.00 / ×0.25 / ×0.15 / ×0.06).`
+                : `${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹ factor & shielding multipliers (×1.00 / ×0.25 / ×0.15 / ×0.06).`}
+            </div>
+            <div>
+              <strong className="text-rose-200">
+                {lang === 'az' ? '4. Uydurma Missiya Parametri: ' : '4. Fictional Mission Param: '}
+              </strong>
+              {lang === 'az'
+                ? `48 saatlıq Ay fırtına əyrisi və ${RADIATION_LIMITS.missionWarningMsv} mSv xəbərdarlıq həddi.`
+                : `Synthetic 48 h lunar storm pulse & ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning limit.`}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <section className="flex min-h-0 flex-col">
+      <div
+        className="decision-scroll min-h-0 overflow-y-auto px-1 pb-4 scrollbar-thin"
+        tabIndex={0}
+        role="region"
+        aria-label={lang === 'az' ? 'Qərar variantları və proqnozlar' : 'Decision options and forecasts'}
+      >
+        <div className="flex flex-col gap-3 px-1">
+          {/* Header with Step Title + Cadet/Engineer Switch + Hints + Prev/Next */}
+          <header className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+                {t('decision')} {decision.id} / 6 · {tr(decision.phase.label)}
+                {mode === 'branch' && (
+                  <span className="ml-2 rounded bg-fuchsia-500/20 px-1.5 py-0.5 text-fuchsia-200">{t('runB')}</span>
+                )}
+              </p>
+              <h2 className="mt-0.5 text-xl font-semibold text-slate-50">{tr(displayedTitle)}</h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {onToggleTrainingMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundFX.play('uiClick');
+                    onToggleTrainingMode();
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                    isCadet
+                      ? 'border-amber-400/50 bg-amber-500/15 text-amber-200 hover:bg-amber-500/25'
+                      : 'border-cyan-400/50 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25'
+                  }`}
+                  title={
+                    lang === 'az'
+                      ? 'Gənc Kadet (7–12 yaş) və Uçuş Mühəndisi rejimi arasında keçid'
+                      : 'Switch between Junior Cadet (Ages 7–12) and Flight Engineer telemetry'
                   }
                 >
-                  {fmt(forecastStep.after.radiationMsv)}
-                </span>{' '}
-                <small className="text-slate-400">{t('unitMsv')}</small>
-              </div>
-            </div>
-
-            {/* Science Points Forecast */}
-            <div className="rounded-lg border border-purple-400/25 bg-purple-500/10 p-2">
-              <div className="flex items-center justify-between text-[10px] text-purple-200">
-                <span className="flex items-center gap-1">
-                  <FlaskConical className="h-3 w-3" /> {t('science')}
-                </span>
-                <span className="font-mono font-bold text-purple-300">
-                  {signed(forecastStep.delta.sciencePoints)}
-                </span>
-              </div>
-              <div className="mt-1 font-mono text-xs font-semibold text-white">
-                {fmt(forecastStep.before.sciencePoints)} →{' '}
-                <span className="text-purple-200">{fmt(forecastStep.after.sciencePoints)}</span>{' '}
-                <small className="text-slate-400">{t('unitPts')}</small>
-              </div>
-            </div>
-          </div>
-
-          <dl className="mt-2.5 grid grid-cols-2 gap-1 border-t border-white/10 pt-2 font-mono text-[11px] text-slate-300 sm:grid-cols-3">
-            {[
-              [lang === 'az' ? 'Günəş + ehtiyat' : 'Solar + backup', `${fmt(forecastStep.env.generationKwh)} + ${fmt(forecastStep.env.supplementalGenerationKwh)} ${t('unitKwh')}`],
-              [lang === 'az' ? 'Baza + isitmə' : 'Base + heaters', `${fmt(forecastStep.env.loadKwh - forecastStep.env.loadReductionKwh)} + ${fmt(forecastStep.env.heaterKwh)} ${t('unitKwh')}`],
-              [lang === 'az' ? 'Tapşırıq + istixana' : 'Task + greenhouse', `${fmt(forecastStep.env.taskLoadKwh)} + ${fmt(forecastStep.env.greenhouseLoadKwh)} ${t('unitKwh')}`],
-              [lang === 'az' ? 'Oksigen ehtiyatı' : 'Oxygen reserve', `${fmt(forecastStep.resourcesAfter.oxygenKg)} ${kg}`],
-              [lang === 'az' ? 'Su ehtiyatı' : 'Water reserve', `${fmt(forecastStep.resourcesAfter.waterKg)} ${kg}`],
-              [lang === 'az' ? 'Qida ehtiyatı' : 'Food reserve', `${fmt(forecastStep.resourcesAfter.foodKg)} ${kg}`],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-slate-400">{label}</dt>
-                <dd className="font-semibold">{value}</dd>
-              </div>
-            ))}
-          </dl>
-          {forecastStep.resourcesAfter.cropGrowthDays > 0 && (
-            <p className="mt-2 text-xs text-emerald-200">
-              {lang === 'az'
-                ? `İstixana · ${fmt(forecastStep.resourcesAfter.cropGrowthDays)} / 30 yetişmə günü · ${fmt(forecastStep.resourcesAfter.harvestedFoodKg)} kq məhsul`
-                : `Greenhouse · ${fmt(forecastStep.resourcesAfter.cropGrowthDays)} / 30 growing days · ${fmt(forecastStep.resourcesAfter.harvestedFoodKg)} kg harvested`}
-            </p>
-          )}
-          {forecastStep.resourceFlows.waterExtractedKg > 0 && (
-            <p className="mt-2 text-xs text-sky-200">
-              {lang === 'az'
-                ? `Ssenari nümunəsindən alınan təmiz su · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kq`
-                : `Treated water from the training sample · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kg`}
-            </p>
-          )}
-          {forecastStep.rulesTriggered.length > 0 && (
-            <p className="mt-2 rounded border border-rose-500/40 bg-rose-500/15 px-2 py-1 text-xs text-rose-200">
-              {forecastStep.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}
-            </p>
-          )}
-        </details>
-      )}
-
-      {step !== 3 && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/25 bg-sky-950/30 p-2.5 text-xs">
-        <div className="flex items-center gap-2">
-          <HelpCircle className="h-4 w-4 text-sky-300 shrink-0" />
-          <div>
-            <strong className="text-sky-200 font-mono text-[11px] uppercase tracking-wider">
-              {t('hypothesisTitle')}
-            </strong>
-            <p className="text-slate-300 text-[11.5px] mt-0.5">{t('hypothesisPrompt')}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setHypothesis('safe')}
-            aria-pressed={hypothesis === 'safe'}
-            className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
-              hypothesis === 'safe'
-                ? 'border-emerald-400 bg-emerald-500/25 text-emerald-200'
-                : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            {t('hypothesisYes')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setHypothesis('drain')}
-            aria-pressed={hypothesis === 'drain'}
-            className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
-              hypothesis === 'drain'
-                ? 'border-amber-400 bg-amber-500/25 text-amber-200'
-                : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
-            }`}
-          >
-            {t('hypothesisNo')}
-          </button>
-        </div>
-        {hypothesis !== null && forecastStep && (
-          <div
-            className={`w-full rounded-lg border px-2.5 py-1 text-[11px] font-mono flex items-center justify-between ${
-              hypothesisMatches
-                ? 'border-emerald-400/50 bg-emerald-950/40 text-emerald-200'
-                : 'border-amber-400/50 bg-amber-950/40 text-amber-200'
-            }`}
-          >
-            <span>
-              {hypothesisMatches ? `✓ ${t('hypothesisCorrect')}` : `ℹ️ ${t('hypothesisIncorrect')}`}
-            </span>
-            <span>
-              {fmt(forecastStep.env.lowPowerHours)} {lang === 'az' ? 'saat aşağı ehtiyatda' : 'hours on low reserve'}
-            </span>
-          </div>
-        )}
-      </div>}
-
-      {record && (
-        <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
-            <CheckCircle2 className="h-3.5 w-3.5" /> {t('stepBreakdown')}
-          </p>
-          <ul className="mt-1.5 space-y-1.5">
-            {record.contributions.map((c, i) => (
-              <li key={i} className="flex flex-col gap-0.5 border-b border-slate-800/80 pb-1.5 last:border-0">
-                <span className="text-[11px] text-slate-400">
-                  <span className="mr-1 rounded bg-slate-800 px-1 text-[9px] font-semibold uppercase text-slate-300">
-                    {t(
-                      c.source === 'environment'
-                        ? 'envLabel'
-                        : c.source === 'choice'
-                          ? 'choiceLabel'
-                          : c.source === 'conditional'
-                            ? 'conditionalLabel'
-                            : 'ruleLabel',
-                    )}
+                  {isCadet ? <Rocket size={13} /> : <GraduationCap size={13} />}
+                  <span>
+                    {isCadet
+                      ? lang === 'az'
+                        ? 'Kadet Rejimi'
+                        : 'Cadet Mode'
+                      : lang === 'az'
+                        ? 'Mühəndis Rejimi'
+                        : 'Engineer Mode'}
                   </span>
-                  {tr(c.label)}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  soundFX.play('uiClick');
+                  setCopilotEnabled((v) => !v);
+                }}
+                className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                  copilotEnabled
+                    ? 'border-emerald-400/50 bg-emerald-500/15 text-emerald-200'
+                    : 'border-slate-700 bg-slate-900/60 text-slate-400 hover:text-slate-200'
+                }`}
+                aria-pressed={copilotEnabled}
+              >
+                <Bot size={13} className={copilotEnabled ? 'text-emerald-300' : 'text-slate-400'} />
+                <span>
+                  {copilotEnabled
+                    ? lang === 'az'
+                      ? 'İpucu: Açıq'
+                      : 'Hints on'
+                    : lang === 'az'
+                      ? 'İpucu: Qapalı'
+                      : 'Hints off'}
                 </span>
-                <DeltaChips delta={c.delta} size="xs" />
-              </li>
+              </button>
+
+              <button
+                onClick={onPrev}
+                disabled={step === 1}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> {t('prev')}
+              </button>
+              <button
+                onClick={onNext}
+                disabled={activeChoice === undefined}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
+              >
+                {step === 6 ? t('viewResults') : t('next')} <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </header>
+
+          {isCadet ? (
+            <div className="grid gap-2.5 rounded-xl border border-[#4c6b68] bg-[#13252d] p-3">
+              <p className="text-sm leading-relaxed text-slate-200">{tr(displayedContext)}</p>
+              {briefingContent}
+            </div>
+          ) : (
+            <div className="grid gap-2.5 rounded-xl border border-[#4c6b68] bg-[#13252d] p-3">
+              {briefingContent}
+            </div>
+          )}
+
+          {step === 3 && (mode === 'baseline' || props.shadowPrediction) && (
+            <ShadowPredictionInput
+              value={shadowGuess}
+              onChange={setShadowGuess}
+              locked={mode === 'branch' || !canChoose}
+            />
+          )}
+
+          {/* Choice Cards A / B / C */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-300">
+              {isCadet
+                ? lang === 'az'
+                  ? 'A, B və ya C planını seçin — rəngli nişanlar batareya, həyat təminatı, radiasiya və elm dəyişikliyini göstərir:'
+                  : 'Pick Plan A, B, or C — color badges show how battery, life support, radiation, and science change:'
+                : lang === 'az'
+                  ? 'Model üzrə mərhələnin əvvəlindən sonuna dəyişiklik (əvvəlki qərarlar və stansiya bonusları daxil olmaqla):'
+                  : 'Modeled delta from start to end of this phase (including prior flags and active station bonuses):'}
+            </p>
+            {((step === 4 && inspectedIdx === 0 && (minedCount ?? 0) > 0) || newSamples > 0) && (
+              <span className="inline-flex items-center gap-2 font-mono text-[10.5px] text-emerald-200">
+                {step === 4 && inspectedIdx === 0 && (minedCount ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded border border-sky-400/35 bg-sky-500/15 px-1.5 py-0.5">
+                    <Snowflake size={11} className="text-sky-300" /> +{(minedCount ?? 0) * 3} {kg} {lang === 'az' ? 'buzlu reqolit xammalı' : 'icy regolith feedstock'}
+                  </span>
+                )}
+                {newSamples > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded border border-amber-400/35 bg-amber-500/15 px-1.5 py-0.5">
+                    <Sparkles size={11} className="text-amber-300" /> {lang === 'az' ? 'Yeni nümunələr: ən çox' : 'New samples: up to'} +{newSamples * 2} {t('unitPts')}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+
+          <div className="grid gap-2.5 md:grid-cols-3">
+            {decision.choices.map((c, i) => {
+              const forecast = forecasts[i];
+              const isA = choiceA === i;
+              const isB = mode === 'branch' && choiceB === i;
+              const selected = mode === 'branch' ? isB : isA;
+              const inspected = inspectedIdx === i;
+              const labelText = isCadet && c.cadetLabel ? tr(c.cadetLabel) : tr(c.label);
+
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={inspected}
+                  onClick={() => setInspectedChoice(i)}
+                  className={`relative flex flex-col gap-2 rounded-xl border p-3.5 text-left transition ${
+                    inspected
+                      ? 'border-sky-300 bg-sky-950/50 ring-1 ring-sky-400/60'
+                      : 'border-slate-700 bg-slate-950/55 hover:border-sky-400 hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <span
+                      className={`grid h-6 w-6 place-items-center rounded-md text-xs font-bold ${
+                        selected ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-200'
+                      }`}
+                    >
+                      {CHOICE_LETTERS[i]}
+                    </span>
+                    <span className="flex flex-wrap items-center justify-end gap-1">
+                      {copilotEnabled && c.copilotRecommendation && (
+                        <span className="rounded border border-emerald-400/45 bg-emerald-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-200">
+                          ★ {lang === 'az' ? 'CapCom tövsiyəsi' : 'CapCom Pick'}
+                        </span>
+                      )}
+                      {forecast &&
+                        (forecast.env.lowPowerHours > 0 ||
+                        forecast.after.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh ? (
+                          <span className="rounded border border-amber-400/45 bg-amber-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-amber-200">
+                            ⚠ {lang === 'az'
+                              ? `Aşağı batareya (${fmt(forecast.env.lowPowerHours, 0)}s)`
+                              : `Low battery (${fmt(forecast.env.lowPowerHours, 0)}h)`}
+                          </span>
+                        ) : forecast.after.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct ? (
+                          <span className="rounded border border-rose-400/45 bg-rose-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-200">
+                            ⚠ {lang === 'az'
+                              ? `Zəif həyat təminatı (${fmt(forecast.after.lifeSupportPct)}%)`
+                              : `Low ECLSS (${fmt(forecast.after.lifeSupportPct)}%)`}
+                          </span>
+                        ) : step === 5 && forecast.delta.radiationMsv >= 25 ? (
+                          <span className="rounded border border-rose-400/45 bg-rose-500/15 px-1.5 py-0.5 text-[9.5px] font-bold text-rose-200">
+                            ⚠ {lang === 'az'
+                              ? `Yüksək doza (+${fmt(forecast.delta.radiationMsv)} mSv)`
+                              : `High storm dose (+${fmt(forecast.delta.radiationMsv)} mSv)`}
+                          </span>
+                        ) : (
+                          <span className="rounded border border-emerald-400/35 bg-emerald-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold text-emerald-200">
+                            ✓ {lang === 'az'
+                              ? `${fmt(forecast.after.powerKwh)} kVt·s təhlükəsiz`
+                              : `${fmt(forecast.after.powerKwh)} kWh safe`}
+                          </span>
+                        ))}
+                      {isA && (
+                        <span className="rounded bg-slate-200 px-1.5 text-[10px] font-bold text-slate-900">
+                          {t('runA')}
+                        </span>
+                      )}
+                      {isB && (
+                        <span className="rounded border border-dashed border-fuchsia-300 px-1.5 text-[10px] font-bold text-fuchsia-200">
+                          {t('runB')}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+
+                  <span className="text-sm font-semibold leading-snug text-white">{labelText}</span>
+
+                  {isCadet && c.cadetSummary && (
+                    <p className="text-xs leading-snug text-slate-300">{tr(c.cadetSummary)}</p>
+                  )}
+
+                  {forecast && (
+                    <span className="mt-auto grid w-full gap-1 border-t border-white/10 pt-2 text-[12px]">
+                      {METRICS.map((metric) => (
+                        <span key={metric.key} className="flex items-center justify-between gap-2">
+                          <span className="text-slate-300">{t(metric.labelKey)}</span>
+                          <span
+                            className={`shrink-0 rounded px-1 font-mono tabular-nums ${deltaTone(
+                              forecast.delta[metric.key],
+                              metric.higherIsBetter,
+                            )}`}
+                          >
+                            {signed(forecast.delta[metric.key])}{' '}
+                            {metric.key === 'lifeSupportPct' ? pp : t(metric.unitKey)}
+                          </span>
+                        </span>
+                      ))}
+                      {step === 4 && i === 0 && (
+                        <span className="flex items-center justify-between gap-2 text-sky-200">
+                          {lang === 'az' ? 'Təmiz su' : 'Treated water'}
+                          <span className="shrink-0 font-mono font-semibold">
+                            {fmt(forecast.resourceFlows.waterExtractedKg, 2)} {kg}
+                          </span>
+                        </span>
+                      )}
+                      <span className="mt-1 border-t border-white/10 pt-1 text-slate-200">
+                        {lang === 'az' ? 'Saat' : 'Hour'} {forecast.endHour} · {lang === 'az' ? 'Batareya' : 'Battery'}{' '}
+                        <strong className="font-mono">{fmt(forecast.after.powerKwh)} {t('unitKwh')}</strong>
+                      </span>
+                      <span className={forecast.env.lowPowerHours > 0 ? 'text-amber-200' : 'text-slate-300'}>
+                        {lang === 'az' ? 'Bu mərhələdə 20 kVt·saatdan aşağı:' : 'Below 20 kWh this phase:'}{' '}
+                        {fmt(forecast.env.lowPowerHours)} {lang === 'az' ? 'saat' : 'h'}
+                      </span>
+                      {forecast.abortCause && (
+                        <strong className="text-rose-200">{lang === 'az'
+                          ? `Missiya ${forecast.endHour}-ci saatda dayanır`
+                          : `Mission stops at hour ${forecast.endHour}`} · {tr(ABORT_CAUSES[forecast.abortCause])}</strong>
+                      )}
+                    </span>
+                  )}
+
+                  {copilotEnabled && c.copilotTip && (
+                    <p className="mt-0.5 border-t border-white/10 pt-1 text-[10.5px] italic leading-tight text-emerald-200/90">
+                      💡 {tr(c.copilotTip)}
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Hands-On Station Mini-Game & Simulation Bonus Card (All 6 Steps) */}
+          {taskExercise && (
+            <div className="rounded-xl border border-amber-300/35 bg-slate-950/65 p-3 text-xs text-slate-200">
+              <details open={!stepTaskEnabled && isCadet}>
+                <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 font-semibold text-amber-200">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Wrench size={14} className="text-amber-300" />
+                    {tr(stationMeta.title)}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] ${
+                      stepTaskEnabled
+                        ? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-200'
+                        : 'border-amber-400/40 bg-amber-500/15 text-amber-200'
+                    }`}
+                  >
+                    {stepTaskEnabled ? '✓ ' : ''}
+                    {tr(stationMeta.badge)}
+                  </span>
+                </summary>
+                <div className="mt-2.5">{taskExercise}</div>
+              </details>
+
+              {(taskAvailable || currentStepDefault || taskOverride !== null) && (
+                <label className="mt-2 flex items-center gap-2 font-medium text-emerald-200">
+                  <input
+                    type="checkbox"
+                    checked={stepTaskEnabled && (step !== 4 || inspectedIdx === 0)}
+                    disabled={!canChoose || (step === 4 && inspectedIdx !== 0)}
+                    onChange={(event) => setTaskOverride(event.target.checked)}
+                    className="accent-emerald-400"
+                  />
+                  {lang === 'az'
+                    ? `Bu gedişdə stansiya bonusunu tətbiq et (${tr(stationMeta.badge)})`
+                    : `Apply station calibration bonus in this run (${tr(stationMeta.badge)})`}
+                </label>
+              )}
+              <p className="mt-1 text-[11.5px] text-slate-300">{tr(stationMeta.detail)}</p>
+            </div>
+          )}
+
+          {/* Cause & Effect Explanation Card (Progressive Disclosure in Cadet Mode) */}
+          <details open={!isCadet} className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+            <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+              <span className="flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5" />
+                {lang === 'az'
+                  ? `${CHOICE_LETTERS[inspectedIdx]} variantı niyə belə işləyir? · NASA mənbəyi`
+                  : `Why Option ${CHOICE_LETTERS[inspectedIdx]} works this way · NASA source`}
+              </span>
+              {conditionals.some((item) => item.active) && (
+                <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] normal-case text-emerald-200">
+                  ✓ {lang === 'az' ? 'Əvvəlki qərardan bonus aktivdir' : 'Prior decision bonus active'}
+                </span>
+              )}
+            </summary>
+            <p className="mt-2 text-sm leading-relaxed text-slate-200">
+              {tr(decision.choices[inspectedIdx].causeAndEffectExplanation)}
+            </p>
+            {conditionals.map(({ flag, active, note }) => (
+              <p key={flag} className={`mt-2 text-xs ${active ? 'text-emerald-200' : 'text-slate-300'}`}>
+                {t('ifEarlier')} ({active ? t('active') : t('inactive')}) · {tr(note)}
+              </p>
             ))}
-            <li className="flex flex-col gap-0.5 pt-0.5">
-              <span className="text-[11px] font-semibold text-slate-200">{t('result')}</span>
-              <DeltaChips delta={record.delta} size="xs" />
-            </li>
-          </ul>
+            <p className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-400">
+              <BookMarked className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                {lang === 'az' ? 'Elmi istinad' : 'Scientific reference'} ·{' '}
+                {tr(decision.choices[inspectedIdx].nasaSourceCitation)}
+              </span>
+            </p>
+          </details>
+
+          {/* Procedural teaching illustration and separate published planner at Decision 1 */}
+          {step === 1 && <LunarSiteIntelligence />}
+
+          {/* Deterministic Forecast for Selected Option (Auto-open in Engineer Mode) */}
+          {forecastStep && (
+            <details open={!isCadet} className="rounded-xl border border-sky-500/35 bg-slate-950/70 p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-sky-200">
+                {lang === 'az' ? 'Ətraflı mühəndis proqnozu' : 'Detailed engineering forecast'} ·{' '}
+                {CHOICE_LETTERS[inspectedIdx]}
+              </summary>
+
+              <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {/* Power Forecast */}
+                <div className="rounded-lg border border-amber-400/25 bg-amber-500/10 p-2">
+                  <div className="flex items-center justify-between text-[10px] text-amber-200">
+                    <span className="flex items-center gap-1">
+                      <Zap className="h-3 w-3" /> {t('power')}
+                    </span>
+                    <span className="font-mono font-bold text-amber-300">
+                      {signed(forecastStep.delta.powerKwh)} {t('unitKwh')}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-xs font-semibold text-white">
+                    {fmt(forecastStep.before.powerKwh)} →{' '}
+                    <span
+                      className={
+                        forecastStep.after.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh
+                          ? 'font-bold text-rose-400'
+                          : 'text-amber-200'
+                      }
+                    >
+                      {fmt(forecastStep.after.powerKwh)}
+                    </span>{' '}
+                    <small className="text-slate-400">{t('unitKwh')}</small>
+                  </div>
+                </div>
+
+                {/* Life Support Forecast */}
+                <div className="rounded-lg border border-emerald-400/25 bg-emerald-500/10 p-2">
+                  <div className="flex items-center justify-between text-[10px] text-emerald-200">
+                    <span className="flex items-center gap-1">
+                      <HeartPulse className="h-3 w-3" /> {t('lifeSupport')}
+                    </span>
+                    <span className="font-mono font-bold text-emerald-300">
+                      {signed(forecastStep.delta.lifeSupportPct)} {pp}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-xs font-semibold text-white">
+                    {fmt(forecastStep.before.lifeSupportPct)}% →{' '}
+                    <span
+                      className={
+                        forecastStep.after.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct
+                          ? 'font-bold text-rose-400'
+                          : 'text-emerald-200'
+                      }
+                    >
+                      {fmt(forecastStep.after.lifeSupportPct)}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Radiation Forecast */}
+                <div
+                  className={`rounded-lg border p-2 ${
+                    forecastStep.after.radiationMsv >= RADIATION_LIMITS.missionWarningMsv
+                      ? 'border-rose-400/40 bg-rose-500/15'
+                      : 'border-slate-700 bg-slate-900/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[10px] text-slate-300">
+                    <span className="flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" /> {t('radiation')}
+                    </span>
+                    <span className="font-mono font-bold text-rose-300">
+                      {signed(forecastStep.delta.radiationMsv)} {t('unitMsv')}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-xs font-semibold text-white">
+                    {fmt(forecastStep.before.radiationMsv)} →{' '}
+                    <span
+                      className={
+                        forecastStep.after.radiationMsv >= RADIATION_LIMITS.missionWarningMsv
+                          ? 'font-bold text-rose-400'
+                          : 'text-slate-200'
+                      }
+                    >
+                      {fmt(forecastStep.after.radiationMsv)}
+                    </span>{' '}
+                    <small className="text-slate-400">{t('unitMsv')}</small>
+                  </div>
+                </div>
+
+                {/* Science Points Forecast */}
+                <div className="rounded-lg border border-purple-400/25 bg-purple-500/10 p-2">
+                  <div className="flex items-center justify-between text-[10px] text-purple-200">
+                    <span className="flex items-center gap-1">
+                      <FlaskConical className="h-3 w-3" /> {t('science')}
+                    </span>
+                    <span className="font-mono font-bold text-purple-300">
+                      {signed(forecastStep.delta.sciencePoints)}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-xs font-semibold text-white">
+                    {fmt(forecastStep.before.sciencePoints)} →{' '}
+                    <span className="text-purple-200">{fmt(forecastStep.after.sciencePoints)}</span>{' '}
+                    <small className="text-slate-400">{t('unitPts')}</small>
+                  </div>
+                </div>
+              </div>
+
+              <dl className="mt-2.5 grid grid-cols-2 gap-1 border-t border-white/10 pt-2 font-mono text-[11px] text-slate-300 sm:grid-cols-3">
+                {[
+                  [
+                    lang === 'az' ? 'Günəş + ehtiyat' : 'Solar + backup',
+                    `${fmt(forecastStep.env.generationKwh)} + ${fmt(forecastStep.env.supplementalGenerationKwh)} ${t('unitKwh')}`,
+                  ],
+                  [
+                    lang === 'az' ? 'Baza + isitmə' : 'Base + heaters',
+                    `${fmt(forecastStep.env.loadKwh - forecastStep.env.loadReductionKwh)} + ${fmt(forecastStep.env.heaterKwh)} ${t('unitKwh')}`,
+                  ],
+                  [
+                    lang === 'az' ? 'Tapşırıq + istixana' : 'Task + greenhouse',
+                    `${fmt(forecastStep.env.taskLoadKwh)} + ${fmt(forecastStep.env.greenhouseLoadKwh)} ${t('unitKwh')}`,
+                  ],
+                  [
+                    lang === 'az' ? 'Oksigen ehtiyatı' : 'Oxygen reserve',
+                    `${fmt(forecastStep.resourcesAfter.oxygenKg)} ${kg}`,
+                  ],
+                  [
+                    lang === 'az' ? 'Su ehtiyatı' : 'Water reserve',
+                    `${fmt(forecastStep.resourcesAfter.waterKg)} ${kg}`,
+                  ],
+                  [
+                    lang === 'az' ? 'Qida ehtiyatı' : 'Food reserve',
+                    `${fmt(forecastStep.resourcesAfter.foodKg)} ${kg}`,
+                  ],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-slate-400">{label}</dt>
+                    <dd className="font-semibold">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {forecastStep.resourcesAfter.cropGrowthDays > 0 && (
+                <p className="mt-2 text-xs text-emerald-200">
+                  {lang === 'az'
+                    ? `İstixana · ${fmt(forecastStep.resourcesAfter.cropGrowthDays)} / 30 yetişmə günü · ${fmt(forecastStep.resourcesAfter.harvestedFoodKg)} kq məhsul`
+                    : `Greenhouse · ${fmt(forecastStep.resourcesAfter.cropGrowthDays)} / 30 growing days · ${fmt(forecastStep.resourcesAfter.harvestedFoodKg)} kg harvested`}
+                </p>
+              )}
+              {forecastStep.resourceFlows.waterExtractedKg > 0 && (
+                <p className="mt-2 text-xs text-sky-200">
+                  {lang === 'az'
+                    ? `Ssenari nümunəsindən alınan təmiz su · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kq`
+                    : `Treated water from the training sample · ${fmt(forecastStep.resourceFlows.waterExtractedKg, 2)} kg`}
+                </p>
+              )}
+              {forecastStep.rulesTriggered.length > 0 && (
+                <p className="mt-2 rounded border border-rose-500/40 bg-rose-500/15 px-2 py-1 text-xs text-rose-200">
+                  {forecastStep.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}
+                </p>
+              )}
+            </details>
+          )}
+
+          {step !== 3 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/25 bg-sky-950/30 p-2.5 text-xs">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-4 w-4 shrink-0 text-sky-300" />
+                <div>
+                  <strong className="font-mono text-[11px] uppercase tracking-wider text-sky-200">
+                    {t('hypothesisTitle')}
+                  </strong>
+                  <p className="mt-0.5 text-[11.5px] text-slate-300">{t('hypothesisPrompt')}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setHypothesis('safe')}
+                  aria-pressed={hypothesis === 'safe'}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
+                    hypothesis === 'safe'
+                      ? 'border-emerald-400 bg-emerald-500/25 text-emerald-200'
+                      : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  {t('hypothesisYes')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHypothesis('drain')}
+                  aria-pressed={hypothesis === 'drain'}
+                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
+                    hypothesis === 'drain'
+                      ? 'border-amber-400 bg-amber-500/25 text-amber-200'
+                      : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  {t('hypothesisNo')}
+                </button>
+              </div>
+              {hypothesis !== null && forecastStep && (
+                <div
+                  className={`flex w-full items-center justify-between rounded-lg border px-2.5 py-1 font-mono text-[11px] ${
+                    hypothesisMatches
+                      ? 'border-emerald-400/50 bg-emerald-950/40 text-emerald-200'
+                      : 'border-amber-400/50 bg-amber-950/40 text-amber-200'
+                  }`}
+                >
+                  <span>
+                    {hypothesisMatches ? `✓ ${t('hypothesisCorrect')}` : `ℹ️ ${t('hypothesisIncorrect')}`}
+                  </span>
+                  <span>
+                    {fmt(forecastStep.env.lowPowerHours)}{' '}
+                    {lang === 'az' ? 'saat aşağı ehtiyatda' : 'hours on low reserve'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {ledgerRecord && (
+            <details open={!isCadet} className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
+              <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-sky-300">
+                <CheckCircle2 className="h-3.5 w-3.5" /> {t('stepBreakdown')}
+              </summary>
+              <ul className="mt-1.5 space-y-1.5">
+                {ledgerRecord.contributions.map((c, i) => (
+                  <li key={i} className="flex flex-col gap-0.5 border-b border-slate-800/80 pb-1.5 last:border-0">
+                    <span className="text-[11px] text-slate-400">
+                      <span className="mr-1 rounded bg-slate-800 px-1 text-[9px] font-semibold uppercase text-slate-300">
+                        {t(
+                          c.source === 'environment'
+                            ? 'envLabel'
+                            : c.source === 'choice'
+                              ? 'choiceLabel'
+                              : c.source === 'conditional'
+                                ? 'conditionalLabel'
+                                : 'ruleLabel',
+                        )}
+                      </span>
+                      {tr(c.label)}
+                    </span>
+                    <DeltaChips delta={c.delta} size="xs" />
+                  </li>
+                ))}
+                <li className="flex flex-col gap-0.5 pt-0.5">
+                  <span className="text-[11px] font-semibold text-slate-200">{t('result')}</span>
+                  <DeltaChips delta={ledgerRecord.delta} size="xs" />
+                </li>
+              </ul>
+            </details>
+          )}
         </div>
-      )}
       </div>
-      </div>
+
       {canChoose && (
         <footer className="decision-footer">
-          <div className="min-w-0" role="status">
+          <div className="min-w-0 flex-1" role="status">
             <p className="text-sm font-semibold text-white">
-              {lang === 'az' ? `Seçilmiş variant · ${CHOICE_LETTERS[inspectedIdx]}` : `Selected option ${CHOICE_LETTERS[inspectedIdx]}`}
+              {lang === 'az'
+                ? `Seçilmiş variant ${CHOICE_LETTERS[inspectedIdx]} · ${
+                    isCadet && decision.choices[inspectedIdx].cadetLabel
+                      ? tr(decision.choices[inspectedIdx].cadetLabel)
+                      : tr(decision.choices[inspectedIdx].label)
+                  }`
+                : `Selected Option ${CHOICE_LETTERS[inspectedIdx]} · ${
+                    isCadet && decision.choices[inspectedIdx].cadetLabel
+                      ? tr(decision.choices[inspectedIdx].cadetLabel)
+                      : tr(decision.choices[inspectedIdx].label)
+                  }`}
             </p>
             <p className="text-xs text-slate-300">
-              {lang === 'az' ? 'Tətbiq etdikdə missiya irəliləyir.' : 'Apply this option to advance the mission.'}
+              {mode === 'branch'
+                ? lang === 'az'
+                  ? `D${step}-dən B gedişi yenidən hesablanır; sonrakı planlaşdırılmış qərarlar saxlanılır.`
+                  : `Recalculate Run B from D${step}; later planned choices stay fixed.`
+                : lang === 'az'
+                  ? `Tətbiq et: missiya ${decision.phase.startHour}-ci saatdan ${forecastStep?.endHour ?? decision.phase.endHour}-ci saata irəliləyir. Araşdırma zamanı vaxt irəliləmir.`
+                  : `Apply advances from hour ${decision.phase.startHour} to ${forecastStep?.endHour ?? decision.phase.endHour}. Exploring does not advance mission time.`}
             </p>
           </div>
-          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared }, shadowGuess)}
-            className="shrink-0 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-200">
-            {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
+          <button
+            type="button"
+            onClick={() =>
+              onChoose(
+                inspectedIdx,
+                {
+                  ...effectiveTasks,
+                  icePrepared: step === 4 ? inspectedIdx === 0 && stepTaskEnabled : effectiveTasks.icePrepared,
+                },
+                shadowGuess,
+              )
+            }
+            className="shrink-0 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-200"
+          >
+            {lang === 'az'
+              ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et`
+              : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
           </button>
         </footer>
       )}

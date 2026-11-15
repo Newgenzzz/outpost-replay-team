@@ -1,11 +1,20 @@
-import { CheckCircle2, X } from 'lucide-react';
+import { CheckCircle2, GitBranch, Sparkles, TriangleAlert, X } from 'lucide-react';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, type StepRecord } from '../engine/simulation';
 import { useI18n } from '../i18n/LanguageContext';
 import { CHOICE_LETTERS, fmt, signed } from './metricMeta';
+import { decisionConsequenceFeedback } from '../utils/decisionFeedback';
 
-export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismiss: () => void }) {
+export function DecisionDebrief({
+  step,
+  onDismiss,
+  onOpenRewind,
+}: {
+  step: StepRecord;
+  onDismiss: () => void;
+  onOpenRewind?: () => void;
+}) {
   const { lang, t, tr } = useI18n();
   const az = lang === 'az';
   const kg = az ? 'kq' : 'kg';
@@ -24,9 +33,12 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
     result = az ? `Emaldan alınan su · ${fmt(step.resourceFlows.waterExtractedKg, 2)} ${kg}`
       : `Water recovered · ${fmt(step.resourceFlows.waterExtractedKg, 2)} ${kg}`;
   } else if (step.step === 5) {
-    result = az ? `Mərhələnin model dozası · ${fmt(step.delta.radiationMsv)} mSv`
-      : `Modeled dose this phase · ${fmt(step.delta.radiationMsv)} mSv`;
+    result = az
+      ? `Mərhələnin model dozası · +${fmt(step.delta.radiationMsv)} mSv (Cəmi: ${fmt(step.after.radiationMsv)} / 50 mSv həddi)`
+      : `Modeled dose this phase · +${fmt(step.delta.radiationMsv)} mSv (Total: ${fmt(step.after.radiationMsv)} / 50 mSv warning)`;
   }
+
+  const consequenceBanner = decisionConsequenceFeedback(step);
 
   return (
     <section className="decision-debrief">
@@ -41,8 +53,37 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
         </button>
       </div>
       <div role="status" aria-atomic="true">
-        <strong className="block text-sm leading-snug text-white">{result}</strong>
+        <p className="mt-0.5 text-xs font-medium text-amber-100">{tr(choice.label)}</p>
+        <strong className="mt-1 block text-sm leading-snug text-white">{result}</strong>
+        <p
+          className={`mt-1.5 inline-flex w-full items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-medium ${
+            consequenceBanner.warn
+              ? 'border-amber-400/45 bg-amber-950/60 text-amber-100'
+              : 'border-emerald-400/35 bg-emerald-950/45 text-emerald-100'
+          }`}
+        >
+          {consequenceBanner.warn ? (
+            <TriangleAlert size={12} className="shrink-0 text-amber-300" aria-hidden="true" />
+          ) : (
+            <Sparkles size={12} className="shrink-0 text-emerald-300" aria-hidden="true" />
+          )}
+          <span>{tr(consequenceBanner.text)}</span>
+        </p>
         <p className="mt-1">{tr(ENGINEERING_LESSONS[step.step - 1])}</p>
+        <div className="mt-2 grid grid-cols-2 gap-1 font-mono text-[10px]">
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-amber-200">
+            ⚡ {signed(step.delta.powerKwh)} {t('unitKwh')}
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-teal-200">
+            🫁 {signed(step.delta.lifeSupportPct)} {az ? 'f.b.' : 'pp'}
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-rose-200">
+            ☢️ {signed(step.delta.radiationMsv)} mSv
+          </span>
+          <span className="rounded bg-black/35 px-1.5 py-0.5 text-sky-200">
+            🔬 {signed(step.delta.sciencePoints)} {t('unitPts')}
+          </span>
+        </div>
       </div>
       <details className="mt-1.5 text-xs text-slate-200">
         <summary className="cursor-pointer font-medium text-sky-200">{az ? 'Qərarın təsiri' : 'Why it changed'}</summary>
@@ -58,6 +99,20 @@ export function DecisionDebrief({ step, onDismiss }: { step: StepRecord; onDismi
           <p className="mt-2 text-amber-100">{step.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}</p>
         )}
       </details>
+      {onOpenRewind && step.step >= 1 && (
+        <button
+          type="button"
+          onClick={onOpenRewind}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-sky-400/40 bg-sky-500/15 px-2.5 py-1.5 text-[11px] font-semibold text-sky-100 transition hover:bg-sky-500/25"
+        >
+          <GitBranch size={12} aria-hidden="true" />
+          <span>
+            {az
+              ? `D${step.step} qərarını geri sar və başqasını sına [R]`
+              : `Rewind D${step.step} & compare another choice [R]`}
+          </span>
+        </button>
+      )}
     </section>
   );
 }

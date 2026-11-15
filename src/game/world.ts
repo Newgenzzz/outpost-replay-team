@@ -597,6 +597,8 @@ export interface WorldSnapshot {
   icePreparationAvailable: boolean;
   iceBypassed: boolean;
   stormPending: boolean;
+  /** Stylized suit warning for a nonzero training storm, not a dose measurement. */
+  stormAudioActive: boolean;
   activeStep: number;
   lastAvailableStep: number;
   completedCount: number;

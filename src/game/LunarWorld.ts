@@ -51,6 +51,15 @@ interface TireTrack {
   bornAt: number;
 }
 
+interface DustPuff {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  bornAt: number;
+  size: number;
+}
+
 type FacilityReadout = 'solar' | 'habitat' | 'greenhouse' | 'ice' | 'shelter';
 
 const NAV_BOUNDS: Rectangle = { left: 90, top: 150, right: WORLD.width - 90, bottom: WORLD.height - 70 };
@@ -82,7 +91,9 @@ export class LunarWorld extends Phaser.Scene {
 
   private aiCrew: AiCrewRuntime[] = [];
   private tireTracks: TireTrack[] = [];
+  private dustPuffs: DustPuff[] = [];
   private lastTrackPos: Point = { x: WORLD.roverSpawn.x, y: WORLD.roverSpawn.y };
+  private geigerAt = 0;
 
   private facilityLights = new Map<number, Phaser.GameObjects.Arc[]>();
   private stationBadges = new Map<number, Phaser.GameObjects.Text>();
@@ -94,6 +105,8 @@ export class LunarWorld extends Phaser.Scene {
   private samplePrompts: Phaser.GameObjects.Text[] = [];
 
   private solarImage!: Phaser.GameObjects.Image;
+  private shelterImage!: Phaser.GameObjects.Image;
+  private isruGlow!: Phaser.GameObjects.Ellipse;
   private batteryLight!: Phaser.GameObjects.Rectangle;
   private habitatLight!: Phaser.GameObjects.Ellipse;
   private greenhouseImage!: Phaser.GameObjects.Image;
@@ -228,9 +241,9 @@ export class LunarWorld extends Phaser.Scene {
           .ellipse(-13, -55, 106, 34, 0xa7dab6, 0.16)
           .setRotation(0.3);
         group.add(this.greenhouseLight);
-        const panel = this.createFacilityReadout('greenhouse', building.x - 12, building.y + 27, 172, 49);
-        this.cropTrack = this.add.rectangle(-76, 16, 152, 3, 0x314950).setOrigin(0, 0.5);
-        this.cropFill = this.add.rectangle(-76, 16, 152, 3, 0x87cebd).setOrigin(0, 0.5);
+        const panel = this.createFacilityReadout('greenhouse', building.x - 18, building.y - 108, 168, 44);
+        this.cropTrack = this.add.rectangle(-74, 14, 148, 3, 0x314950).setOrigin(0, 0.5);
+        this.cropFill = this.add.rectangle(-74, 14, 148, 3, 0x87cebd).setOrigin(0, 0.5);
         panel.add([this.cropTrack, this.cropFill]);
       }
       if (building.id === 'iceProcessor') {
@@ -238,7 +251,14 @@ export class LunarWorld extends Phaser.Scene {
         group.add(this.iceFill);
         this.createFacilityReadout('ice', building.x + 119, building.y - 72, 179);
       }
+      if (building.id === 'lifeSupport') {
+        this.isruGlow = this.add
+          .ellipse(0, -48, 76, 30, 0x38bdf8, 0)
+          .setStrokeStyle(1.5, 0x7dd3fc, 0);
+        group.add(this.isruGlow);
+      }
       if (building.id === 'shelter') {
+        this.shelterImage = image;
         this.createFacilityReadout('shelter', building.x + 111, building.y - 30, 171);
       }
 
@@ -615,18 +635,20 @@ export class LunarWorld extends Phaser.Scene {
     if (transition && !this.bridge.reducedMotion) camera.setScroll(scrollX, scrollY);
   }
 
-  private createFacilityReadout(key: FacilityReadout, x: number, y: number, width: number, height = 41) {
+  private createFacilityReadout(key: FacilityReadout, x: number, y: number, width: number, height = 37) {
     const backing = this.add
-      .rectangle(0, 0, width, height, 0x0c1c25, 0.97)
-      .setStrokeStyle(1, 0x60818a, 0.9);
-    const title = this.add.text(19 - width / 2, 5 - height / 2, '', {
-      fontFamily: 'monospace', fontSize: '10px', color: '#b4c9c8',
+      .rectangle(0, 0, width, height, 0x071420, 0.86)
+      .setStrokeStyle(1.2, 0x38bdf8, 0.45);
+    const accent = this.add
+      .rectangle(0, -height / 2 + 1, width - 2, 2, 0x7dd3fc, 0.55);
+    const title = this.add.text(19 - width / 2, 4 - height / 2, '', {
+      fontFamily: 'monospace', fontSize: '9.5px', color: '#93c5fd',
     });
-    const value = this.add.text(9 - width / 2, 19 - height / 2, '', {
-      fontFamily: 'Inter, sans-serif', fontSize: '12.5px', fontStyle: 'bold',
+    const value = this.add.text(9 - width / 2, 17 - height / 2, '', {
+      fontFamily: 'Inter, sans-serif', fontSize: '11.5px', fontStyle: 'bold',
     });
-    const indicator = this.add.circle(10 - width / 2, 11 - height / 2, 2.6, 0x8bb8b4);
-    const panel = this.add.container(x, y, [backing, indicator, title, value]).setDepth(2030);
+    const indicator = this.add.circle(10 - width / 2, 10 - height / 2, 2.8, 0x8bb8b4);
+    const panel = this.add.container(x, y, [backing, accent, indicator, title, value]).setDepth(2030);
     this.readouts.set(key, { panel, title, value, indicator });
     return panel;
   }
@@ -689,8 +711,8 @@ export class LunarWorld extends Phaser.Scene {
         [f.x + dx - f.width / 4, f.y + f.height / 2 + dy],
         [f.x - f.width / 2, f.y + f.height / 2],
       ].map(([x, y]) => new Phaser.Math.Vector2(x, y));
-      g.fillStyle(0x0f2537, 0.26).fillPoints(pts, true);
-      g.fillStyle(0x0e2030, 0.18).fillEllipse(
+      g.fillStyle(0x0a2034, 0.36).fillPoints(pts, true);
+      g.fillStyle(0x0a2034, 0.24).fillEllipse(
         f.x + 5,
         f.y + f.height * 0.4,
         f.width * 1.12,
@@ -841,10 +863,10 @@ export class LunarWorld extends Phaser.Scene {
       ],
     ];
     for (const route of conduits) {
-      g.lineStyle(6, 0x1c2e3f, 0.72).beginPath().moveTo(route[0][0], route[0][1]);
+      g.lineStyle(5, 0x172e3e, 0.46).beginPath().moveTo(route[0][0], route[0][1]);
       for (const [x, y] of route.slice(1)) g.lineTo(x, y);
       g.strokePath();
-      g.lineStyle(2, 0x86a3aa, 0.62).beginPath().moveTo(route[0][0], route[0][1]);
+      g.lineStyle(1.5, 0x99b5bb, 0.35).beginPath().moveTo(route[0][0], route[0][1]);
       for (const [x, y] of route.slice(1)) g.lineTo(x, y);
       g.strokePath();
     }
@@ -998,7 +1020,7 @@ export class LunarWorld extends Phaser.Scene {
   ) {
     this.fxGfx.clear();
 
-    // Lamps illuminate a patch of ground ahead of the rover.
+    // Lamps illuminate a patch of ground ahead of the rover with volumetric cones in shadow.
     const { x: dx, y: dy } = this.heading;
     this.roverLamps.forEach((lamp, index) => {
       const side = index === 0 ? -1 : 1;
@@ -1006,16 +1028,138 @@ export class LunarWorld extends Phaser.Scene {
       if (snap.controllingRover) {
         lamp.setPosition(activePos.x + dx * 80 - dy * side * 12, activePos.y + dy * 61 + dx * side * 12)
           .setRotation(Math.atan2(dy, dx))
-          .setAlpha(0.06 + 0.23 * (1 - snap.sunlightFraction));
+          .setAlpha(0.08 + 0.25 * (1 - snap.sunlightFraction));
       }
     });
+    if (snap.controllingRover && snap.sunlightFraction < 0.95) {
+      const coneAlpha = 0.09 + 0.18 * (1 - snap.sunlightFraction);
+      const perpX = -dy;
+      const perpY = dx * 0.65;
+      const originX = activePos.x + dx * 22;
+      const originY = activePos.y + dy * 14 - 8;
+      const farX = activePos.x + dx * 138;
+      const farY = activePos.y + dy * 98;
+      this.fxGfx
+        .fillStyle(0xfef08a, coneAlpha)
+        .fillTriangle(
+          originX,
+          originY,
+          farX + perpX * 42,
+          farY + perpY * 42,
+          farX - perpX * 42,
+          farY - perpY * 42,
+        );
+    }
 
-    // Show the contact point while the training drill is in use.
+    // Sequential chaser glow along outpost guide bollards
+    if (!this.bridge.reducedMotion) {
+      const bollardPts = [
+        [555, 555],
+        [690, 555],
+        [810, 555],
+        [985, 555],
+        [1155, 555],
+        [1395, 555],
+        [425, 665],
+        [795, 685],
+        [795, 790],
+      ];
+      const activeBollard = Math.floor(time / 260) % bollardPts.length;
+      bollardPts.forEach(([bx, by], idx) => {
+        const isActive = idx === activeBollard;
+        const glowColor = snap.stormPending ? 0xfb7185 : snap.powerLow ? 0xfbbf24 : 0x7dd3fc;
+        this.fxGfx
+          .fillStyle(glowColor, isActive ? 0.42 : 0.14)
+          .fillCircle(bx, by - 8, isActive ? 5.5 : 3);
+      });
+
+      // Animated HVDC power flow packets traveling along outpost conduit lines
+      const conduitSegments: Array<[[number, number], [number, number]]> = [
+        [[340, 355], [585, 355]],
+        [[585, 355], [585, 415]],
+        [[585, 415], [895, 415]],
+        [[425, 595], [425, 745]],
+        [[425, 595], [795, 595]],
+        [[795, 595], [795, 865]],
+        [[1085, 415], [1290, 415]],
+        [[1290, 415], [1545, 445]],
+      ];
+      const packetColor = snap.powerLow ? 0xfbbf24 : 0x38bdf8;
+      conduitSegments.forEach(([p0, p1], segIdx) => {
+        const t = ((time * 0.00055 + segIdx * 0.21) % 1 + 1) % 1;
+        const px = p0[0] + (p1[0] - p0[0]) * t;
+        const py = p0[1] + (p1[1] - p0[1]) * t;
+        this.fxGfx.fillStyle(packetColor, 0.62).fillCircle(px, py, 2.8);
+        this.fxGfx.fillStyle(0xe0f2fe, 0.85).fillCircle(px, py, 1.3);
+      });
+    }
+
+    // Show glowing cryo-laser beam and sparkling ice shards while the training drill is in use.
     if (drilling && nearIceIdx >= 0) {
       const point = ICE_DEPOSITS[nearIceIdx];
-      const radius = this.bridge.reducedMotion ? 5 : 5 + Math.sin(time * 0.015) * 1.8;
-      this.fxGfx.lineStyle(1.6, 0xb0e8ed, 0.95).strokeCircle(point.x, point.y - 12, radius + 2);
-      this.fxGfx.fillStyle(0xe0f6ef, 0.95).fillCircle(point.x, point.y - 12, 2);
+      const beamOriginY = snap.controllingRover ? activePos.y - 18 : activePos.y - 36;
+      const radius = this.bridge.reducedMotion ? 6 : 6 + Math.sin(time * 0.02) * 2.5;
+      this.fxGfx.lineStyle(8, 0x0284c7, 0.22).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
+      this.fxGfx.lineStyle(5, 0x0ea5e9, 0.38).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
+      this.fxGfx.lineStyle(2.2, 0xe0f2fe, 0.95).lineBetween(activePos.x, beamOriginY, point.x, point.y - 14);
+      this.fxGfx.lineStyle(1.8, 0x67e8f9, 0.95).strokeCircle(point.x, point.y - 14, radius + 3);
+      this.fxGfx.lineStyle(1.2, 0x38bdf8, 0.55).strokeCircle(point.x, point.y - 14, radius + 9);
+      this.fxGfx.fillStyle(0xffffff, 0.95).fillCircle(point.x, point.y - 14, 3.4);
+      if (!this.bridge.reducedMotion) {
+        for (let k = 0; k < 6; k++) {
+          const ang = time * 0.014 + (k * Math.PI) / 3;
+          const dist = 6 + ((time * 0.055 + k * 6) % 18);
+          this.fxGfx.fillStyle(k % 2 === 0 ? 0x7dd3fc : 0xe0f2fe, 0.88).fillCircle(
+            point.x + Math.cos(ang) * dist,
+            point.y - 14 + Math.sin(ang) * dist * 0.6,
+            1.9,
+          );
+        }
+      }
+    }
+
+    // Commander helmet headlamp beam when outside in polar horizon shadow
+    if (!snap.controllingRover && snap.sunlightFraction < 0.85) {
+      const lampAlpha = 0.22 * (1 - snap.sunlightFraction);
+      this.fxGfx.fillStyle(0xfef08a, lampAlpha).fillEllipse(
+        activePos.x + dx * 48,
+        activePos.y + dy * 34 - 8,
+        68,
+        28,
+      );
+    }
+
+    // Low-gravity regolith dust puffs kicked up by boots and rover wheels
+    this.dustPuffs = this.dustPuffs.filter((p) => time - p.bornAt < 680);
+    for (const puff of this.dustPuffs) {
+      const age = (time - puff.bornAt) / 680;
+      const px = puff.x + puff.vx * age * 18;
+      const py = puff.y + puff.vy * age * 14 - Math.sin(age * Math.PI) * 7;
+      this.fxGfx
+        .fillStyle(0xd6cbb5, (1 - age) * 0.34)
+        .fillCircle(px, py, puff.size * (0.7 + age * 0.9));
+    }
+
+    // Energetic solar proton streaks & emergency bunker strobe during D5 Solar Storm
+    if (snap.stormPending && !this.bridge.reducedMotion) {
+      const cam = this.cameras.main;
+      const viewLeft = cam.worldView.x;
+      const viewTop = cam.worldView.y;
+      const viewW = cam.worldView.width || 960;
+      const viewH = cam.worldView.height || 600;
+      for (let s = 0; s < 14; s++) {
+        const seedX = ((s * 197 + time * 0.42) % (viewW + 160)) - 80;
+        const seedY = ((s * 131 + time * 0.65) % (viewH + 120)) - 60;
+        const sx = viewLeft + seedX;
+        const sy = viewTop + seedY;
+        this.fxGfx
+          .lineStyle(1.4, s % 3 === 0 ? 0xfda4af : 0xfde047, 0.38)
+          .lineBetween(sx, sy, sx - 18, sy - 26);
+      }
+      const bunkerPulse = 0.5 + 0.5 * Math.sin(time * 0.01);
+      this.fxGfx
+        .lineStyle(2.4, 0xfb7185, 0.35 + bunkerPulse * 0.5)
+        .strokeEllipse(STATIONS[4].x, STATIONS[4].y, 118 + bunkerPulse * 26, 52 + bunkerPulse * 12);
     }
 
     // Fade the tracks left by actual rover movement.
@@ -1054,6 +1198,16 @@ export class LunarWorld extends Phaser.Scene {
       }
       nextMarker -= length;
       from = point;
+    }
+
+    // Subtle pulsing target beacon ring around the active objective station
+    if (snap.completedCount < 6) {
+      const targetSt = STATIONS[Math.min(5, Math.max(0, snap.activeStep - 1))];
+      const ringPulse = this.bridge.reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * 0.0055);
+      const ringColor = snap.stormPending ? 0xfb923c : snap.powerLow ? 0xf6d59b : 0x86efac;
+      this.fxGfx
+        .lineStyle(2, ringColor, 0.32 + ringPulse * 0.42)
+        .strokeEllipse(targetSt.x, targetSt.y + 8, 74 + ringPulse * 14, 34 + ringPulse * 7);
     }
 
     if (!this.bridge.reducedMotion) {
@@ -1275,7 +1429,17 @@ export class LunarWorld extends Phaser.Scene {
           bornAt: time,
         });
         this.lastTrackPos = { x: this.carSprite.x, y: this.carSprite.y };
-        if (time > this.stepSoundAt) {
+        if (!b.reducedMotion) {
+          this.dustPuffs.push({
+            x: this.carSprite.x - this.heading.x * 26,
+            y: this.carSprite.y - this.heading.y * 12 + 4,
+            vx: -this.heading.x + (Math.random() - 0.5) * 0.6,
+            vy: -this.heading.y + (Math.random() - 0.5) * 0.4,
+            bornAt: time,
+            size: 6.5,
+          });
+        }
+        if (!paused && time > this.stepSoundAt) {
           soundFX.play('roverMotor');
           this.stepSoundAt = time + 240;
         }
@@ -1297,8 +1461,18 @@ export class LunarWorld extends Phaser.Scene {
         const startFrame = currentAnim?.key.startsWith('commander-walk-') ? (currentFrame?.index ?? 1) - 1 : 0;
         this.player.play({ key: `commander-walk-${this.facing}`, startFrame }, true);
         this.player.anims.timeScale = Phaser.Math.Clamp(this.walkPace / WORLD.speed, 0.55, 1.12);
-        if (time > this.stepSoundAt) {
+        if (!paused && time > this.stepSoundAt) {
           soundFX.play('footstep');
+          if (!b.reducedMotion) {
+            this.dustPuffs.push({
+              x: this.player.x - this.heading.x * 8,
+              y: this.player.y + 2,
+              vx: -this.heading.x * 0.7,
+              vy: -this.heading.y * 0.5,
+              bornAt: time,
+              size: 4.2,
+            });
+          }
           this.stepSoundAt = time + 310;
         }
       } else if (!b.reducedMotion && !paused) {
@@ -1410,6 +1584,12 @@ export class LunarWorld extends Phaser.Scene {
 
     this.renderFieldFeedback(time, snap, activePos, nearIceIdx, drilling);
 
+    // Stylized suit warning during the pending training storm, not live dosimetry.
+    if (!paused && snap.stormAudioActive && time > this.geigerAt) {
+      soundFX.play('geiger');
+      this.geigerAt = time + 1150 + Math.random() * 900;
+    }
+
     // Sync Deterministic World Snapshot Visuals
     if (snap !== this.lastSnapshot) {
       const previous = this.lastSnapshot;
@@ -1418,11 +1598,27 @@ export class LunarWorld extends Phaser.Scene {
       const az = snap.lang === 'az';
       const powerFrac = Phaser.Math.Clamp(snap.batteryKwh / BATTERY_CAPACITY_KWH, 0, 1);
       const lowLight = snap.sunlightFraction < 1;
+      const hasTallMast = snap.choices[0] === 0;
+      const hasRegolithBerm = snap.choices[1] === 0;
+      const hasIsruOxygen = snap.choices[1] === 1;
       this.shade.setAlpha(0.44 * (1 - snap.sunlightFraction)).setVisible(lowLight);
-      this.solarImage.setTexture(lowLight ? 'solar-off' : 'solar');
+      this.solarImage.setTexture(
+        hasTallMast
+          ? lowLight ? 'solar-mast-off' : 'solar-mast'
+          : lowLight ? 'solar-off' : 'solar',
+      );
+      this.shelterImage.setTexture(hasRegolithBerm ? 'shelter-berm' : 'shelter');
+      this.isruGlow
+        .setFillStyle(0x38bdf8, hasIsruOxygen ? 0.24 : 0)
+        .setStrokeStyle(1.5, 0x7dd3fc, hasIsruOxygen ? 0.65 : 0);
+      const solarHeightLabel = snap.choices[0] === 0
+        ? az ? '10m dirək' : '10m mast'
+        : snap.choices[0] !== undefined
+          ? az ? '2m panel' : '2m deck'
+          : '';
       this.setReadout('solar', az ? 'GÜNƏŞ PANELLƏRİ' : 'SOLAR ARRAY', snap.solarOutputPct === null
         ? az ? 'Quraşdırma gözlənilir' : 'Setup pending'
-        : az ? `Nominal gücün ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% of nominal output`,
+        : `${solarHeightLabel ? `${solarHeightLabel} · ` : ''}${az ? `Nominalın ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% output`}`,
       lowLight ? '#f6d99e' : '#c6e9d1');
       if (previous && (previous.powerLow !== snap.powerLow || previous.sunlightFraction !== snap.sunlightFraction)) {
         this.acknowledgeFacility('solar', snap.powerLow || lowLight ? 0xf6d99e : 0xc6e9d1);
@@ -1430,13 +1626,27 @@ export class LunarWorld extends Phaser.Scene {
 
       this.habitatLight.setFillStyle(snap.powerLow ? 0xe7af64 : 0xa4eadc)
         .setAlpha(snap.powerLow ? 0.05 : 0.19 + powerFrac * 0.32);
+      const hasBackupFuelCells = snap.completedCount >= 3 && snap.choices[2] === 1;
       const habitatStatus = snap.lifeSupportLow
         ? az ? `Həyat təminatı zəif · ${fmt(snap.lifeSupportPct)}%` : `Life support low · ${fmt(snap.lifeSupportPct)}%`
         : snap.powerLow
-          ? az ? 'Batareya ehtiyatı azdır' : 'Battery reserve low'
-          : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
+          ? az ? 'Aşağı enerji <20 kVt·s · İşıq zəif' : 'Brownout <20 kWh · Lights dim'
+          : hasBackupFuelCells
+            ? az ? `Yanacaq elem. aktiv · ${fmt(snap.lifeSupportPct)}%` : `Fuel cells active · ${fmt(snap.lifeSupportPct)}%`
+            : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
       this.setReadout('habitat', az ? 'YAŞAYIŞ MODULU' : 'HABITAT', habitatStatus,
         snap.lifeSupportLow || snap.powerLow ? '#f6d59b' : '#c6e9d1');
+      if (
+        previous &&
+        (previous.powerLow !== snap.powerLow ||
+          previous.lifeSupportLow !== snap.lifeSupportLow ||
+          (previous.choices[2] === 1) !== hasBackupFuelCells)
+      ) {
+        this.acknowledgeFacility(
+          'habitat',
+          snap.lifeSupportLow || snap.powerLow ? 0xf6d59b : hasBackupFuelCells ? 0x38bdf8 : 0xc6e9d1,
+        );
+      }
 
       const crop = CROP_DISPLAY[snap.cropStatus];
       const cropProgress = Phaser.Math.Clamp(snap.cropProgress, 0, 1);
@@ -1473,8 +1683,21 @@ export class LunarWorld extends Phaser.Scene {
       if (previous && (previous.icePreparationAvailable !== snap.icePreparationAvailable || previous.iceWaterKg !== water)) {
         this.acknowledgeFacility('ice', 0x9edce8);
       }
+      const shelterChoice = snap.completedCount >= 5 ? snap.choices[4] : undefined;
+      const shelterStatus = shelterChoice === 2
+        ? az ? 'Sığınacaq bağlı (×0.06 doza)' : 'Bunker sealed (×0.06 dose)'
+        : shelterChoice === 1
+          ? az ? 'Su divarlı modul (×0.15)' : 'Water-wall module (×0.15)'
+          : shelterChoice === 0
+            ? az ? 'Açıq səth səfəri (100%)' : 'Exposed EVA traverse'
+            : az ? 'Qorunma planını seçin' : 'Choose a shielding plan';
       this.setReadout('shelter', az ? 'D5 · SIĞINACAQ' : 'D5 · SHELTER',
-        az ? 'Qorunma planını seçin' : 'Choose a shielding plan', '#f6d59b', snap.stormPending);
+        shelterStatus,
+        shelterChoice === 2 ? '#c6e9d1' : '#f6d59b',
+        snap.stormPending);
+      if (previous && (previous.stormPending !== snap.stormPending || previous.choices[4] !== snap.choices[4])) {
+        this.acknowledgeFacility('shelter', shelterChoice === 2 ? 0xc6e9d1 : 0xf6d59b);
+      }
 
       this.batteryLight
         .setVisible(powerFrac > 0)

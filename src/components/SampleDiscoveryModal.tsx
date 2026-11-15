@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Award,
   Compass,
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { FIELD_SAMPLES, type FieldSampleNode } from '../game/world';
 import { useI18n } from '../i18n/LanguageContext';
-import { soundFX } from '../utils/soundEffects';
 
 interface SampleDiscoveryModalProps {
   sampleIdx: number | null;
@@ -29,10 +28,6 @@ export function SampleDiscoveryModal({
   onOpenScience,
 }: SampleDiscoveryModalProps) {
   const { lang } = useI18n();
-
-  useEffect(() => {
-    soundFX.play('hotspot');
-  }, [sampleIdx]);
 
   const activeIdx =
     sampleIdx !== null

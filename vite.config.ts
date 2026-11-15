@@ -14,6 +14,7 @@ export default defineConfig({
         manualChunks: {
           charts: ['recharts'],
           phaser: ['phaser'],
+          three: ['three'],
         },
       },
     },
