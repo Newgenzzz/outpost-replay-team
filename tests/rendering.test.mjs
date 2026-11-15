@@ -20,6 +20,7 @@ const {
   computeRimIllumination,
   destroyWorldRenderer,
   hologramFrameLoop,
+  releaseWorldKeyboard,
   updateWorldRendering,
 } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 
@@ -64,6 +65,34 @@ test('preboot visibility changes do not interfere with Phaser boot and apply aft
   updateWorldRendering(game, true);
   assert.deepEqual(calls, ['sleep']);
   updateWorldRendering(game, false);
+  assert.deepEqual(calls, ['sleep', 'wake']);
+});
+
+test('paused worlds release DOM control keys immediately even while their renderer remains running', () => {
+  const { calls, game } = worldStub();
+  game.input = { keyboard: { preventDefault: true } };
+  releaseWorldKeyboard(game);
+  assert.equal(game.input.keyboard.preventDefault, false);
+  assert.equal(game.loop.running, true);
+  assert.deepEqual(calls, []);
+});
+
+test('suspension releases captured keys before sleeping so DOM sliders receive their first arrow key', () => {
+  const { calls, game } = worldStub();
+  game.input = { keyboard: { preventDefault: true } };
+  const sleep = game.loop.sleep;
+  game.loop.sleep = function () {
+    assert.equal(game.input.keyboard.preventDefault, false, 'release capture before the last frame stops');
+    sleep.call(this);
+  };
+  updateWorldRendering(game, true);
+  assert.equal(game.input.keyboard.preventDefault, false);
+  // The loop may already be asleep when a later visibility update arrives.
+  game.input.keyboard.preventDefault = true;
+  updateWorldRendering(game, true);
+  assert.equal(game.input.keyboard.preventDefault, false);
+  updateWorldRendering(game, false);
+  assert.equal(game.input.keyboard.preventDefault, false, 'the resumed world owns its focus-based capture policy');
   assert.deepEqual(calls, ['sleep', 'wake']);
 });
 

@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef } f
 import Phaser from 'phaser';
 import { LunarWorld } from './LunarWorld';
 import { renderCounter } from '../utils/renderDiagnostics';
-import { destroyWorldRenderer, updateWorldRendering } from '../utils/renderPolicy';
+import { destroyWorldRenderer, releaseWorldKeyboard, updateWorldRendering } from '../utils/renderPolicy';
 import type {
   Point,
   StationNode,
@@ -50,6 +50,7 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       bridge.current.paused = props.paused;
       bridge.current.snapshot = props.snapshot;
     }
+    if (props.paused && instance.current) releaseWorldKeyboard(instance.current);
   }, [props]);
 
   useEffect(() => {
