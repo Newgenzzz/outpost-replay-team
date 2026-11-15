@@ -50,7 +50,9 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
   useImperativeHandle(
     ref,
     () => ({
-      focus: () => host.current?.focus({ preventScroll: true }),
+      focus: () => {
+        if (!bridge.current?.paused) host.current?.focus({ preventScroll: true });
+      },
       move: (direction) => {
         if (bridge.current) {
           bridge.current.direction = direction;

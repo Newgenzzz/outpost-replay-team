@@ -51,6 +51,8 @@ import StationTaskMiniGame from './components/StationTaskMiniGame';
 import { OutcomeBadge } from './components/MetricGauges';
 import DecisionCard from './components/DecisionCard';
 import { DecisionDebrief } from './components/DecisionDebrief';
+import { ShadowPredictionResult } from './components/ShadowPredictionResult';
+import type { ShadowPrediction, ShadowStrategy } from './engine/shadowPrediction';
 import CompareCharts from './components/CompareCharts';
 import DeltaSummary from './components/DeltaSummary';
 import MissionResults from './components/MissionResults';
@@ -138,6 +140,7 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [achievementToast]);
   const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
+  const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(null);
 
   // 2.5D Phaser World Live State
   const [ready, setReady] = useState(false);
@@ -435,7 +438,7 @@ export default function App() {
     }
   }
 
-  function handleChoose(choiceIndex: number, tasks: MissionTaskSettings) {
+  function handleChoose(choiceIndex: number, tasks: MissionTaskSettings, prediction: ShadowStrategy | null) {
     if (!canChoose) return;
 
     // Run B keeps the original plan for executed phases and can extend a rescued run.
@@ -454,6 +457,9 @@ export default function App() {
       setBaselineTasks(tasks);
     }
     setLastDebrief(debriefStep);
+    if (!hasBranch && viewStep === 3) {
+      setShadowPrediction(prediction ? { expected: prediction, priorChoices: nextChoices.slice(0, 2), solarCalibrated: tasks.solarCalibrated } : null);
+    }
 
     setDecisionModalOpen(false);
     if (preview.complete) {
@@ -490,6 +496,7 @@ export default function App() {
     setInspectSampleIdx(null);
     setSampleModalOpen(false);
     setLastDebrief(null);
+    setShadowPrediction(null);
     setAchievementToast(null);
     world.current?.reset();
   }
@@ -1773,6 +1780,7 @@ export default function App() {
               taskAvailable={calibratedTasks[viewStep - 1]}
               taskExercise={stationExercise}
               canChoose={canChoose}
+              shadowPrediction={shadowPrediction}
               onChoose={handleChoose}
               onPrev={() => setViewStep((s) => Math.max(1, s - 1))}
               onNext={() => {
@@ -1856,6 +1864,7 @@ export default function App() {
               </div>
             </div>
 
+            {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
             {runB && <div className="mb-4"><DeltaSummary a={runA} b={runB} /></div>}
 
             <div className="mb-4 rounded-xl border border-white/10 bg-[#0e1a22] p-4">

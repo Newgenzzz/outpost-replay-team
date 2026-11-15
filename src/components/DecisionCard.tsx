@@ -32,6 +32,8 @@ import {
 import type { Bilingual, FlagId, MetricDelta, MissionTaskSettings } from '../types';
 import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
+import { ShadowPredictionInput } from './ShadowPrediction';
+import type { ShadowPrediction, ShadowStrategy } from '../engine/shadowPrediction';
 
 const CREW_ADVISORY: Record<number, { speaker: Bilingual; tip: Bilingual }> = {
   1: {
@@ -115,7 +117,8 @@ interface DecisionCardProps {
   taskSettings: MissionTaskSettings;
   taskAvailable: boolean;
   taskExercise?: ReactNode;
-  onChoose: (index: number, tasks: MissionTaskSettings) => void;
+  shadowPrediction: ShadowPrediction | null;
+  onChoose: (index: number, tasks: MissionTaskSettings, prediction: ShadowStrategy | null) => void;
   onPrev: () => void;
   onNext: () => void;
 }
@@ -142,6 +145,7 @@ export default function DecisionCard(props: DecisionCardProps) {
   const [hypothesis, setHypothesis] = useState<'safe' | 'drain' | null>(null);
   const [copilotEnabled, setCopilotEnabled] = useState(false);
   const [taskOverride, setTaskOverride] = useState<boolean | null>(null);
+  const [shadowGuess, setShadowGuess] = useState<ShadowStrategy | null>(props.shadowPrediction?.expected ?? null);
   const isSolar = step === 1;
   const solarCalibrated = isSolar ? taskOverride ?? taskSettings.solarCalibrated : taskSettings.solarCalibrated;
   const icePrepared = step === 4 ? taskOverride ?? taskSettings.icePrepared : taskSettings.icePrepared;
@@ -230,6 +234,9 @@ export default function DecisionCard(props: DecisionCardProps) {
         </h3>
         <p className="mt-0.5 text-sm leading-snug text-slate-200">{tr(advisory.tip)}</p>
       </div>
+
+      {step === 3 && (mode === 'baseline' || props.shadowPrediction) && <ShadowPredictionInput value={shadowGuess} onChange={setShadowGuess}
+        locked={mode === 'branch' || !canChoose} />}
 
       <p className="text-xs text-slate-300">
         {lang === 'az'
@@ -580,8 +587,7 @@ export default function DecisionCard(props: DecisionCardProps) {
         </details>
       )}
 
-      {/* Interactive Commander Hypothesis / Prediction Card (NASA Scientific Method) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/25 bg-sky-950/30 p-2.5 text-xs">
+      {step !== 3 && <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/25 bg-sky-950/30 p-2.5 text-xs">
         <div className="flex items-center gap-2">
           <HelpCircle className="h-4 w-4 text-sky-300 shrink-0" />
           <div>
@@ -633,7 +639,7 @@ export default function DecisionCard(props: DecisionCardProps) {
             </span>
           </div>
         )}
-      </div>
+      </div>}
 
       {record && (
         <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
@@ -679,7 +685,7 @@ export default function DecisionCard(props: DecisionCardProps) {
               {lang === 'az' ? 'Tətbiq etdikdə missiya irəliləyir.' : 'Apply this option to advance the mission.'}
             </p>
           </div>
-          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared })}
+          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared }, shadowGuess)}
             className="shrink-0 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-200">
             {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
           </button>
