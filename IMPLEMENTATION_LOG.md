@@ -103,3 +103,8 @@ The nine original tests remain, plus two covering NASA site planning and calibra
 ### Visual milestone completion
 
 The requested visual and player-experience stages are implemented and verified. The current map and graphics are preserved. The existing Phaser bundle warning remains, and integrated-graphics frame rate has not been benchmarked. Team license approval, inherited artwork permissions, and release dependency notices remain submission tasks documented in `ATTRIBUTION.md`.
+
+## Premium gameplay and educational upgrade
+
+- **Baseline.** Started clean at `4ce0eaf`, tagged `premium-gameplay-baseline`. TypeScript, 12 tests, and the production build passed. Captured the current world, console, and replay in Chromium at 1366 × 768.
+- **Facility responses.** Added short native Phaser outline acknowledgements for sunlight/reserve changes, crop state transitions, and extractor preparation/results. Added an intermediate crop texture and a harvest crate on the existing greenhouse footprint. D4 distinguishes preparation unlocked from applying a processing plan. Effects respect reduced motion and use current simulation and exercise state. TypeScript, 12 tests, and the production build passed. Chromium showed 60% growth, 1.5 kg harvested and 0.67 kg standard water recovery, with the original map composition preserved.

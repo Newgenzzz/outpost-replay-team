@@ -641,6 +641,15 @@ export class LunarWorld extends Phaser.Scene {
     }
   }
 
+  private acknowledgeFacility(key: FacilityReadout, color: number) {
+    if (this.bridge.reducedMotion) return;
+    const { panel } = this.readouts.get(key)!;
+    const frame = this.add.rectangle(panel.x, panel.y, panel.width || 175, key === 'greenhouse' ? 49 : 41)
+      .setFillStyle(0, 0).setStrokeStyle(2, color).setDepth(2029);
+    this.tweens.add({ targets: frame, alpha: 0, scaleX: 1.12, scaleY: 1.3,
+      duration: 700, ease: 'Sine.Out', onComplete: () => frame.destroy() });
+  }
+
   private navigationObstacles(x: number, top: number, bottom: number): Rectangle[] {
     return this.obstacles.map((rect) => ({
       left: rect.left - x,
@@ -1415,6 +1424,9 @@ export class LunarWorld extends Phaser.Scene {
         ? az ? 'Quraşdırma gözlənilir' : 'Setup pending'
         : az ? `Nominal gücün ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% of nominal output`,
       lowLight ? '#f6d99e' : '#c6e9d1');
+      if (previous && (previous.powerLow !== snap.powerLow || previous.sunlightFraction !== snap.sunlightFraction)) {
+        this.acknowledgeFacility('solar', snap.powerLow || lowLight ? 0xf6d99e : 0xc6e9d1);
+      }
 
       this.habitatLight.setFillStyle(snap.powerLow ? 0xe7af64 : 0xa4eadc)
         .setAlpha(snap.powerLow ? 0.05 : 0.19 + powerFrac * 0.32);
@@ -1432,18 +1444,21 @@ export class LunarWorld extends Phaser.Scene {
         : snap.cropStatus === 'idle' ? '' : ` · ${Math.round(cropProgress * 100)}%`;
       const hasCrop = snap.cropStatus !== 'idle' && snap.cropStatus !== 'harvested';
       this.greenhouseImage.setTexture(hasCrop
-        ? cropProgress >= 0.5 ? 'greenhouse-growing' : 'greenhouse-tray'
-        : 'greenhouse');
+        ? cropProgress >= 0.8 ? 'greenhouse-growing' : cropProgress >= 0.4 ? 'greenhouse-mid' : 'greenhouse-tray'
+        : snap.cropStatus === 'harvested' ? 'greenhouse-harvested' : 'greenhouse');
       this.greenhouseLight.setFillStyle(crop.light).setAlpha(crop.opacity);
       this.setReadout('greenhouse', az ? 'İSTİXANA' : 'GREENHOUSE', `${crop[snap.lang]}${cropDetail}`, crop.text);
       this.cropTrack.setVisible(snap.cropStatus !== 'idle');
       this.cropFill.setFillStyle(crop.light).setScale(cropProgress, 1).setVisible(cropProgress > 0);
+      if (previous && previous.cropStatus !== snap.cropStatus) this.acknowledgeFacility('greenhouse', crop.light);
 
       const water = snap.iceWaterKg;
       const iceStatus = water !== null
         ? az ? `${fmt(water, 2)} kq təmiz su` : `${fmt(water, 2)} kg water recovered`
         : snap.iceBypassed ? az ? 'Emal seçilmədi' : 'Processing skipped'
-          : snap.activeStep === 4 ? az ? 'Nümunə gözlənilir' : 'Awaiting sample'
+          : snap.activeStep === 4 ? snap.icePreparationAvailable
+            ? az ? 'Hazırlıq açılıb · D4-A' : 'Prep unlocked · D4-A'
+            : az ? 'D4 planı gözlənilir' : 'Awaiting D4 plan'
             : az ? 'Gözləmə rejimi' : 'Standby';
       this.setReadout('ice', az ? 'BUZ EMAL QURĞUSU' : 'ICE PROCESSOR', iceStatus,
         water !== null && water > 0 ? '#bceaf5' : '#c0d0d1');
@@ -1454,6 +1469,9 @@ export class LunarWorld extends Phaser.Scene {
         if (level > 0 && !b.reducedMotion) {
           this.tweens.add({ targets: this.iceFill, scaleY: level, duration: 480, ease: 'Sine.Out' });
         }
+      }
+      if (previous && (previous.icePreparationAvailable !== snap.icePreparationAvailable || previous.iceWaterKg !== water)) {
+        this.acknowledgeFacility('ice', 0x9edce8);
       }
       this.setReadout('shelter', az ? 'D5 · SIĞINACAQ' : 'D5 · SHELTER',
         az ? 'Qorunma planını seçin' : 'Choose a shielding plan', '#f6d59b', snap.stormPending);
