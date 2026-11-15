@@ -1,4 +1,4 @@
-import { GraduationCap, Orbit, Play, Rocket, Sparkles, Wind } from 'lucide-react';
+import { GraduationCap, Orbit, Play, Rocket, Sparkles, Volume2, Wind } from 'lucide-react';
 import { useI18n } from '../i18n/LanguageContext';
 import type { TrainingMode } from '../types';
 import { soundFX } from '../utils/soundEffects';
@@ -10,6 +10,7 @@ interface MissionLaunchScreenProps {
   hasMissionProgress: boolean;
   hasMarsProgress: boolean;
   missionSaveStatus: 'saved' | 'unavailable' | null;
+  onOpenAudioSettings: () => void;
   onChangeTrainingMode: (mode: TrainingMode) => void;
   onLaunchMission: () => void;
   onStartJudgeTour: () => void;
@@ -24,6 +25,7 @@ export function MissionLaunchScreen({
   hasMissionProgress,
   hasMarsProgress,
   missionSaveStatus,
+  onOpenAudioSettings,
   onChangeTrainingMode,
   onLaunchMission,
   onStartJudgeTour,
@@ -130,20 +132,27 @@ export function MissionLaunchScreen({
 
           {/* Top Bar Inside Hero */}
           <div className="absolute inset-x-4 top-3.5 flex items-center justify-between">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#c0e6aa]/40 bg-slate-950/75 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#c0e6aa] backdrop-blur-md">
+            <span className="inline-flex min-w-0 items-center gap-2 rounded-full border border-[#c0e6aa]/40 bg-slate-950/75 px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-[#c0e6aa] backdrop-blur-md">
               <Orbit size={13} />
               {az ? 'AYIN CƏNUB QÜTBÜ · UYDURMA ŞEKLTON KƏNARI BAZASI' : 'LUNAR SOUTH POLE · FICTIONAL SHACKLETON RIM OUTPOST'}
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                soundFX.play('uiClick');
-                setLang(az ? 'en' : 'az');
-              }}
-              className="rounded-lg border border-white/25 bg-slate-950/80 px-3 py-1 font-mono text-xs font-bold text-white hover:bg-slate-900"
-            >
-              {az ? 'AZ · EN' : 'EN · AZ'}
-            </button>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button type="button" onClick={onOpenAudioSettings}
+                aria-label={az ? 'Səs ayarları' : 'Audio settings'}
+                className="rounded-lg border border-white/25 bg-slate-950/80 p-1.5 text-white hover:bg-slate-900">
+                <Volume2 size={16} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  soundFX.play('uiClick');
+                  setLang(az ? 'en' : 'az');
+                }}
+                className="rounded-lg border border-white/25 bg-slate-950/80 px-3 py-1 font-mono text-xs font-bold text-white hover:bg-slate-900"
+              >
+                {az ? 'AZ · EN' : 'EN · AZ'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -281,7 +290,6 @@ export function MissionLaunchScreen({
             <button
               type="button"
               onClick={() => {
-                soundFX.startAmbient();
                 onStartJudgeTour();
               }}
               className="inline-flex flex-1 min-w-[220px] items-center justify-center gap-2 rounded-xl bg-[#c0e6aa] px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-lg transition hover:bg-[#d5f5c3]"
@@ -293,8 +301,6 @@ export function MissionLaunchScreen({
             <button
               type="button"
               onClick={() => {
-                soundFX.play('choice');
-                soundFX.startAmbient();
                 onLaunchMission();
               }}
               className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-slate-950/40 px-4 py-3.5 text-xs sm:text-sm font-bold text-slate-200 transition hover:bg-white/10"

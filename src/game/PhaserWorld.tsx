@@ -130,6 +130,8 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
         parent: host.current,
         backgroundColor: '#0c1824',
         transparent: false,
+        // All sound is mixed by soundFX; Phaser must not create an unused audio context.
+        audio: { noAudio: true },
         scale: {
           mode: Phaser.Scale.RESIZE,
           width: host.current.clientWidth,

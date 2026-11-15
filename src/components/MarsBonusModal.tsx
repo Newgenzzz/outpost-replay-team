@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   BatteryCharging,
@@ -19,7 +19,7 @@ import {
   runMarsSimulation,
 } from '../engine/marsMission';
 import type { TrainingMode } from '../types';
-import { playSfx } from '../utils/soundEffects';
+import { playSfx, soundFX } from '../utils/soundEffects';
 
 interface MarsBonusModalProps {
   trainingMode: TrainingMode;
@@ -39,6 +39,16 @@ export function MarsBonusModal({
   const { lang, tr } = useI18n();
   const az = lang === 'az';
   const [pingState, setPingState] = useState<'idle' | 'transmitting' | 'delayed'>('idle');
+  const pingTimer = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (pingTimer.current !== null) window.clearTimeout(pingTimer.current);
+  }, []);
+
+  const clearPingTimer = () => {
+    if (pingTimer.current !== null) window.clearTimeout(pingTimer.current);
+    pingTimer.current = null;
+  };
 
   const partial = runMarsSimulation(choices);
   const currentSolIdx = choices.length;
@@ -46,25 +56,36 @@ export function MarsBonusModal({
   const decision = !isFinished ? MARS_DECISIONS[currentSolIdx] : null;
 
   const chooseOption = (idx: number) => {
-    playSfx('confirm');
     const next = [...choices, idx];
+    const res = runMarsSimulation(next);
+    const completedSuccessfully = next.length >= MARS_DECISIONS.length && res.outcome === 'success';
+    clearPingTimer();
     setChoices(next);
     setPingState('idle');
-    const res = runMarsSimulation(next);
-    if (next.length >= MARS_DECISIONS.length && res.outcome === 'success') {
+    soundFX.play(res.outcome === 'abort' && partial.outcome !== 'abort'
+      ? 'failure'
+      : completedSuccessfully
+        ? 'success'
+        : res.outcome === 'degraded' && partial.outcome !== 'degraded'
+          ? 'batteryAlert'
+          : 'choice');
+    if (completedSuccessfully) {
       onCompleteSuccess();
     }
   };
 
   const pingHouston = () => {
+    clearPingTimer();
     playSfx('radio');
     setPingState('transmitting');
-    setTimeout(() => {
+    pingTimer.current = window.setTimeout(() => {
+      pingTimer.current = null;
       setPingState('delayed');
     }, 900);
   };
 
   const resetMars = () => {
+    clearPingTimer();
     playSfx('click');
     setChoices([]);
     setPingState('idle');
@@ -179,6 +200,7 @@ export function MarsBonusModal({
                     type="button"
                     disabled={!canRewind}
                     onClick={() => {
+                      clearPingTimer();
                       playSfx('click');
                       setChoices(choices.slice(0, idx));
                       setPingState('idle');

@@ -30,8 +30,6 @@ import {
   Trash2,
   Trophy,
   Truck,
-  Volume2,
-  VolumeX,
   Wind,
   Wrench,
   X,
@@ -86,6 +84,9 @@ import type { MissionTaskSettings, TrainingMode } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
 import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
+import { AudioSettings } from './components/AudioSettings';
+import { runMarsSimulation } from './engine/marsMission';
+import { decisionAudioCue, missionMusicState } from './utils/missionAudio';
 
 const STORAGE_MODE_KEY = 'outpost_training_mode';
 const STORAGE_CALLSIGN_KEY = 'outpost_commander_callsign';
@@ -173,8 +174,24 @@ export default function App() {
 
   const [unlockedBadges, setUnlockedBadges] = useState<string[]>([]);
   const [achievementToast, setAchievementToast] = useState<Achievement | null>(null);
-  const [muted, setMuted] = useState(() => soundFX.isMuted());
+  const [audioSettingsOpen, setAudioSettingsOpen] = useState(false);
   const [guideDismissed, setGuideDismissed] = useState(false);
+
+  useEffect(() => {
+    soundFX.initialize();
+    const activate = (event: Event) => {
+      if (!event.isTrusted) return;
+      soundFX.unlock();
+      soundFX.startAmbient();
+    };
+    document.addEventListener('pointerdown', activate, true);
+    document.addEventListener('keydown', activate, true);
+    return () => {
+      document.removeEventListener('pointerdown', activate, true);
+      document.removeEventListener('keydown', activate, true);
+      soundFX.dispose();
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -335,6 +352,7 @@ export default function App() {
   }, [lang]);
 
   const anyOverlayOpen =
+    audioSettingsOpen ||
     launchScreenOpen ||
     tourConfirmOpen ||
     decisionModalOpen ||
@@ -374,6 +392,7 @@ export default function App() {
     achievementsModalOpen,
     sampleModalOpen,
     marsModalOpen,
+    audioSettingsOpen,
   ]);
 
   useEffect(() => {
@@ -409,6 +428,10 @@ export default function App() {
         }
       }
       if (e.key !== 'Escape') return;
+      if (audioSettingsOpen) {
+        setAudioSettingsOpen(false);
+        return;
+      }
       if (tourConfirmOpen) {
         setTourConfirmOpen(false);
         return;
@@ -437,7 +460,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [anyOverlayOpen, certificateOpen, dossierMenuOpen, launchScreenOpen, tourConfirmOpen]);
+  }, [anyOverlayOpen, audioSettingsOpen, certificateOpen, dossierMenuOpen, launchScreenOpen, tourConfirmOpen]);
 
   // Passive Cryo-Laser Thermal Cooldown
   useEffect(() => {
@@ -604,18 +627,36 @@ export default function App() {
     [baselineInput, branchInput, trainingMode, shadowPrediction],
   );
 
-  // Trigger audio cues on LRO Shadow (Step 3) and DONKI Solar Storm (Step 5)
-  useEffect(() => {
-    if (viewStep === 3) soundFX.play('shadowAlert');
-    else if (viewStep === 5) soundFX.play('stormAlert');
-  }, [viewStep]);
-
   const activeRecord = activeRun.steps[viewStep - 1];
   const currentMetrics =
     activeRun.history[Math.min(viewStep, activeRun.history.length - 1)] ?? activeRun.final;
   const compareMetrics = hasBranch
     ? runA.history[Math.min(viewStep, runA.history.length - 1)]
     : undefined;
+
+  const marsAudioOutcome = useMemo(() => runMarsSimulation(marsChoices).outcome, [marsChoices]);
+  useEffect(() => {
+    const state = launchScreenOpen ? 'menu' : marsModalOpen
+      ? marsAudioOutcome === 'success' ? 'exploration' : 'critical'
+      : missionMusicState(false, activeRun);
+    soundFX.setMusicState(state);
+  }, [launchScreenOpen, activeRun, marsModalOpen, marsAudioOutcome]);
+
+  useEffect(() => () => soundFX.stopRadio(), [decisionModalOpen, viewStep]);
+
+  // Warn once when a newly reached crisis becomes the next unplanned phase.
+  // Restored missions start silently; inspecting completed history never replays warnings.
+  const pendingAudioWarning = !runA.complete && !hasBranch
+    ? completedPhases === 2 ? 'shadowAlert'
+      : completedPhases === 4 && baselineInput.scenario.stormPeakPfu > 0 ? 'stormAlert' : null
+    : null;
+  const previousAudioWarning = useRef(pendingAudioWarning);
+  useEffect(() => {
+    if (pendingAudioWarning !== previousAudioWarning.current && pendingAudioWarning && !launchScreenOpen) {
+      soundFX.play(pendingAudioWarning);
+    }
+    previousAudioWarning.current = pendingAudioWarning;
+  }, [pendingAudioWarning, launchScreenOpen]);
 
   const flagsBefore = useMemo(() => {
     if (viewStep === 1) return [];
@@ -624,7 +665,6 @@ export default function App() {
   }, [activeRun, viewStep]);
 
   function celebrateVictory() {
-    soundFX.play('success');
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     try {
       confetti({
@@ -639,6 +679,7 @@ export default function App() {
   }
 
   function closeAllModals() {
+    setAudioSettingsOpen(false);
     setLaunchScreenOpen(false);
     setTourConfirmOpen(false);
     setDecisionModalOpen(false);
@@ -661,7 +702,7 @@ export default function App() {
     const debriefStep = preview.steps[viewStep - 1];
     if (!debriefStep) return;
 
-    soundFX.play(hasBranch ? 'rewind' : 'choice');
+    soundFX.play(decisionAudioCue(activeRun, preview, viewStep));
     if (hasBranch) {
       setBranchInput(nextInput);
     } else {
@@ -753,8 +794,7 @@ export default function App() {
 
   function startTour() {
     handleReset();
-    soundFX.startAmbient();
-    soundFX.play('tourChime');
+    soundFX.play('launch');
     setDemoStage('setup');
     world.current?.teleportTo({ x: STATIONS[0].x, y: STATIONS[0].y + 38 });
   }
@@ -764,7 +804,8 @@ export default function App() {
     useBackup = false,
     prediction: ShadowStrategy | null = null,
   ) {
-    soundFX.play('tourChime');
+    if (stage === 'setup') soundFX.play('choice');
+    if (stage === 'rewind') soundFX.play('rewind');
     if (stage !== 'rewind') setBranchInput(null);
     setPendingTasks({});
     if (stage === 'setup') {
@@ -775,6 +816,7 @@ export default function App() {
     } else if (stage === 'shadow') {
       const choices = useBackup ? MISSION_DEMO.branch : MISSION_DEMO.baseline;
       const nextInput = createRunInput(choices);
+      soundFX.play(decisionAudioCue(runA, runExperiment(nextInput), 3));
       setBaselineInput(nextInput);
       setShadowPrediction(prediction ? recordShadowPrediction(prediction, nextInput) : null);
       setViewStep(MISSION_DEMO.rewindStep);
@@ -948,6 +990,7 @@ export default function App() {
       icePreparationAvailable: calibratedTasks[3] || activeTasks.icePrepared,
       iceBypassed: iceRecord !== undefined && iceWaterKg === null,
       stormPending: isStormCrisis,
+      stormAudioActive: isStormCrisis && activeInput.scenario.stormPeakPfu > 0,
       activeStep: viewStep,
       lastAvailableStep,
       completedCount: completedPhases,
@@ -972,6 +1015,7 @@ export default function App() {
       iceWaterKg,
       iceRecord,
       isStormCrisis,
+      activeInput.scenario.stormPeakPfu,
       viewStep,
       lastAvailableStep,
       activeChoices,
@@ -1345,15 +1389,7 @@ export default function App() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setMuted(soundFX.toggleMute())}
-            aria-label={muted ? t('unmute') : t('mute')}
-            title={muted ? t('unmute') : t('mute')}
-          >
-            {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
-          </button>
+          <AudioSettings open={audioSettingsOpen} onOpenChange={setAudioSettingsOpen} />
 
           <button
             type="button"
@@ -1869,7 +1905,7 @@ export default function App() {
                 step={lastDebrief}
                 onDismiss={() => setLastDebrief(null)}
                 onOpenRewind={() => {
-                  soundFX.play('rewind');
+                  soundFX.play('StepNav');
                   setTelemetryDrawerOpen(true);
                 }}
               />
@@ -2311,20 +2347,21 @@ export default function App() {
           hasMissionProgress={hasMissionProgress}
           hasMarsProgress={marsChoices.length > 0}
           missionSaveStatus={missionSaveStatus}
+          onOpenAudioSettings={() => setAudioSettingsOpen(true)}
           onChangeTrainingMode={setTrainingMode}
           onLaunchMission={() => {
-            soundFX.startAmbient();
+            soundFX.play('launch');
             setLaunchScreenOpen(false);
             requestAnimationFrame(() => world.current?.focus());
           }}
           onStartJudgeTour={handleStartTour}
           onOpenMarsBonus={() => {
-            soundFX.startAmbient();
+            soundFX.play('launch');
             setLaunchScreenOpen(false);
             setMarsModalOpen(true);
           }}
           onOpen3DNasaDeck={() => {
-            soundFX.startAmbient();
+            soundFX.play('launch');
             setLaunchScreenOpen(false);
             setSensorDeckOpen(true);
           }}

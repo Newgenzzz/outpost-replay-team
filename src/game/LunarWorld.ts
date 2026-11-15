@@ -1439,7 +1439,7 @@ export class LunarWorld extends Phaser.Scene {
             size: 6.5,
           });
         }
-        if (time > this.stepSoundAt) {
+        if (!paused && time > this.stepSoundAt) {
           soundFX.play('roverMotor');
           this.stepSoundAt = time + 240;
         }
@@ -1461,7 +1461,7 @@ export class LunarWorld extends Phaser.Scene {
         const startFrame = currentAnim?.key.startsWith('commander-walk-') ? (currentFrame?.index ?? 1) - 1 : 0;
         this.player.play({ key: `commander-walk-${this.facing}`, startFrame }, true);
         this.player.anims.timeScale = Phaser.Math.Clamp(this.walkPace / WORLD.speed, 0.55, 1.12);
-        if (time > this.stepSoundAt) {
+        if (!paused && time > this.stepSoundAt) {
           soundFX.play('footstep');
           if (!b.reducedMotion) {
             this.dustPuffs.push({
@@ -1584,8 +1584,8 @@ export class LunarWorld extends Phaser.Scene {
 
     this.renderFieldFeedback(time, snap, activePos, nearIceIdx, drilling);
 
-    // Subtle Geiger counter ticks while exposed outdoors during D5 Solar Storm alert
-    if (!paused && snap.stormPending && time > this.geigerAt) {
+    // Stylized suit warning during the pending training storm, not live dosimetry.
+    if (!paused && snap.stormAudioActive && time > this.geigerAt) {
       soundFX.play('geiger');
       this.geigerAt = time + 1150 + Math.random() * 900;
     }
