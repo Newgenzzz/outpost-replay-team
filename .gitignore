@@ -5,3 +5,21 @@ dist
 .env
 .env.*
 !.env.example
+
+# Local credentials and private key material
+.aws/
+.ssh/
+.gnupg/
+.npmrc
+.netrc
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+service-account*.json
+
+# Generated caches and test output
+.vite/
+coverage/
+*.tsbuildinfo
