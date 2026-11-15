@@ -11,30 +11,30 @@ export type DemoStage = 'setup' | 'shadow' | 'rewind';
 const DEMO_STAGES = {
   setup: {
     number: 1,
-    title: { en: 'One decision. Two possible outcomes.', az: 'Bir qərar. İki mümkün nəticə.' },
+    title: { en: 'Keep your crew powered', az: 'Ekipajı enerjisiz qoymayın' },
     instruction: {
-      en: 'Start Day 1 & Day 2 with low 2 m solar panels and a protective soil berm, then jump to the 72-hour lunar shadow. Pick a strategy, rewind time, and compare both runs with zero guesswork.',
-      az: '1 və 2-ci günə alçaq 2 m panellər və qoruyucu torpaq səddi ilə başlayın, sonra 72 saatlıq Ay kölgəsinə keçin. Bir plan seçin, vaxtı geri sarın və hər iki nəticəni yan-yana müqayisə edin.',
+      en: 'Your crew needs power for heat and air. We’ll set up low solar panels and a protective soil wall, then jump to three days of reduced sunlight.',
+      az: 'Ekipaja istilik və hava üçün enerji lazımdır. Alçaq günəş panelləri və qoruyucu torpaq səddi qurub üç günlük az işıqlı mərhələyə keçəcəyik.',
     },
-    action: { en: 'Apply the starting plan', az: 'İlkin planı tətbiq et' },
+    action: { en: 'Start the shadow test', az: 'Kölgə sınağına keç' },
   },
   shadow: {
     number: 2,
     title: { en: 'Choose a plan for the shadow', az: 'Kölgə mərhələsi üçün plan seçin' },
     instruction: {
-      en: 'Sun is blocked for 72 scenario hours and heaters pull heavy battery power. Will you push science by drilling, or fire up backup fuel cells to protect the battery?',
-      az: 'Ssenaridə Günəş 72 saat kəsilir və qızdırıcılar batareyanı sürətlə boşaldır. Elm üçün qazmanı davam etdirəcəksiniz, yoxsa batareyanı qorumaq üçün ehtiyat yanacaq elementlərini açacaqsınız?',
+      en: 'For three training days, sunlight drops and heaters use the battery. Drill for science, or use backup fuel cells for power. Predict first, then choose a plan.',
+      az: 'Üç təlim günü işıq azalır, qızdırıcılar batareyanı işlədir. Elm üçün qazın, ya da enerji üçün ehtiyat yanacaq elementlərini açın. Əvvəl proqnoz verin, sonra plan seçin.',
     },
     action: { en: 'Keep drilling', az: 'Qazmanı davam etdir' },
   },
   rewind: {
     number: 3,
-    title: { en: 'Change one decision & compare', az: 'Bir qərarı dəyişin və müqayisə edin' },
+    title: { en: 'Observe your first result', az: 'İlk nəticənizə baxın' },
     instruction: {
-      en: 'Here is Run A. Now hit Rewind D3 to test the opposite choice from the exact same Hour 48 state, and see what every kilowatt-hour or science point really cost.',
-      az: 'Bu, Sınaq A nəticəsidir. İndi eyni 48-ci saat vəziyyətindən digər strategiyanı sınamaq üçün D3-ü geri sarın və enerjinin nəyə başa gəldiyini görün.',
+      en: 'This is Run A. Rewind to try the other plan from the same starting point. All your other choices stay the same.',
+      az: 'Bu, A sınağıdır. Geri qayıdıb digər planı eyni başlanğıcdan sınayın. Qalan seçimləriniz eyni qalır.',
     },
-    action: { en: 'Rewind D3 and compare', az: 'D3-ə qayıt və müqayisə et' },
+    action: { en: 'Rewind & try the other plan', az: 'Geri qayıt, digər planı sına' },
   },
 } as const;
 
@@ -154,11 +154,13 @@ export function JudgeTourBanner({
           <div className="mt-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
             <strong className="mb-1 block">{t('runA')} · {shadow.choiceIndex === MISSION_DEMO.branch[shadowIndex] ? backupLabel : tr(DEMO_STAGES.shadow.action)}</strong>
             <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 font-mono">
-              <dt>{az ? 'D3 sonunda batareya' : 'Battery after D3'}</dt>
-              <dd className="text-right">{fmt(shadow.after.powerKwh)} {t('unitKwh')}</dd>
-              <dt>{az ? 'D3-də elmi qazanc' : 'Science earned during D3'}</dt>
+              <dt>{az ? `${shadow.endHour}-ci saatda batareya` : `Battery at hour ${shadow.endHour}`}</dt>
+              <dd className="whitespace-nowrap text-right text-lg font-bold text-white">
+                {fmt(shadow.after.powerKwh)} <span className="text-[11px] font-medium">{t('unitKwh')}</span>
+              </dd>
+              <dt>{az ? 'Kölgədə elm' : 'Science during shadow'}</dt>
               <dd className="text-right">{fmt(shadow.after.sciencePoints - shadow.before.sciencePoints)} {az ? 'xal' : 'pts'}</dd>
-              <dt>{az ? 'D3-də aşağı ehtiyat' : 'Low reserve during D3'}</dt>
+              <dt>{az ? 'Kölgədə aşağı ehtiyat' : 'Low reserve in shadow'}</dt>
               <dd className="text-right">{fmt(shadow.env.lowPowerHours)} {az ? 'saat' : 'h'}</dd>
             </dl>
           </div>

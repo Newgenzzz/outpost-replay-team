@@ -3,11 +3,16 @@ import { useI18n } from '../i18n/LanguageContext';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, compareRuns, type ComparisonReason, type SimulationResult } from '../engine/simulation';
+import type { TrainingMode } from '../types';
 import { OutcomeBadge } from './MetricGauges';
 import { ABORT_CAUSES } from './MissionResults';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 
-export default function DeltaSummary({ a, b }: { a: SimulationResult; b: SimulationResult }) {
+export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
+  a: SimulationResult;
+  b: SimulationResult;
+  trainingMode?: TrainingMode;
+}) {
   const { t, tr, lang } = useI18n();
   const az = lang === 'az';
   const cmp = compareRuns(a, b);
@@ -183,14 +188,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
                 <span className="shrink-0 rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs text-slate-200">
                   {az ? 'Var.' : 'Opt'} {CHOICE_LETTERS[phase.choiceIndex]}
                 </span>
-                <span>
-                  <span className="block">{tr(choice.label)}</span>
-                  {choice.cadetLabel && (
-                    <span className="mt-0.5 block text-xs font-normal text-slate-300">
-                      {tr(choice.cadetLabel)}
-                    </span>
-                  )}
-                </span>
+                <span>{tr(trainingMode === 'cadet' ? choice.cadetLabel ?? choice.label : choice.label)}</span>
               </p>
               {calibration && <p className="text-xs text-amber-100">{run.solarCalibrated
                 ? az ? 'Kalibrləmə tətbiq edildi' : 'Calibration applied'
@@ -249,26 +247,14 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
         })}
       </div>
 
-      <div className="flex gap-2 rounded-lg border border-amber-200/25 bg-[#29352c] px-3 py-2.5 text-sm text-[#f0efde]">
-        <Lightbulb size={17} className="mt-0.5 shrink-0 text-amber-200" aria-hidden="true" />
-        <div>
-          <p className="mb-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-200">
-            {az ? 'ÖYRƏN · Mühəndislik prinsipi' : 'LEARN · Engineering principle'}
-          </p>
-          <p>{tr(ENGINEERING_LESSONS[firstChange - 1])}</p>
-          {sameEndpoint && lowReserveA !== lowReserveB && (
-            <p className="mt-0.5 text-xs text-amber-100">
-              {az
-                ? `A gedişində aşağı batareya ehtiyatı ${lowReserveA}, B gedişində isə ${lowReserveB} saat davam etdi.`
-                : `Run A spent ${lowReserveA} h on low battery reserve. Run B spent ${lowReserveB} h.`}
-            </p>
-          )}
-        </div>
-      </div>
-
       {sameEndpoint ? finalChanges.length > 0 && (
         <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-200">{t('deltaFinal')} · {az ? `Saat ${a.elapsedHours}` : `Hour ${a.elapsedHours}`}</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-200">
+            {trainingMode === 'cadet'
+              ? az ? 'Bütün missiya: B nəticəsi A ilə müqayisədə' : 'Whole mission: B compared with A'
+              : t('deltaFinal')}
+            {' · '}{az ? `Saat ${a.elapsedHours}` : `Hour ${a.elapsedHours}`}
+          </p>
           <ul className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {finalChanges.map(({ label, Icon, value, unit, higherIsBetter, digits }) => {
               const isBenefit = higherIsBetter ? value > 0 : value < 0;
@@ -277,7 +263,7 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
                   <div className="flex items-start justify-between gap-2">
                     <span className="flex items-center gap-1 text-xs leading-snug"><Icon size={13} className="shrink-0" aria-hidden="true" />{label}</span>
                     <span className="shrink-0 whitespace-nowrap rounded bg-black/25 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider">
-                      {isBenefit ? (az ? 'Üstünlük' : 'Benefit') : (az ? 'Kompromis' : 'Trade-off')}
+                      {isBenefit ? (az ? 'Fayda' : 'Benefit') : (az ? 'İtki' : 'Cost')}
                     </span>
                   </div>
                   <strong className="mt-1 whitespace-nowrap font-mono text-sm">{value > 0 ? '+' : ''}{fmt(value, digits)} {unit}</strong>
@@ -299,6 +285,23 @@ export default function DeltaSummary({ a, b }: { a: SimulationResult; b: Simulat
             : `Run A reached hour ${a.elapsedHours} and Run B reached hour ${b.elapsedHours}. Compare their values at matching times in the charts.`}
         </p>
       )}
+
+      <div className="flex gap-2 rounded-lg border border-amber-200/25 bg-[#29352c] px-3 py-2.5 text-sm text-[#f0efde]">
+        <Lightbulb size={17} className="mt-0.5 shrink-0 text-amber-200" aria-hidden="true" />
+        <div>
+          <p className="mb-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-amber-200">
+            {az ? 'ÖYRƏN · Mühəndislik prinsipi' : 'LEARN · Engineering principle'}
+          </p>
+          <p>{tr(ENGINEERING_LESSONS[firstChange - 1])}</p>
+          {sameEndpoint && lowReserveA !== lowReserveB && (
+            <p className="mt-0.5 text-xs text-amber-100">
+              {az
+                ? `A gedişində aşağı batareya ehtiyatı ${lowReserveA}, B gedişində isə ${lowReserveB} saat davam etdi.`
+                : `Run A spent ${lowReserveA} h on low battery reserve. Run B spent ${lowReserveB} h.`}
+            </p>
+          )}
+        </div>
+      </div>
 
       {cmp.reasons.length > 0 && (
         <details className="text-xs text-sky-100">

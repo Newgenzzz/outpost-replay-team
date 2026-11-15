@@ -2470,121 +2470,126 @@ export default function App() {
                   : 'Older replay link: missing preparation settings use defaults; results may differ from the original experiment.'}
               </p>
             )}
-            <div className="mb-4 rounded-xl border border-cyan-400/25 bg-cyan-950/20 p-3.5">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
-                  {lang === 'az' ? '7 Addımlıq Elmi Metod Axını' : '7-Step Scientific Replay Loop'}
-                </span>
-                <span className="text-[11px] text-slate-300">
-                  {runB && divergedStep !== null
-                    ? lang === 'az'
-                      ? 'Sınaq A və B müqayisəsi hazırdır'
-                      : 'Run A vs Run B comparison active'
-                    : hasBranch
-                      ? lang === 'az'
-                        ? 'İndi Sınaq B üçün fərqli strategiya seçin'
-                        : 'Now choose an alternate strategy for Run B'
-                      : runA.steps.length > 0
-                        ? lang === 'az'
-                          ? 'Geri qayıtmaq üçün aşağıdan tamamlanmış qərarı seçin'
-                          : 'Select any completed decision below to rewind'
-                        : lang === 'az'
-                          ? 'Proqnoz verin və ilk qərarınızı sınayın'
-                          : 'Make a prediction and test your first decision'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
-                {[
-                  {
-                    n: 1,
-                    en: 'Predict',
-                    az: 'Proqnoz',
-                    done: Boolean(shadowPrediction) || runA.steps.length > 0,
-                    active: !shadowPrediction && runA.steps.length === 0,
-                  },
-                  {
-                    n: 2,
-                    en: 'Choose',
-                    az: 'Seçim',
-                    done: runA.steps.length > 0,
-                    active: runA.steps.length === 0,
-                  },
-                  {
-                    n: 3,
-                    en: 'Observe A',
-                    az: 'Sınaq A',
-                    done: runA.steps.length > 0,
-                    active: runA.steps.length > 0 && !hasBranch,
-                  },
-                  {
-                    n: 4,
-                    en: 'Rewind',
-                    az: 'Geri Qayıt',
-                    done: hasBranch,
-                    active: runA.steps.length > 0 && !hasBranch,
-                  },
-                  {
-                    n: 5,
-                    en: 'Choose B',
-                    az: 'Sınaq B',
-                    done: Boolean(runB && divergedStep !== null),
-                    active: hasBranch && divergedStep === null,
-                  },
-                  {
-                    n: 6,
-                    en: 'Compare',
-                    az: 'Müqayisə',
-                    done: Boolean(runB && divergedStep !== null),
-                    active: false,
-                  },
-                  {
-                    n: 7,
-                    en: 'Principle',
-                    az: 'Prinsip',
-                    done: Boolean(runB && divergedStep !== null),
-                    active: false,
-                  },
-                ].map((stage) => (
-                  <div
-                    key={stage.n}
-                    className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-medium ${
-                      stage.done
-                        ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-100'
-                        : stage.active
-                          ? 'border-amber-300/55 bg-amber-400/15 text-amber-100'
-                          : 'border-white/10 bg-slate-950/45 text-slate-400'
-                    }`}
-                  >
-                    <span
-                      className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                        stage.done
-                          ? 'bg-emerald-400 text-slate-950'
-                          : stage.active
-                            ? 'bg-amber-300 text-slate-950'
-                            : 'bg-white/10 text-slate-300'
-                      }`}
-                    >
-                      {stage.n}
-                    </span>
-                    <span className="truncate">{lang === 'az' ? stage.az : stage.en}</span>
-                  </div>
-                ))}
-              </div>
-              {!hasBranch && runA.steps.length > 0 && (
-                <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-950/40 px-2.5 py-1.5 text-xs text-amber-100">
-                  {lang === 'az'
-                    ? 'Növbəti addım: Aşağıdakı tamamlanmış qərarlardan (D1–D6) birini klikləyib alternativ strategiya ilə Sınaq B yaradın.'
-                    : 'Next step: Click any completed decision (D1–D6) below to rewind, pick an alternate strategy, and compare Run A vs Run B.'}
-                </p>
-              )}
-            </div>
-
-            {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
             {runB && (
               <div className="mb-4">
-                <DeltaSummary a={runA} b={runB} />
+                <DeltaSummary a={runA} b={runB} trainingMode={trainingMode} />
               </div>
             )}
+            {shadowPrediction && <ShadowPredictionResult prediction={shadowPrediction} a={runA} b={runB} />}
+
+            <details open={!runB || divergedStep === null} className="mb-4 rounded-xl border border-cyan-400/25 bg-cyan-950/20 p-3.5">
+              <summary className="cursor-pointer text-xs font-semibold text-cyan-200">
+                {lang === 'az' ? 'Sınağın addımları' : 'Experiment steps'}
+              </summary>
+              <div className="mt-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-200">
+                    {lang === 'az' ? '7 Addımlıq Elmi Metod Axını' : '7-Step Scientific Replay Loop'}
+                  </span>
+                  <span className="text-[11px] text-slate-300">
+                    {runB && divergedStep !== null
+                      ? lang === 'az'
+                        ? 'Sınaq A və B müqayisəsi hazırdır'
+                        : 'Run A vs Run B comparison active'
+                      : hasBranch
+                        ? lang === 'az'
+                          ? 'İndi Sınaq B üçün fərqli strategiya seçin'
+                          : 'Now choose an alternate strategy for Run B'
+                        : runA.steps.length > 0
+                          ? lang === 'az'
+                            ? 'Geri qayıtmaq üçün aşağıdan tamamlanmış qərarı seçin'
+                            : 'Select any completed decision below to rewind'
+                          : lang === 'az'
+                            ? 'Proqnoz verin və ilk qərarınızı sınayın'
+                            : 'Make a prediction and test your first decision'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
+                  {[
+                    {
+                      n: 1,
+                      en: 'Predict',
+                      az: 'Proqnoz',
+                      done: Boolean(shadowPrediction) || runA.steps.length > 0,
+                      active: !shadowPrediction && runA.steps.length === 0,
+                    },
+                    {
+                      n: 2,
+                      en: 'Choose',
+                      az: 'Seçim',
+                      done: runA.steps.length > 0,
+                      active: runA.steps.length === 0,
+                    },
+                    {
+                      n: 3,
+                      en: 'Observe A',
+                      az: 'Sınaq A',
+                      done: runA.steps.length > 0,
+                      active: runA.steps.length > 0 && !hasBranch,
+                    },
+                    {
+                      n: 4,
+                      en: 'Rewind',
+                      az: 'Geri Qayıt',
+                      done: hasBranch,
+                      active: runA.steps.length > 0 && !hasBranch,
+                    },
+                    {
+                      n: 5,
+                      en: 'Choose B',
+                      az: 'Sınaq B',
+                      done: Boolean(runB && divergedStep !== null),
+                      active: hasBranch && divergedStep === null,
+                    },
+                    {
+                      n: 6,
+                      en: 'Compare',
+                      az: 'Müqayisə',
+                      done: Boolean(runB && divergedStep !== null),
+                      active: false,
+                    },
+                    {
+                      n: 7,
+                      en: 'Principle',
+                      az: 'Prinsip',
+                      done: Boolean(runB && divergedStep !== null),
+                      active: false,
+                    },
+                  ].map((stage) => (
+                    <div
+                      key={stage.n}
+                      className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-medium ${
+                        stage.done
+                          ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-100'
+                          : stage.active
+                            ? 'border-amber-300/55 bg-amber-400/15 text-amber-100'
+                            : 'border-white/10 bg-slate-950/45 text-slate-400'
+                      }`}
+                    >
+                      <span
+                        className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                          stage.done
+                            ? 'bg-emerald-400 text-slate-950'
+                            : stage.active
+                              ? 'bg-amber-300 text-slate-950'
+                              : 'bg-white/10 text-slate-300'
+                        }`}
+                      >
+                        {stage.n}
+                      </span>
+                      <span className="truncate">{lang === 'az' ? stage.az : stage.en}</span>
+                    </div>
+                  ))}
+                </div>
+                {!hasBranch && runA.steps.length > 0 && (
+                  <p className="mt-2 rounded-lg border border-amber-300/35 bg-amber-950/40 px-2.5 py-1.5 text-xs text-amber-100">
+                    {lang === 'az'
+                      ? 'Növbəti addım: Aşağıdakı tamamlanmış qərarlardan (D1–D6) birini klikləyib alternativ strategiya ilə Sınaq B yaradın.'
+                      : 'Next step: Click any completed decision (D1–D6) below to rewind, pick an alternate strategy, and compare Run A vs Run B.'}
+                  </p>
+                )}
+              </div>
+            </details>
 
             <div className="mb-4 rounded-xl border border-white/10 bg-[#0e1a22] p-4">
               <h3 className="mb-1 text-sm font-semibold text-slate-100">
