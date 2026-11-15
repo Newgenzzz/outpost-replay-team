@@ -120,8 +120,8 @@ export function AudioSettings({ open, onOpenChange }: AudioSettingsProps) {
               {az ? 'Bütün səsləri söndür' : 'Mute all audio'}
             </label>
             <p id={noteId} className="mt-3 text-xs leading-relaxed text-slate-300">
-              {az ? 'Musiqi və skafandr/radio siqnalları; Ay vakuumunda səs yayılmır.'
-                : 'Music and suit/radio feedback; no sound travels through lunar vacuum.'}
+              {az ? 'Musiqi, skafandr/radio siqnalları və rover gövdəsinin titrəyişi; Ay vakuumunda səs yayılmır.'
+                : 'Music and suit, radio, and structure-borne rover vibration; no sound travels through lunar vacuum.'}
             </p>
           </section>
         </div>, document.body,

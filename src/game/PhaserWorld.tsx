@@ -3,6 +3,7 @@ import Phaser from 'phaser';
 import { LunarWorld } from './LunarWorld';
 import { renderCounter } from '../utils/renderDiagnostics';
 import { destroyWorldRenderer, releaseWorldKeyboard, updateWorldRendering } from '../utils/renderPolicy';
+import { soundFX } from '../utils/soundEffects';
 import type {
   Point,
   StationNode,
@@ -51,9 +52,13 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       bridge.current.snapshot = props.snapshot;
     }
     if (props.paused && instance.current) releaseWorldKeyboard(instance.current);
+    if (props.paused || !props.snapshot.controllingRover) {
+      soundFX.stopRoverMotor(props.paused);
+    }
   }, [props]);
 
   useEffect(() => {
+    if (props.suspendRendering) soundFX.stopRoverMotor(true);
     if (instance.current) updateWorldRendering(instance.current, Boolean(props.suspendRendering));
   }, [props.suspendRendering]);
 
@@ -167,12 +172,18 @@ export const PhaserWorld = forwardRef<WorldHandle, Props>(function PhaserWorld(p
       b.direction = { x: 0, y: 0 };
       b.nudgeUntil = 0;
       b.drillHeld = false;
+      if (game.isBooted) {
+        releaseWorldKeyboard(game);
+        game.scene.getScene('LunarWorld')?.input?.keyboard?.resetKeys();
+      }
+      soundFX.stopRoverMotor(true);
     };
     window.addEventListener('blur', blur);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('blur', blur);
+      soundFX.stopRoverMotor(true);
       bridge.current = null;
       instance.current = null;
       destroyWorldRenderer(game);
