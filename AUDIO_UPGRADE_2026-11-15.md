@@ -2,6 +2,18 @@
 
 Starting checkpoint: clean `8804322` on `codex/protect-progress-and-sharing`, confirmed present. This is a local audio upgrade; no push, deployment, license or repository-visibility change is authorized or performed.
 
+> [!NOTE]
+> **Listening review still required.** Automated checks cannot establish that the soundtrack is pleasant, memorable or well mixed. See [Listening review required](#listening-review-required).
+
+## Contents
+
+- [Existing problems addressed](#existing-problems-addressed)
+- [Soundtrack and effects](#soundtrack-and-effects)
+- [Controls and lifecycle](#controls-and-lifecycle)
+- [Verification](#verification)
+- [Listening review required](#listening-review-required)
+- [Files changed](#files-changed)
+
 ## Existing problems addressed
 
 The existing `soundFX` engine played a single 58 Hz ambient oscillator, routed effects straight to the destination, lacked persisted level controls and did not stop active effect nodes when muted. It had no visibility/unmount lifecycle. Drilling requested a sound every frame. Timeline browsing could repeat shadow/storm alerts; ordinary branch Apply and opening the result drawer could sound like an actual rewind. Guided/failure results lacked corresponding completion feedback. Sample discovery could ping both in its collection event and when the modal mounted. Phaser also created its own unused audio context.

@@ -2,6 +2,18 @@
 
 Starting checkpoint: clean `be768ff`, branch `codex/protect-progress-and-sharing`, ancestor confirmed. This review prepares a **local technical release candidate**. It does not authorize publication, clear organizer eligibility, grant a license, or submit a project. No push, deployment, visibility change, history rewrite or scientific-model change is performed.
 
+> [!IMPORTANT]
+> **Technical review — later license and deployment work superseded parts of it.** Apache-2.0 was subsequently approved for original team materials, and a GitHub Pages deployment was prepared. Public-host verification and the submission blockers below remain open.
+
+## Contents
+
+- [First-minute judge experience](#first-minute-judge-experience)
+- [Official challenge and NASA-resource verification](#official-challenge-and-nasa-resource-verification)
+- [Public-release readiness and focused correction](#public-release-readiness-and-focused-correction)
+- [Final verification and artifact](#final-verification-and-artifact)
+- [Remaining submission blockers](#remaining-submission-blockers)
+- [GitHub repository strategy](#github-repository-strategy)
+
 ## First-minute judge experience
 
 The existing launch screen names the crew/power/science objective, makes **Start guided experiment** primary, and labels the fictional training setting. Five actions reach prediction, decision, observation, rewind and comparison: start the guide, start the shadow test, predict backup, choose drilling, rewind. Prediction is optional; four actions suffice without it. The observed comparison leads with **19.9/43.9 kWh at hour 120**, names the benefit/cost and explains battery → water recycling. No blocking first-minute confusion was demonstrated, so no general redesign or new game system was justified. This is an expert walkthrough, not evidence that unfamiliar students understood it within 60 seconds.
@@ -41,8 +53,8 @@ Additional NASA-derived/reference inputs have these distinct roles:
 - **NASA failure:** the optional query has a 4.5 s abort, response validation, distinct live/empty/unavailable states and no fabricated replacement records. Existing automated tests cover failed HTTP, offline rejection and invalid payloads; outcomes use recorded inputs independently.
 - **Saves/replay:** bounded version-1 browser saves store inputs and recalculate results. Existing tests cover corrupt/future saves, drafts, preparations, predictions and both runs. Refresh/resume is checked in the browser. Storage is origin-specific; local progress will not move automatically to a public domain.
 - **Accessibility:** English default, labeled native controls, keyboard dialog navigation, a Cadet explanation layer and visible warning cues remain. EN/AZ desktop checks are listed below. No complete screen-reader/mobile/WCAG certification is claimed.
-- **Disclosures:** the initial build shipped software notices but provided no direct UI path to those notices or an AI/media disclosure. Added `public/credits.html` and a small bilingual launch link, and updated them alongside `ATTRIBUTION.md` to record OpenAI Codex, Google Antigravity & Gemini, Anthropic Claude, and team-reported ChatGPT (scope pending confirmation), procedural code media vs. external AI-media labeling rules, the evidence-based pre-event (`fd05999`–`09e9e10` / `35f3349`) vs. Nov 14–15 (`8ace633`–HEAD) timeline, and the unchanged pending team-license status. No inherited rights or unverified contributions were invented.
-- **Notices:** regenerated from the actual runtime module graph: 40 package versions, no notice text change. No asset/dependency/license grant added. The source tree's candidate Apache text remains a draft outside the deployment artifact.
+- **Disclosures:** the initial build shipped software notices but provided no direct UI path to those notices or an AI/media disclosure. Added `public/credits.html` and a small bilingual launch link, and updated them alongside `ATTRIBUTION.md` to record OpenAI Codex, Google Antigravity & Gemini, Anthropic Claude, and team-reported ChatGPT (scope pending confirmation), procedural code media vs. external AI-media labeling rules, the evidence-based pre-event (`fd05999`–`09e9e10` / `35f3349`) vs. Nov 14–15 (`8ace633`–HEAD) timeline, and the then-pending team-license status. No inherited rights or unverified contributions were invented.
+- **Notices:** regenerated from the actual runtime module graph: 40 package versions, no notice text change. No asset/dependency/license grant added. At that point, the source tree's candidate Apache text remained a draft outside the deployment artifact; the later approved [LICENSE](LICENSE) and [NOTICE](NOTICE) replaced it.
 
 The official [2026 participant terms](https://www.spaceappschallenge.org/legal/), updated August 7, were read in-browser this session. They require rights to submitted materials, source credits and applicable third-party license documentation, and discuss unrestricted/OSI original-content terms and NASA's Apache default. This review does not choose a project license or resolve authorship. The [event page](https://www.spaceappschallenge.org/2026/) gives November 15, 11:59 PM local time; confirm the Universal/team event's applicable time zone and submission form. A 27-second storyboard does not establish an official video-duration limit.
 
@@ -52,7 +64,7 @@ Baseline: **79/79 tests**, TypeScript and production build passed. Final post-ch
 
 ## Remaining submission blockers
 
-1. Team/rights-holder confirmation of project licensing and inherited code/art provenance. No root project license has been approved by this work.
+1. Team/rights-holder confirmation of project licensing and inherited code/art provenance. No root project license had been approved at the time of this review; Apache-2.0 was subsequently approved for original team materials, while exact authorship/provenance details still need confirmation.
 2. Written organizer determination about pre-event work, plus correct registration/team event and an accurate event-work description. Repository reports of clearance are not the written evidence.
 3. Complete earlier AI tools/models/scope and all submission references confirmed by the team; current draft names are not silently treated as verified.
 4. Current team-event deadline/time zone, required project fields, video/link rules and source-access requirements checked in the actual submission form. No assumed 27/30-second global limit.
@@ -61,6 +73,8 @@ Baseline: **79/79 tests**, TypeScript and production build passed. Final post-ch
 
 There is no demonstrated need for another graphics/audio/gameplay redesign. Resolve the external blockers, publish only the chosen artifact after authorization, verify that exact host, and enter the tested links and references in the official project form. No submission-complete or public-ready claim is made prematurely.
 
-## GitHub repository strategy (`Kenan22w/outpost-replay-team`)
+## GitHub repository strategy
+
+Repository: `Kenan22w/outpost-replay-team`.
 
 Keep and brand `Kenan22w/outpost-replay-team` (`# OUTPOST REPLAY — Team Brochachos`)—or rename it in GitHub Settings once approved—rather than creating a fresh history-less repository. Preserving the complete commit graph (`fd05999`–`09e9e10` pre-event practice/audits, `35f3349` transition checkpoint, `8ace633`–`HEAD` Nov 14–15 event work) keeps provenance transparent; visibility changes (`private` → `public`), pushes, and licensing (`LICENSE`) remain gated on team rights-holder and organizer approval.

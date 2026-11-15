@@ -1,6 +1,17 @@
 # OUTPOST REPLAY · three-minute judge demonstration
 
-Internal rehearsal script, not an official submission-video limit. Confirm the current global guide and local pitch rules. Use the reviewed production build; mute audio if speaking. Rehearse on the actual laptop. The scripted game works without live NASA access; do not spend pitch time fetching DONKI.
+> [!IMPORTANT]
+> **Internal rehearsal script — not an official submission-video limit.** Confirm the current global guide and local pitch rules. Use the reviewed production build; mute audio if speaking. Rehearse on the actual laptop. The scripted game works without live NASA access; do not spend pitch time fetching DONKI.
+
+## Pre-flight checklist
+
+- [ ] Confirm the current global guide and local pitch rules, including any time limit.
+- [ ] Start the reviewed production build and mute game audio if you are speaking.
+- [ ] Rehearse on the actual presentation laptop.
+- [ ] Keep the source references, methodology, licensing record and approved public URL ready for questions.
+- [ ] Keep the local `dist/` preview, screenshots and a consented recording as fallbacks.
+
+## Run of show
 
 | Time | Action | Say |
 | --- | --- | --- |
@@ -10,6 +21,25 @@ Internal rehearsal script, not an official submission-video limit. Confirm the c
 | 1:55–2:35 | Rewind & try the other plan. Point to the matched-hour cards and Benefit/Cost results. | “We change only D3. Starting conditions, preparation and other planned decisions stay fixed. Backup leaves 43.9 kWh at the same hour. Across the full mission, low reserve falls from 97 hours to zero, but science drops by 14 points. Both runs reach hour 216. Students can see the cost of protecting the crew, rather than just hunting for a higher score.” |
 | 2:35–3:00 | Show the comparison's decision controls; finish on the result. | “Our innovation is a reproducible counterfactual experiment inside an explorable outpost. Students can isolate an option or preparation setting, inspect the resource consequence, and explain why it happened. These are educational estimates, not astronaut exposure forecasts. Next we want to evaluate the learning experience with students and educators.” |
 
+## Numbers to keep straight
+
+| Quantity | Drilling first | Backup first |
+| --- | ---: | ---: |
+| D3 endpoint battery (hour 120) | **19.9 kWh** | **43.9 kWh** |
+| Whole-mission low-reserve duration | 97 h | 0 h |
+| Science difference | — | −14 points |
+| Judge-demo score | 54 | 66 |
+| Mission endpoint | 216 h | 216 h |
+
 Expected judge-demo scores are 54/66; the main comparison is 19.9/43.9 kWh at hour 120. Do not confuse the D3 phase-only low-reserve duration with the 97/0 whole-mission totals. The prediction is optional; this script records it before choosing a plan. Reversing the initial demo choice reverses A/B, so use Keep drilling first for this script.
 
-If presentation time or hardware fails, use the same local `dist/` over HTTP, then a consented prerecorded walkthrough and saved screenshots. Do not present a recording as a live experiment. Keep the source references, methodology, licensing record and approved public URL ready for questions. Avoid claiming real NASA terrain, validated radiation transport, established student learning gains or confirmed submission eligibility.
+## If time or hardware fails
+
+Use the same local `dist/` over HTTP, then a consented prerecorded walkthrough and saved screenshots. Do not present a recording as a live experiment. Keep the source references, methodology, licensing record and approved public URL ready for questions.
+
+## Claims to avoid
+
+- Do not claim real NASA terrain or a LOLA-derived 3D reconstruction.
+- Do not claim validated radiation transport, astronaut exposure prediction or NASA endorsement.
+- Do not claim established student learning gains.
+- Do not claim confirmed submission eligibility or a verified public deployment.

@@ -4,6 +4,29 @@ The [2026 NASA Space Apps participant terms](https://www.spaceappschallenge.org/
 
 ## Approved license for original team materials
 
+> [!NOTE]
+> **Apache-2.0 approved on 15 November 2026 for original team materials only.** Third-party software and NASA/NOAA material retain their own terms. See [NOTICE](NOTICE) for scope.
+
+## Licensing status at a glance
+
+| Item | Current status |
+| --- | --- |
+| Team code, documentation and original media | Apache-2.0 approved; limited to team-owned rights |
+| Runtime third-party notices | Collected for 40 package versions |
+| Shipped visual/audio media | Procedurally generated in project code |
+| Inherited assets and prior-work eligibility | SVG provenance recovered; organizer eligibility confirmation still required |
+| AI-assistance disclosure | Drafted; ChatGPT scope requires team confirmation |
+
+## Contents
+
+- [Licensing status at a glance](#licensing-status-at-a-glance)
+- [Approved license for original team materials](#approved-license-for-original-team-materials)
+- [Scientific sources and media](#scientific-sources-and-media)
+- [Direct software dependencies](#direct-software-dependencies)
+- [AI assistance and procedural media disclosure](#ai-assistance-and-procedural-media-disclosure)
+- [Evidence-based development timeline & eligibility status](#evidence-based-development-timeline--eligibility-status)
+- [Unresolved organizer & team questions](#unresolved-organizer--team-questions)
+
 **Approved by the authorized rights-holder representative on 15 November 2026:** [Apache-2.0](LICENSE), with attribution **Copyright 2026 Team Brochachos contributors**. The grant covers original project code, documentation, and procedural visual/audio materials only to the extent the team owns the relevant rights or is authorized to license them. See [NOTICE](NOTICE) for the scope and [the browser-accessible license](public/PROJECT_LICENSE.txt).
 
 Third-party dependencies and incorporated third-party material retain their own licenses and notices. NASA/NOAA data, publications, agency names and marks are excluded from the team's grant and remain subject to their applicable terms. Recorded AI-assisted generation does not automatically establish copyright ownership; no unsupported ownership claim is made for AI output. The earlier candidate text remains in `licensing/Apache-2.0.txt` as a historical review copy. Historical audit entries below describe their then-current approval status; this paragraph records the subsequent approval.

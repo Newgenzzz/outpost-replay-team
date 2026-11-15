@@ -2,6 +2,17 @@
 
 Baseline: clean `d1c4fc2`, branch `codex/protect-progress-and-sharing`. This session addresses three observed presentation weaknesses; it does not repeat the independent technical/science audit.
 
+> [!NOTE]
+> **Local presentation pass.** No learning outcomes are measured, and public release remains conditional on the external gates in [Remaining weaknesses and release-candidate assessment](#remaining-weaknesses-and-release-candidate-assessment).
+
+## Contents
+
+- [What was unclear](#what-was-unclear)
+- [Three improvements](#three-improvements)
+- [Changed files](#changed-files)
+- [Verification performed](#verification-performed)
+- [Remaining weaknesses and release-candidate assessment](#remaining-weaknesses-and-release-candidate-assessment)
+
 ## What was unclear
 
 1. **Guided instructions competed with the immediate task.** The opening explained D1/D2, a berm, D3 and hour 48 in long paragraphs. The learner needed a shorter objective, a clear transition into the shadow test and a readable first result.

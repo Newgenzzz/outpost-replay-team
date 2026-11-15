@@ -2,30 +2,73 @@
 
 Prepared 14 November 2026. Copy-ready drafts below require the team's review. This document does not certify eligibility, grant a license, authorize publication, or claim that a public demo or learner study exists.
 
+> [!WARNING]
+> **Working drafts — not a submission.** Confirm current rules, obtain written approvals, and replace every placeholder before using any text here.
+
+## Submission status at a glance
+
+| Item | Current status |
+| --- | --- |
+| Current Universal rules and time zone | Must be confirmed |
+| Prior-work eligibility | Written organizer confirmation pending |
+| Team license and authorship | Apache-2.0 approved for original materials; authorship details pending |
+| Public playable URL | Pages deployment prepared; public verification pending |
+| Learner study | Not performed |
+| Submission video | Outline only; not recorded or submitted |
+
+## Contents
+
+- [Submission status at a glance](#submission-status-at-a-glance)
+- [Confirm before submitting](#confirm-before-submitting)
+- [Project-page drafts](#project-page-drafts)
+- [NASA and other scientific resources used](#nasa-and-other-scientific-resources-used)
+- [AI and prior-work disclosure drafts](#ai-and-prior-work-disclosure-drafts)
+- [GitHub repository strategy](#github-repository-strategy)
+- [Provisional 30-second recording](#provisional-30-second-recording)
+- [Optional seven-slide outline](#optional-seven-slide-outline)
+- [Small learner check · not yet performed](#small-learner-check--not-yet-performed)
+- [Release gates and final check](#release-gates-and-final-check)
+
 ## Confirm before submitting
 
 - Check the current **Universal Event** organizer messages and project form for the deadline time zone, required fields, video/slide limits, language and AI disclosure requirements. The [2026 event page](https://www.spaceappschallenge.org/2026/) lists the general November 15, 11:59 PM local-time closing time; the applicable Universal time zone must be confirmed. Direct retrieval of the current Universal/resources pages failed during this review. The earlier 30-second / seven-slide / equally weighted rubric claims are **not independently verified current Universal requirements**.
 - Obtain written confirmation about reuse of work completed before the event. Retain the actual Git history and distinguish prior development from event work; do not relabel earlier work as created during the weekend.
-- Resolve team authorship and license approval, then complete the source/material documentation in [ATTRIBUTION.md](ATTRIBUTION.md). The candidate Apache-2.0 text is not an active project license.
+- Confirm remaining team authorship/timeline details, then complete the source/material documentation in [ATTRIBUTION.md](ATTRIBUTION.md). The approved Apache-2.0 [LICENSE](LICENSE) covers original team materials only; third-party software and NASA/NOAA terms still apply.
 - Review the [2026 participant terms](https://www.spaceappschallenge.org/legal/), including source citations, third-party rights and media restrictions. Recognizable names, voices and likenesses of minors must not appear in the submission. Use anonymous learner observations; do not record or publish children's identities.
 
 ## Project-page drafts
 
-**Title:** OUTPOST REPLAY — Predict. Decide. Rewind. Explain.
+### Title
 
-**Summary:** OUTPOST REPLAY is an English–Azerbaijani mission trainer in which students manage a fictional lunar outpost and explore competing needs for power, life support, shielding, food and scientific work. Players predict an outcome, apply an engineering choice, rewind it, and compare two runs while preserving their other recorded inputs. Resource forecasts and matched-time comparisons make the cost of each choice visible. Published NASA research and reference parameters are credited separately from the game's educational assumptions.
+OUTPOST REPLAY — Predict. Decide. Rewind. Explain.
 
-**Problem and audience:** Young learners encounter spaceflight as either a simplified adventure or a technical subject with unfamiliar units. Our target audience is students aged 7–12, with a Cadet interface for plain-language guidance and an Engineer interface for quantitative inspection by educators and judges. These are design targets, not measured evidence of suitability or learning gains.
+### Summary
 
-**Challenge relevance:** [Build a Junior Astronaut Mission Trainer](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/) asks for interactive experiences that make competing outpost engineering demands tangible and fun. Our six-decision lunar exercise combines exploration and station preparation with explicit resource consequences. A bonus Mars scenario is available, but the submission demonstration concentrates on one complete lunar experiment.
+OUTPOST REPLAY is an English–Azerbaijani mission trainer in which students manage a fictional lunar outpost and explore competing needs for power, life support, shielding, food and scientific work. Players predict an outcome, apply an engineering choice, rewind it, and compare two runs while preserving their other recorded inputs. Resource forecasts and matched-time comparisons make the cost of each choice visible. Published NASA research and reference parameters are credited separately from the game's educational assumptions.
 
-**Innovation:** Rewind & Compare turns a mission choice into a reproducible counterfactual experiment. Run A records scenario settings and preparations at each phase. Run B can change one choice while retaining the other recorded inputs. The interface explains trade-offs at matching mission times and identifies changed preparations or unequal-duration runs. Students can ask not only “Did I succeed?” but “What changed, and why?”
+### Problem and audience
 
-**Demonstrated example:** In the existing default Guided Demo, keeping the drill running leaves 19.9 kWh at hour 120; changing D3 to backup fuel cells leaves 43.9 kWh at that same hour. Both runs finish at hour 216. Across the whole mission, time below the 20 kWh reserve threshold changes from 97 hours to zero, while science decreases by 14 points. Scores are 54 and 66. These are deterministic game-model results, not real outpost forecasts. Recheck these values in the exact release build before recording.
+Young learners encounter spaceflight as either a simplified adventure or a technical subject with unfamiliar units. Our target audience is students aged 7–12, with a Cadet interface for plain-language guidance and an Engineer interface for quantitative inspection by educators and judges. These are design targets, not measured evidence of suitability or learning gains.
 
-**Impact and next evaluation:** The bilingual interface is intended to make the same engineering experiment accessible to English- and Azerbaijani-speaking learners. Next we will observe first-time players and educators, measure completion and assistance, and ask learners to explain one benefit and one cost. No classroom effectiveness, measured learning gain or adoption claim is made yet.
+### Challenge relevance
 
-**Technical approach:** Static React/TypeScript/Vite application, with a Phaser 2.5D world, a Three.js teaching illustration, deterministic resource accounting and recorded replay inputs. The core exercise uses bundled inputs and does not depend on a successful live API request. A first load still requires a served build; no installable offline app is claimed.
+[Build a Junior Astronaut Mission Trainer](https://www.spaceappschallenge.org/2026/challenges/junior-astronaut-mission-trainer/) asks for interactive experiences that make competing outpost engineering demands tangible and fun. Our six-decision lunar exercise combines exploration and station preparation with explicit resource consequences. A bonus Mars scenario is available, but the submission demonstration concentrates on one complete lunar experiment.
+
+### Innovation
+
+Rewind & Compare turns a mission choice into a reproducible counterfactual experiment. Run A records scenario settings and preparations at each phase. Run B can change one choice while retaining the other recorded inputs. The interface explains trade-offs at matching mission times and identifies changed preparations or unequal-duration runs. Students can ask not only “Did I succeed?” but “What changed, and why?”
+
+### Demonstrated example
+
+In the existing default Guided Demo, keeping the drill running leaves 19.9 kWh at hour 120; changing D3 to backup fuel cells leaves 43.9 kWh at that same hour. Both runs finish at hour 216. Across the whole mission, time below the 20 kWh reserve threshold changes from 97 hours to zero, while science decreases by 14 points. Scores are 54 and 66. These are deterministic game-model results, not real outpost forecasts. Recheck these values in the exact release build before recording.
+
+### Impact and next evaluation
+
+The bilingual interface is intended to make the same engineering experiment accessible to English- and Azerbaijani-speaking learners. Next we will observe first-time players and educators, measure completion and assistance, and ask learners to explain one benefit and one cost. No classroom effectiveness, measured learning gain or adoption claim is made yet.
+
+### Technical approach
+
+Static React/TypeScript/Vite application, with a Phaser 2.5D world, a Three.js teaching illustration, deterministic resource accounting and recorded replay inputs. The core exercise uses bundled inputs and does not depend on a successful live API request. A first load still requires a served build; no installable offline app is claimed.
 
 ## NASA and other scientific resources used
 
@@ -52,13 +95,15 @@ Other boundaries to state honestly: lossless battery storage, simplified loads, 
 
 **Publication fields to complete:** official team name; approved source URL; tested playable URL; exact release commit; video/slides link; applicable license; confirmed Universal deadline/time zone; complete resource and AI-tool list. A private team repository alone does not establish open-source submission compliance.
 
-## GitHub Repository Release Strategy (`Kenan22w/outpost-replay-team`)
+## GitHub repository strategy
+
+Repository: `Kenan22w/outpost-replay-team`.
 
 **Recommendation:** **Keep (and optionally rename in GitHub Settings) `Kenan22w/outpost-replay-team` rather than creating a fresh repository without history.**
 
 - **Why keep/rename `Kenan22w/outpost-replay-team`:** Renaming or keeping the existing repository with `README.md` branded as `# OUTPOST REPLAY — Team Brochachos` preserves the full, honest commit log (`fd05999`–`09e9e10` pre-event work, `35f3349` transition checkpoint, `8ace633`–`HEAD` hackathon-weekend work), branches, and attribution records. Creating a brand-new single-commit repository on November 15 to hide pre-event history (`fd05999`–`09e9e10`) would misrepresent development dates and violate honest Space Apps disclosure standards.
 - **When a separate team/org mirror would ever be justified:** Only if collaboration permissions require transferring to a Team Brochachos GitHub organization that cannot fork or transfer the existing repository; even then, transfer via GitHub Settings or mirror complete history (`git push --mirror`) while retaining `ATTRIBUTION.md` and `public/credits.html`.
-- **Action status:** No repository rename, visibility change (`private` → `public`), push, or deployment has been executed automatically. Team & rights-holder approval plus organizer pre-event clearance are required first.
+- **Action status:** No repository rename or visibility change (`private` → `public`) has been executed automatically by this kit. Organizer pre-event clearance and verified public deployment are still required; the approved license scope is recorded in [ATTRIBUTION.md](ATTRIBUTION.md).
 
 ## Provisional 30-second recording
 
@@ -75,7 +120,15 @@ Keep a longer [three-minute rehearsal](JUDGE_DEMO.md) for conversations or a bac
 
 ## Optional seven-slide outline
 
-This is a planning option, not a verified official slide allowance: (1) learner/problem; (2) one question and prediction; (3) D3 decision and result; (4) rewind comparison with benefit and cost; (5) NASA evidence chain and limits; (6) bilingual access and honest pilot findings, if collected; (7) tested demo/source links, team contributions and next evaluation.
+This is a planning option, not a verified official slide allowance:
+
+1. Learner and problem.
+2. One question and prediction.
+3. D3 decision and result.
+4. Rewind comparison with benefit and cost.
+5. NASA evidence chain and limits.
+6. Bilingual access and honest pilot findings, if collected.
+7. Tested demo/source links, team contributions and next evaluation.
 
 ## Small learner check · not yet performed
 
