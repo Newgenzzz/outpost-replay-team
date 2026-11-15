@@ -1,5 +1,8 @@
 # GitHub Pages release
 
+> [!NOTE]
+> **Deployment verified live:** `.github/workflows/pages.yml` is active on `Newgenzzz/outpost-replay-team`, and <https://newgenzzz.github.io/outpost-replay-team/> (plus `credits.html`, `PROJECT_LICENSE.txt`, and `THIRD_PARTY_NOTICES.txt`) has been verified in Chromium without authentication.
+
 The production target is <https://newgenzzz.github.io/outpost-replay-team/>.
 The target is playable only after the deployment succeeds; source publication alone does not publish the game website.
 

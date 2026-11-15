@@ -1,17 +1,21 @@
-# OUTPOST REPLAY — Team Brochachos
+# OUTPOST REPLAY — Predict. Decide. Rewind. Compare. Learn.
 
-**A bilingual (`EN · AZ`) lunar & Mars mission-engineering trainer for ages 7–12.** Built for the **2026 NASA International Space Apps Challenge — "Build a Junior Astronaut Mission Trainer."**
+**Team Brochachos** · **2026 NASA International Space Apps Challenge** (*"Build a Junior Astronaut Mission Trainer"*)
 
-Lead a two-person crew through nine simulated days (216 hours) near Shackleton Crater's sunlit south-polar rim. Explore a 2.5D WebGL outpost, inspect a procedural 3D crater-shadow demonstration alongside published LOLA illumination research, rewind any decision to run a controlled counterfactual experiment, and unlock **Bonus Mission 2: Mars Jezero Global Dust Storm & 14-Min Comms Delay**.
+- **Play Immediately (Verified Public Web Game):** <https://newgenzzz.github.io/outpost-replay-team/>
+- **Source Repository:** <https://github.com/Newgenzzz/outpost-replay-team>
+- **Credits, Licenses & AI Disclosure:** <https://newgenzzz.github.io/outpost-replay-team/credits.html> · [ATTRIBUTION.md](ATTRIBUTION.md) · [NASA_SCIENCE.md](NASA_SCIENCE.md)
 
-![status](https://img.shields.io/badge/status-release%20candidate-f0b429)
+A bilingual (`EN · AZ`) lunar & Mars mission-engineering trainer for **ages 7–12** (with an optional **Flight Engineer Mode** for educators and NASA judges). Lead a two-person crew through nine simulated days (216 hours) near Shackleton Crater's sunlit south-polar rim, explore a 2.5D outpost on foot or by rover, inspect a procedural 3D crater-shadow demonstration alongside published LOLA illumination research, rewind any decision to run a controlled counterfactual experiment, and unlock **Bonus Mission 2: Mars Jezero Global Dust Storm & 14-Min Comms Delay**.
+
+![status](https://img.shields.io/badge/status-live%20%C2%B7%20verified-2ea44f)
 ![license](https://img.shields.io/badge/license-Apache--2.0%20(team%20materials)-blue)
 ![stack](https://img.shields.io/badge/stack-React%20%C2%B7%20TypeScript%20%C2%B7%20Vite-3178c6)
 ![engine](https://img.shields.io/badge/engine-Phaser%20%2B%20Three.js-6c47ff)
 ![languages](https://img.shields.io/badge/languages-EN%20%C2%B7%20AZ-2ea44f)
 
-> [!IMPORTANT]
-> **Release candidate — public source release approved; playable deployment not yet verified.** Original team materials are Apache-2.0 licensed. Organizer eligibility, submission and public-host checks remain open. See [Remaining submission blockers](RELEASE_CANDIDATE_2026-11-15.md#remaining-submission-blockers) and [Release gates](COMPETITION_READINESS.md#release-gates).
+> [!NOTE]
+> **Live public release verified without authentication.** Play directly at <https://newgenzzz.github.io/outpost-replay-team/> or inspect source at <https://github.com/Newgenzzz/outpost-replay-team>. Original team materials are licensed under [Apache-2.0](LICENSE) ([NOTICE](NOTICE)); see [ATTRIBUTION.md](ATTRIBUTION.md) and [public/credits.html](public/credits.html) for development-history records, AI disclosures, scientific limits, and submission-eligibility notes.
 
 ## Contents
 
@@ -28,22 +32,27 @@ Lead a two-person crew through nine simulated days (216 hours) near Shackleton C
 
 | Item | Details |
 | --- | --- |
-| **Audience** | Ages 7–12 (Cadet Mode) and educators/judges (Engineer Mode) |
+| **Audience** | **Ages 7–12** (Cadet Mode) and educators / NASA judges (Flight Engineer Mode) |
 | **Languages** | English · Azerbaijani (`EN · AZ`) |
-| **Mission** | 9 simulated days / 216 hours · 6 decisions · 2-person crew |
+| **Mission** | 9 simulated days / 216 hours · 6 engineering decisions (`D1`–`D6`) · 2-person crew |
 | **Setting** | Fictional outpost near Shackleton Crater's south-polar rim |
-| **Bonus mission** | Mars Jezero global dust storm & 14-minute comms delay |
-| **Stack** | React 18 · TypeScript · Vite 6 · Phaser 4 · Three.js |
-| **License** | Apache-2.0 for original team materials; third-party terms retained |
-| **Status** | Release candidate · source public · playable deployment unverified |
+| **Bonus mission** | Mars Jezero global dust storm & 14-minute one-way comms delay |
+| **Stack** | React 18 · TypeScript · Vite 6 · Phaser 4 · Three.js · Recharts |
+| **License** | Apache-2.0 for original team materials ([LICENSE](LICENSE) / [NOTICE](NOTICE)); third-party notices retained |
+| **Status** | Live & verified at [newgenzzz.github.io/outpost-replay-team](https://newgenzzz.github.io/outpost-replay-team/) · [Source on GitHub](https://github.com/Newgenzzz/outpost-replay-team) |
 
 ## Core Educational Innovation: PREDICT → DECIDE → OBSERVE → REWIND → COMPARE → LEARN
 
-- **Problem being solved:** Spaceflight education for ages 7–12 is often either passive storytelling with no resource trade-offs or dense engineering spreadsheets inaccessible to young students. Outpost managers must balance competing power, life-support, radiation shielding, food, and science demands at the same time.
-- **Educational approach:** Default **Junior Cadet Mode (Ages 7–12)** pairs plain-language story cards, visual hazard cues, hands-on station mini-games, and bilingual (`EN · AZ`) explanations with a 1-click **Flight Engineer Mode** exposing exact `kWh`, `kg O₂/H₂O/Food`, `mSv`, and 216-hour deterministic forecasts.
-- **Originality of Rewind & Compare:** Rather than forcing a full restart after a mission failure or low-score ending, **Rewind & Compare (`[R]`)** snapshots every phase input and preparation setting into **Run A**, lets the player branch from any completed decision (`D1`–`D6`) into **Run B**, holds other recorded settings fixed, and explains the exact delta (`Benefit` / `Cost`), threshold crossings (`<20 kWh` brownout, `≥50 mSv` warning), and engineering principle.
-- **Role of NASA data & meaning of the simulation:** Selected published NASA/NOAA parameters (e.g., BVAD oxygen demand, LCROSS Cabeus ice fraction, Gläser et al. LOLA Table 2 site metrics, DONKI archived May 2024 notification + optional live FLR catalog, OSDR `VEG-01A`, and NOAA GOES `207 pfu` peak) anchor real engineering trade-offs inside a deterministic classroom balance model. The simulation teaches systems thinking and controlled experimentation—not operational spacecraft flight certification.
-- **Scientific limitations & evaluation status:** No raw LOLA/Diviner raster, RadLab dosimetry time series, or Mars Trek DEM is loaded; dose scaling (`0.015 mSv·h⁻¹·pfu⁻¹`), fixed shielding multipliers, thermal loads, and crop timelines are simplified classroom assumptions, and no formal classroom learning-gain study has been completed yet. Development history spans pre-event preparation/prototypes (`fd05999`–`09e9e10`, transition `35f3349`) and Nov 14–15 hackathon work (`8ace633`–HEAD); see [ATTRIBUTION.md](ATTRIBUTION.md) and [public/credits.html](public/credits.html).
+- **Problem being solved:** Spaceflight education for ages 7–12 is often either passive storytelling with no resource trade-offs or dense engineering spreadsheets inaccessible to young students. Real lunar outpost design requires balancing competing power, life-support, radiation shielding, food, and science demands simultaneously.
+- **Who the game is designed for & how to play immediately:** Built primarily for learners aged **7–12** in **Junior Cadet Mode** (plain-language story cards, visual hazard cues, hands-on station tasks, and bilingual `EN · AZ` explanations), with a 1-click **Flight Engineer Mode** exposing exact `kWh`, `kg O₂/H₂O/Food`, `mSv`, and 216-hour forecasts. Open <https://newgenzzz.github.io/outpost-replay-team/> in any modern desktop browser with zero login and click **Start guided experiment** (a focused counterfactual shadow test) or **Judge Demo** (instant finished A/B comparison), or explore the full 9-day mission on foot (`WASD`) and by Lunar Rover (`V`).
+- **Central innovation — Rewind & Compare (`[R]`):** Rather than restarting from scratch after a low-score or brownout ending, **Rewind & Compare** snapshots every phase choice, fieldwork item, and preparation setting into **Run A**, lets the player branch from any completed decision (`D1`–`D6`) into **Run B**, holds other recorded settings fixed, and quantifies the exact **Benefit / Cost** deltas (`19.9 kWh` vs `43.9 kWh` at hour 120; `97 h` vs `0 h` low-reserve exposure; `−14` science points), threshold crossings (`<20 kWh` brownout, `≥50 mSv` science gate), and physical cause.
+- **How NASA data informs the experience (4-tier scientific separation):** Published NASA and NOAA references anchor every station dilemma while transparently distinguishing four data tiers throughout the UI:
+  1. **Real observations:** NOAA GOES `207 pfu` near-Earth proton peak (May 10, 2024) and NASA CCMC DONKI archive Alert `#30944` (`20240516-7D-001`, optional live `FLR` catalog metadata).
+  2. **Published research models:** NASA LRO LOLA site-illumination rows (`Gläser et al. 2018` Table 2: `S` `85.5%` / `66 h` vs `C1` `88.0%` / `112 h`), LCROSS Cabeus water-ice estimate (`5.6 ± 2.9%`), Diviner cold-trap temperature (`~38 K`), OSDR `VEG-01A` (`33-day` ISS lettuce water-stress trial), BVAD oxygen consumption (`0.82 kg O₂/crew-day`), ISS `~98%` water recovery, and `NASA-STD-3001` (`<600 mSv` career reference).
+  3. **Educational engineering approximations:** Deterministic hourly energy/O₂/H₂O/food accounting, `0.015 mSv·h⁻¹·pfu⁻¹` training flux-to-dose factor, simplified shelter transmission multipliers, and lossless storage / `90 K` thermal curves.
+  4. **Fictional gameplay assumptions:** The fictional south-polar outpost site, scripted `72 h` shadow (`D3`), Mars Jezero `τ = 4.2` / `14 min` bonus scenario, and procedural 3D Shackleton horizon art (`×14` mast exaggeration).
+- **Scientific limitations:** No raw LOLA/Diviner DEM raster, RadLab dosimetry time series, or Mars Trek DEM is bundled. Calculated doses, power margins, and yields are educational abstractions unsuitable for operational flight planning or crew-exposure forecasting, and no formal classroom learning-gain study has been completed yet.
+- **Development history, credits & AI disclosure summary:** Team Brochachos researched the challenge, discussed ideas, and planned our approach prior to November 14, 2026, and built and finalized the official hackathon submission on **November 14–15, 2026** (`35f3349` and `8ace633`–`HEAD`). Git history also preserves earlier November 6–9 AI-generated exploratory prototype checkpoints and automated audit drafts (`fd05999`–`09e9e10`, plus November 5 Antigravity write logs for nine removed prototype SVGs); those earlier exploratory artifacts are retained transparently without rewriting history and are not presented as completed team submission development. Original team code, documentation, and procedural audio/visuals are licensed under [Apache-2.0](LICENSE) ([NOTICE](NOTICE)); see [ATTRIBUTION.md](ATTRIBUTION.md) and [public/credits.html](public/credits.html) for complete AI-tool disclosures (`OpenAI Codex`, `Google Antigravity & Gemini`, `Anthropic Claude`, and team `ChatGPT` ideation) and third-party notices for `40` bundled runtime packages.
 
 ## NASA Scientific Data Integration (Source-to-Feature Map)
 
@@ -69,13 +78,13 @@ Lead a two-person crew through nine simulated days (216 hours) near Shackleton C
 - **216-Hour Counterfactual Rewind Lab, PNG Patch & Shareable Replay URLs:** Inspect continuous 216-hour `hourlyHistory` telemetry curves comparing **Run A** vs **Run B**, export a custom HTML5 Canvas **Mission Patch PNG** with your Commander Callsign, or copy a `?m=` shareable replay URL that restores your exact comparison run.
 - **Hands-On Station Calibrations & Fieldwork Wired to Physics:** Aligning the D1 solar mast, sealing the D2 water loop, patching the D3 HVDC bus, pre-heating the D4 cryo-extractor, mining 90K basin ice cores (`[Space]`), clamping the D5 storm bulkhead, aligning the D6 Ka-band dish, and logging lunar geology samples directly improve simulated reserves and science output.
 - **Bonus Mission 2 — Mars Jezero Global Dust Storm:** Survive 3 Martian Sols under `τ = 4.2` atmospheric dust (`−82%` solar output), `−68 °C` nights, MOXIE `CO₂ → O₂` power trade-offs, and a simulated 28-minute round-trip Earth radio delay.
-- **Original adaptive audio:** A procedural chord-and-melody score shifts between menu, exploration and restrained tension. Separate master/music/effects levels and mute are available from the launch screen and HUD; preferences stay in this browser. Audio begins after a pointer or keyboard interaction and pauses when the tab is hidden. Feedback represents music, suit/equipment vibration and radio cues, not sound traveling through lunar vacuum.
+- **Original adaptive audio & rover vibration:** A procedural chord-and-melody score shifts between menu, exploration, and restrained tension, paired with a continuous speed-reactive dual-oscillator rover motor synthesis representing structure-borne chassis vibration. Separate master/music/effects levels and mute are available from the launch screen and HUD; preferences stay in this browser. Audio begins after a pointer or keyboard interaction and pauses cleanly when leaving the rover, opening overlays, losing window focus, or hiding the tab. Feedback represents music, suit/radio cues, and vehicle structure vibration—not sound traveling through lunar vacuum.
 
 ## Run locally
 
-GitHub Pages deployment is prepared for <https://newgenzzz.github.io/outpost-replay-team/>. See [GitHub Pages setup and verification](GITHUB_PAGES.md) for the official Actions workflow, owner setup, production base path, and Direct Upload fallback. Confirm a successful deployment before sharing the target as a playable demo.
+The public web deployment is live and verified at <https://newgenzzz.github.io/outpost-replay-team/> (see [GITHUB_PAGES.md](GITHUB_PAGES.md) for the workflow and [CLOUDFLARE_DIRECT_UPLOAD.md](CLOUDFLARE_DIRECT_UPLOAD.md) for the static fallback). Source is hosted at <https://github.com/Newgenzzz/outpost-replay-team>.
 
-For the current release candidate, see [the verified release review and NASA source map](RELEASE_CANDIDATE_2026-11-15.md), [Cloudflare Pages Direct Upload instructions](CLOUDFLARE_DIRECT_UPLOAD.md), and the [27-second gameplay storyboard](DEMO_27_SECONDS.md). Public source release and the limited Apache-2.0 scope were approved on 15 November 2026. Organizer eligibility and submission-specific confirmations remain separate. The built launch screen links to credits, AI assistance and bundled software notices.
+Supporting documentation includes [the release-candidate review](RELEASE_CANDIDATE_2026-11-15.md) (historical pre-Pages checkpoint), the [27-second gameplay storyboard](DEMO_27_SECONDS.md), [NASA_SCIENCE.md](NASA_SCIENCE.md), and [ATTRIBUTION.md](ATTRIBUTION.md). Original team materials are Apache-2.0 licensed ([LICENSE](LICENSE) / [NOTICE](NOTICE)). Public launch links directly to interactive credits, AI/timeline disclosures, and bundled third-party notices.
 
 For presentation drafts and remaining release gates, see [SUBMISSION_KIT.md](SUBMISSION_KIT.md). Current development state and verification limits are in [CODEX_HANDOFF.md](CODEX_HANDOFF.md).
 
@@ -157,7 +166,7 @@ Allow two to three minutes to talk through the planning exercise and mission com
 
 See [SPEC.md](SPEC.md) for implementation details, [NASA_SCIENCE.md](NASA_SCIENCE.md) for source provenance, and [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for completed work and verification.
 
-See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the M6 release gates, static deployment/rollback instructions, judge rehearsal and submission checklist. Prior-work eligibility requires organizer confirmation before submission; the original-material license scope is recorded in [ATTRIBUTION.md](ATTRIBUTION.md). Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. The team has authorized this public deployment; verify the actual HTTPS site before claiming it is playable.
+See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for earlier release-gate checklists, static deployment/rollback instructions, judge rehearsal, and submission verification items. Original-material Apache-2.0 licensing is recorded in [ATTRIBUTION.md](ATTRIBUTION.md) and [NOTICE](NOTICE); third-party runtime notices are regenerated with `node scripts/prepare-notices.mjs` and verified in CI. Both <https://newgenzzz.github.io/outpost-replay-team/> and <https://github.com/Newgenzzz/outpost-replay-team> are publicly accessible without login.
 
 The setting is a fictional outpost near Shackleton's rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the approved limited Apache-2.0 scope. Original team materials are licensed under [Apache-2.0](LICENSE), with [NOTICE](NOTICE) recording Copyright 2026 Team Brochachos contributors and the exclusions for third-party software and NASA/NOAA materials.
 
@@ -165,19 +174,19 @@ The setting is a fictional outpost near Shackleton's rim. See [source credits an
 
 | Document | Purpose |
 | --- | --- |
-| [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) | Current release review, NASA resource verification and submission blockers |
-| [SUBMISSION_KIT.md](SUBMISSION_KIT.md) | Copy-ready project-page drafts, disclosures, recording outline and gates |
+| [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) | Historical pre-Pages release-candidate review (superseded by README & ATTRIBUTION) |
+| [SUBMISSION_KIT.md](SUBMISSION_KIT.md) | Submission portal drafts, disclosures and recording template |
 | [JUDGE_DEMO.md](JUDGE_DEMO.md) | Timed three-minute judge rehearsal |
 | [DEMO_27_SECONDS.md](DEMO_27_SECONDS.md) | 27-second gameplay storyboard |
 | [GITHUB_PAGES.md](GITHUB_PAGES.md) | GitHub Pages workflow, owner setup and verification |
 | [CLOUDFLARE_DIRECT_UPLOAD.md](CLOUDFLARE_DIRECT_UPLOAD.md) | Static deployment fallback via Cloudflare Pages Direct Upload |
-| [COMPETITION_READINESS.md](COMPETITION_READINESS.md) | Release gates, deployment runbook and submission checklist |
+| [COMPETITION_READINESS.md](COMPETITION_READINESS.md) | Historical 9 Nov release-gate checklist and static runbook |
 | [NASA_SCIENCE.md](NASA_SCIENCE.md) | Source ledger, equations and scientific limitations |
-| [ATTRIBUTION.md](ATTRIBUTION.md) | Credits, dependency notices and licensing status |
+| [ATTRIBUTION.md](ATTRIBUTION.md) | Credits, dependency notices, development history and licensing status |
 | [ASSET_PROVENANCE_2026-11-15.md](ASSET_PROVENANCE_2026-11-15.md) | Historical SVG provenance and AI-assisted origin record |
-| [INDEPENDENT_AUDIT_2026-11-14.md](INDEPENDENT_AUDIT_2026-11-14.md) | Independent code, gameplay and science audit |
+| [INDEPENDENT_AUDIT_2026-11-14.md](INDEPENDENT_AUDIT_2026-11-14.md) | Historical Nov 14 independent code, gameplay and science audit |
 | [SPEC.md](SPEC.md) | Technical specification and replay contract |
-| [CODEX_HANDOFF.md](CODEX_HANDOFF.md) | Current development checkpoint and next actions |
+| [CODEX_HANDOFF.md](CODEX_HANDOFF.md) | Historical local development checkpoint |
 | [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) | Architecture, milestones and engineering constraints |
 | [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) | Chronological implementation and verification log |
 | [PLAYER_EXPERIENCE_2026-11-15.md](PLAYER_EXPERIENCE_2026-11-15.md) | Player-experience improvement report |

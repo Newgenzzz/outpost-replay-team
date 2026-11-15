@@ -1,20 +1,21 @@
 # OUTPOST REPLAY · submission working kit
 
-Prepared 14 November 2026. Copy-ready drafts below require the team's review. This document does not certify eligibility, grant a license, authorize publication, or claim that a public demo or learner study exists.
+Prepared November 14–15, 2026. Copy-ready drafts below summarize verified project details for the official Space Apps submission form. Check the active event submission fields before submitting.
 
-> [!WARNING]
-> **Working drafts — not a submission.** Confirm current rules, obtain written approvals, and replace every placeholder before using any text here.
+> [!NOTE]
+> **Live public release & repository published.** Both <https://github.com/Newgenzzz/outpost-replay-team> and <https://newgenzzz.github.io/outpost-replay-team/> are public, verified, and licensed under [Apache-2.0](LICENSE) ([NOTICE](NOTICE)) for original team materials. Confirm remaining team/organizer submission form fields below before final submission.
 
 ## Submission status at a glance
 
 | Item | Current status |
 | --- | --- |
-| Current Universal rules and time zone | Must be confirmed |
-| Prior-work eligibility | Written organizer confirmation pending |
-| Team license and authorship | Apache-2.0 approved for original materials; authorship details pending |
-| Public playable URL | Pages deployment prepared; public verification pending |
-| Learner study | Not performed |
-| Submission video | Outline only; not recorded or submitted |
+| Public source repository | Live at <https://github.com/Newgenzzz/outpost-replay-team> |
+| Public playable URL | Live & verified in Chromium at <https://newgenzzz.github.io/outpost-replay-team/> |
+| Team license & third-party notices | Apache-2.0 approved for original team materials ([LICENSE](LICENSE) / [NOTICE](NOTICE)); `40` package notices in `public/THIRD_PARTY_NOTICES.txt` |
+| Development history & AI disclosures | Accurately separated in [ATTRIBUTION.md](ATTRIBUTION.md) and [public/credits.html](https://newgenzzz.github.io/outpost-replay-team/credits.html) (`Nov 14–15` build vs. preserved `Nov 6–9` exploratory prototypes) |
+| Current Universal rules & time zone | Confirm in the active Space Apps submission portal |
+| Learner study | Not performed (no learning-gain claims made) |
+| Submission video | Storyboard ([DEMO_27_SECONDS.md](DEMO_27_SECONDS.md)) and Ubuntu capture plan ready; record final clip before submitting |
 
 ## Contents
 
@@ -40,7 +41,7 @@ Prepared 14 November 2026. Copy-ready drafts below require the team's review. Th
 
 ### Title
 
-OUTPOST REPLAY — Predict. Decide. Rewind. Explain.
+OUTPOST REPLAY — Predict. Decide. Rewind. Compare. Learn.
 
 ### Summary
 
@@ -89,21 +90,17 @@ Other boundaries to state honestly: lossless battery storage, simplified loads, 
 
 ## AI and prior-work disclosure drafts
 
-**AI use — team must confirm the exact tools and scope:** “Repository records document assistance from OpenAI Codex (`fd05999`–`80ae256`, `codex/*` branches, audits, tests and release preparation), Google Antigravity and Gemini (`86eda74`, `35f3349` and UI/science polish), and Anthropic Claude through Google Antigravity (`5df32e9`, `CLAUDE_HANDOFF.md`, `SUBMISSION_KIT.md`). The team's workflow also included ChatGPT for challenge research/drafting *(exact scope and dates require team confirmation)*. All graphics and Web Audio music/effects in the app are procedurally generated in code; no standalone AI-generated image, audio or video files are bundled. We reviewed generated code against primary NASA/NOAA citations and automated tests. Tool assistance does not validate scientific assumptions. If any AI-generated media is added to external slides or video, it must be explicitly labeled with its generating tool.”
+**AI use — accurate summary:** “Repository records document assistance from OpenAI Codex (`fd05999`–`80ae256`, `800ae43`, `2df3358`, `ffd9e6d`, `codex/*` branches, audits, tests and release preparation), Google Antigravity and Gemini (`86eda74`, `35f3349` and UI/science polish), and Anthropic Claude via Google Antigravity (`5df32e9`, `CLAUDE_HANDOFF.md`, `SUBMISSION_KIT.md`, continuous rover audio/blur hardening `649fbf9`, and final release documentation). Team ideation and research also used ChatGPT (exact prompts/dates unrecorded in Git metadata). All graphics and Web Audio music/effects/rover vibration synthesis in the app are procedurally generated in code; no standalone AI-generated image, audio or video files are bundled. Generated code was verified against primary NASA/NOAA citations and automated tests. If any AI-generated media is added to external slides or video, it must be explicitly labeled with its generating tool.”
 
-**Prior work — organizer review required:** “The project continues from the pre-event `outpost-replay-practice` repository (unversioned practice folder before Nov 6, commits `fd05999`–`09e9e10` on Nov 6–9, and transition checkpoint `35f3349` at the start of Nov 14 with a Nov 11 log entry whose pre-event vs. event split requires team confirmation). Hackathon-weekend commits `8ace633` through HEAD (Nov 14–15) cover horizon diagram repair, guided experiment onboarding, progress protection/persistence, strategy/provenance clarity, OSDR/DONKI updates, adaptive procedural audio, `Science` (`Elm`) navigation/UI clarity and credits documentation. See `ATTRIBUTION.md` and `public/credits.html`. Written organizer confirmation is required for pre-event code eligibility before submission.” Replace this with the actual written determination; do not claim the entire codebase was written on Nov 14–15 or imply permission has already been verified.
+**Development history & exploratory prototype disclosure:** “Team Brochachos researched the challenge, discussed ideas, and planned our approach before November 14, 2026, and considers November 14–15, 2026 (`35f3349` and `8ace633`–HEAD) the period when our official hackathon submission was built and finalized. Git history transparently preserves earlier November 6–9 commits (`fd05999`–`09e9e10` and mirrored `88fae9d`–`615de10` from an earlier `outpost-replay-practice` workspace, plus Nov 5 Antigravity write logs for nine removed prototype SVGs); those earlier AI-generated exploratory prototype checkpoints are not presented as completed team submission development. Where Git metadata cannot establish exact pre-Nov-6 dates or the `35f3349` vs. Nov 11 log entry boundary, those uncertainties are disclosed in `ATTRIBUTION.md` and `public/credits.html`. If organizers require written eligibility confirmation for retained prototype history, enter the official determination here.”
 
-**Publication fields to complete:** official team name; approved source URL; tested playable URL; exact release commit; video/slides link; applicable license; confirmed Universal deadline/time zone; complete resource and AI-tool list. A private team repository alone does not establish open-source submission compliance.
+**Publication fields to verify on the form:** Team Brochachos (`official team name`), `https://github.com/Newgenzzz/outpost-replay-team` (`public repository`), `https://newgenzzz.github.io/outpost-replay-team/` (`verified public playable URL`), release commit SHA, video/slides link, Apache-2.0 for original team materials (`LICENSE` / `NOTICE`), confirmed Universal deadline/time zone, and complete resource/AI-tool disclosures.
 
 ## GitHub repository strategy
 
-Repository: `Kenan22w/outpost-replay-team`.
+Repository: <https://github.com/Newgenzzz/outpost-replay-team> (formerly referenced during early drafting as `Kenan22w/outpost-replay-team`).
 
-**Recommendation:** **Keep (and optionally rename in GitHub Settings) `Kenan22w/outpost-replay-team` rather than creating a fresh repository without history.**
-
-- **Why keep/rename `Kenan22w/outpost-replay-team`:** Renaming or keeping the existing repository with `README.md` branded as `# OUTPOST REPLAY — Team Brochachos` preserves the full, honest commit log (`fd05999`–`09e9e10` pre-event work, `35f3349` transition checkpoint, `8ace633`–`HEAD` hackathon-weekend work), branches, and attribution records. Creating a brand-new single-commit repository on November 15 to hide pre-event history (`fd05999`–`09e9e10`) would misrepresent development dates and violate honest Space Apps disclosure standards.
-- **When a separate team/org mirror would ever be justified:** Only if collaboration permissions require transferring to a Team Brochachos GitHub organization that cannot fork or transfer the existing repository; even then, transfer via GitHub Settings or mirror complete history (`git push --mirror`) while retaining `ATTRIBUTION.md` and `public/credits.html`.
-- **Action status:** No repository rename or visibility change (`private` → `public`) has been executed automatically by this kit. Organizer pre-event clearance and verified public deployment are still required; the approved license scope is recorded in [ATTRIBUTION.md](ATTRIBUTION.md).
+- **Published configuration:** The public repository <https://github.com/Newgenzzz/outpost-replay-team> and GitHub Pages deployment <https://newgenzzz.github.io/outpost-replay-team/> are live with full preserved commit history (`fd05999`–`HEAD`), [LICENSE](LICENSE), [NOTICE](NOTICE), [ATTRIBUTION.md](ATTRIBUTION.md), and [public/credits.html](public/credits.html). Preserving the complete commit graph keeps development history and exploratory artifacts completely transparent for Space Apps judges and organizers.
 
 ## Provisional 30-second recording
 

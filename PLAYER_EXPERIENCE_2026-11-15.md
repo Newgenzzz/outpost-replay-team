@@ -3,7 +3,7 @@
 Baseline: clean `d1c4fc2`, branch `codex/protect-progress-and-sharing`. This session addresses three observed presentation weaknesses; it does not repeat the independent technical/science audit.
 
 > [!NOTE]
-> **Local presentation pass.** No learning outcomes are measured, and public release remains conditional on the external gates in [Remaining weaknesses and release-candidate assessment](#remaining-weaknesses-and-release-candidate-assessment).
+> **Historical `d1c4fc2` presentation report — later superseded by public release.** Public source (<https://github.com/Newgenzzz/outpost-replay-team>), Apache-2.0 licensing ([LICENSE](LICENSE) / [NOTICE](NOTICE)), adaptive + rover audio upgrades (`be768ff`, `649fbf9`), and verified GitHub Pages hosting (<https://newgenzzz.github.io/outpost-replay-team/>) are now live. No formal student learning-gain study has been conducted. See [Remaining weaknesses and release-candidate assessment](#remaining-weaknesses-and-release-candidate-assessment).
 
 ## Contents
 

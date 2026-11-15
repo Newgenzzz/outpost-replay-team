@@ -3,7 +3,7 @@
 Starting checkpoint: clean `be768ff`, branch `codex/protect-progress-and-sharing`, ancestor confirmed. This review prepares a **local technical release candidate**. It does not authorize publication, clear organizer eligibility, grant a license, or submit a project. No push, deployment, visibility change, history rewrite or scientific-model change is performed.
 
 > [!IMPORTANT]
-> **Technical review — later license and deployment work superseded parts of it.** Apache-2.0 was subsequently approved for original team materials, and a GitHub Pages deployment was prepared. Public-host verification and the submission blockers below remain open.
+> **Historical release-candidate checkpoint — superseded by final public release.** Later commits added team-approved Apache-2.0 licensing ([LICENSE](LICENSE) / [NOTICE](NOTICE)), public publication at <https://github.com/Newgenzzz/outpost-replay-team>, continuous rover motor audio & keyboard hardening (`649fbf9`), and verified GitHub Pages deployment at <https://newgenzzz.github.io/outpost-replay-team/>. See [README.md](README.md) and [ATTRIBUTION.md](ATTRIBUTION.md) for current release status and corrected development-history disclosures.
 
 ## Contents
 
@@ -75,6 +75,6 @@ There is no demonstrated need for another graphics/audio/gameplay redesign. Reso
 
 ## GitHub repository strategy
 
-Repository: `Kenan22w/outpost-replay-team`.
+Published repository: <https://github.com/Newgenzzz/outpost-replay-team> (formerly referenced during earlier drafting as `Kenan22w/outpost-replay-team`).
 
-Keep and brand `Kenan22w/outpost-replay-team` (`# OUTPOST REPLAY — Team Brochachos`)—or rename it in GitHub Settings once approved—rather than creating a fresh history-less repository. Preserving the complete commit graph (`fd05999`–`09e9e10` pre-event practice/audits, `35f3349` transition checkpoint, `8ace633`–`HEAD` Nov 14–15 event work) keeps provenance transparent; visibility changes (`private` → `public`), pushes, and licensing (`LICENSE`) remain gated on team rights-holder and organizer approval.
+Keep the complete preserved commit graph rather than creating a fresh history-less repository so provenance (`fd05999`–`09e9e10` exploratory checkpoints, `35f3349` transition checkpoint, `8ace633`–`HEAD` Nov 14–15 hackathon build) remains transparent. Repository publicity, Apache-2.0 licensing (`LICENSE`), and verified GitHub Pages deployment (<https://newgenzzz.github.io/outpost-replay-team/>) are now active.

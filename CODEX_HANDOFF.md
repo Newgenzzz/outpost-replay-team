@@ -3,7 +3,7 @@
 Updated 15 November 2026. Continue the existing game, not a new engine or roadmap.
 
 > [!IMPORTANT]
-> **Local checkpoint; later commits add the approved license and GitHub Pages work.** This handoff made no push, publication or deployment. Recheck Git history for current repository and deployment state. Eligibility and public-host verification remain open.
+> **Historical local checkpoint — superseded by final public release.** Later commits integrated into `Newgenzzz/outpost-replay-team` added Apache-2.0 licensing ([LICENSE](LICENSE) / [NOTICE](NOTICE)), continuous speed-reactive rover audio (`649fbf9`), updated development-history disclosures ([ATTRIBUTION.md](ATTRIBUTION.md)), and verified GitHub Pages deployment (<https://newgenzzz.github.io/outpost-replay-team/>). See [README.md](README.md) for current repository and deployment status.
 
 **Latest follow-up:** original adaptive procedural audio and persisted master/music/effects controls, starting from clean `8804322` on `codex/protect-progress-and-sharing`. Read [AUDIO_UPGRADE_2026-11-15.md](AUDIO_UPGRADE_2026-11-15.md) for implementation, actual browser/test evidence and the required manual listening review. Existing soundFX is the sole sound engine; no external audio or dependency was added. All 79 tests, typecheck, build and diff check pass. Equations, parameters, outcomes, NASA provenance and saved mission inputs are unchanged.
 

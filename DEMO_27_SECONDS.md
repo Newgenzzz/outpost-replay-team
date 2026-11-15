@@ -35,7 +35,7 @@
 - The 97/0 low-reserve hours and −14 science delta are **whole-mission** results at hour 216.
 - Scores 54/66 are secondary.
 - Keep the ending on the comparison rather than detouring into 3D, Mars or a live API call; show those only in the longer [judge rehearsal](JUDGE_DEMO.md).
-- Do not claim measured learning gains or a successful public deployment.
+- Do not claim measured learning gains or NASA endorsement. (The public web release is live and Chromium-verified at <https://newgenzzz.github.io/outpost-replay-team/>.)
 - Include the actual playable URL, source/resource credits and confirmed AI disclosure in the submission or accompanying description, according to the verified event rules.
 - Use original game audio or a cleared narrator; no additional stock track is needed.
 

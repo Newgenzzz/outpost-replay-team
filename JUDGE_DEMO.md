@@ -41,5 +41,5 @@ Use the same local `dist/` over HTTP, then a consented prerecorded walkthrough a
 
 - Do not claim real NASA terrain or a LOLA-derived 3D reconstruction.
 - Do not claim validated radiation transport, astronaut exposure prediction or NASA endorsement.
-- Do not claim established student learning gains.
-- Do not claim confirmed submission eligibility or a verified public deployment.
+- Do not claim established student learning gains without a completed pilot study.
+- Keep public-site claims scoped to the live, Chromium-verified GitHub Pages release (<https://newgenzzz.github.io/outpost-replay-team/>).

@@ -1,7 +1,7 @@
 # Release readiness · verified 9 November 2026
 
 > [!NOTE]
-> **Current review:** [15 November release candidate](RELEASE_CANDIDATE_2026-11-15.md). It supersedes the technical checkpoint and source-retrieval limitations below, freshly verifies the official challenge Details/Resources and full terms, and provides the NASA usage map, upload runbook and 27-second storyboard. Earlier entries below remain historical. Project licensing was subsequently approved (Apache-2.0 for original team materials; see [ATTRIBUTION.md](ATTRIBUTION.md)); no publication approval is implied by this historical review.
+> **Historical 9 November review — superseded by later releases.** See [README.md](README.md), [ATTRIBUTION.md](ATTRIBUTION.md), and [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) for current release status. Public source (<https://github.com/Newgenzzz/outpost-replay-team>), Apache-2.0 licensing ([LICENSE](LICENSE) / [NOTICE](NOTICE)), and verified GitHub Pages hosting (<https://newgenzzz.github.io/outpost-replay-team/>) are now live; pre-Nov-14 exploratory commit context has also been clarified in [ATTRIBUTION.md](ATTRIBUTION.md). Earlier entries below remain preserved as historical records.
 
 Current gameplay/science baseline: `deca79a`, including M0–M6, visual polish, final QA and the independent scientific audit. Handoff documentation continues on `codex/final-science-audit`; see CLAUDE_HANDOFF.md. No public release, push or merge is authorized by this document. Earlier milestone audit notes below are historical; current checks appear at the end.
 
