@@ -20,7 +20,7 @@ import { CALIBRATED_INCIDENCE_LIMIT_DEG } from '../engine/power';
 import { ICE_TREATMENT_RECOVERY } from '../engine/resources';
 import { useI18n } from '../i18n/LanguageContext';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
-import { CITATIONS, RADIATION_LIMITS } from '../data/nasaTelemetry';
+import { CITATIONS, GAME_CONSTANTS, RADIATION_LIMITS } from '../data/nasaTelemetry';
 import { soundFX } from '../utils/soundEffects';
 import {
   METRIC_KEYS,
@@ -159,13 +159,19 @@ export default function DecisionCard(props: DecisionCardProps) {
     return decision.choices.map((_, index) => runSimulation([...prefix, index], { solarCalibrated, icePrepared }).steps[step - 1]);
   }, [decision, priorChoices, step, solarCalibrated, icePrepared]);
   const forecastStep = forecasts[inspectedIdx];
+  const conditionals = previewChoiceEffects(step, inspectedIdx, flagsBefore).conditionals;
+  const kg = lang === 'az' ? 'kq' : 'kg';
+  const pp = lang === 'az' ? 'faiz b.' : 'pp';
 
   const willBeSafe = (forecastStep?.env.lowPowerHours ?? 0) === 0;
   const hypothesisMatches =
     hypothesis !== null ? (hypothesis === 'safe' && willBeSafe) || (hypothesis === 'drain' && !willBeSafe) : null;
 
   return (
-    <section className="panel flex flex-col gap-3 p-4">
+    <section className="flex min-h-0 flex-col">
+      <div className="decision-scroll min-h-0 overflow-y-auto px-1 pb-4 scrollbar-thin" tabIndex={0} role="region"
+        aria-label={lang === 'az' ? 'Qərar variantları və proqnozlar' : 'Decision options and forecasts'}>
+      <div className="flex flex-col gap-3 px-1">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-sky-300">
@@ -211,107 +217,19 @@ export default function DecisionCard(props: DecisionCardProps) {
           <button
             onClick={onNext}
             disabled={activeChoice === undefined}
-            className="inline-flex items-center gap-1 rounded-lg bg-amber-400 px-3 py-1 text-xs font-bold text-slate-950 hover:bg-amber-300 disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-40"
           >
             {step === 6 ? t('viewResults') : t('next')} <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </header>
 
-      {/* RPG Crew Radio Comms Banner */}
-      <div className="flex items-center gap-3 rounded-xl border border-sky-500/30 bg-slate-950/75 p-2.5">
-        <img
-          src={step === 4 ? `${import.meta.env.BASE_URL}assets/rover_viper.svg` : `${import.meta.env.BASE_URL}assets/astronaut_companion.svg`}
-          alt="Crew Advisor"
-          className="h-12 w-12 shrink-0 rounded-xl border border-sky-400/50 bg-slate-900 p-1"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <p className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-300">
-              <Radio className="h-3 w-3 animate-pulse text-emerald-400" />
-              {tr(advisory.speaker)}
-            </p>
-            <button
-              type="button"
-              onClick={() => soundFX.speakRadio(tr(advisory.tip), lang)}
-              className="inline-flex items-center gap-1 rounded border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-200 hover:bg-sky-500/20"
-              title="Listen to Radio Broadcast (Web Speech)"
-            >
-              <Volume2 size={11} className="text-sky-300" />
-              <span className="hidden sm:inline">
-                {lang === 'az' ? 'Rabitəni Dinlə' : 'Radio Call'}
-              </span>
-            </button>
-          </div>
-          <p className="mt-0.5 text-xs italic leading-relaxed text-slate-200">{tr(advisory.tip)}</p>
-        </div>
+      <div className="rounded-lg border border-[#55706d] bg-[#1a2d34] px-3 py-2.5">
+        <h3 className="text-sm font-semibold text-[#d6edc7]">
+          {lang === 'az' ? 'Variantları müqayisə edin' : 'Compare your options'}
+        </h3>
+        <p className="mt-0.5 text-sm leading-snug text-slate-200">{tr(advisory.tip)}</p>
       </div>
-
-      <p className="text-sm leading-relaxed text-slate-300">{tr(decision.context)}</p>
-
-      {step === 1 && <LunarSiteIntelligence />}
-
-      {trigger && (
-        <div
-          className={`rounded-xl border p-3 ${
-            trigger.source === 'LRO_SHADOW'
-              ? 'border-amber-500/40 bg-amber-500/10'
-              : 'border-rose-500/40 bg-rose-500/10'
-          }`}
-        >
-          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
-            <Satellite className="h-3.5 w-3.5" /> {t('nasaDataTrigger')}
-          </p>
-          <p
-            className={`mt-1 flex items-center gap-1.5 text-sm font-semibold ${
-              trigger.source === 'LRO_SHADOW' ? 'text-amber-200' : 'text-rose-200'
-            }`}
-          >
-            {trigger.source === 'LRO_SHADOW' ? <SunDim className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
-            {tr(trigger.headline)}
-          </p>
-          <p className="mt-1 text-xs text-slate-300">{tr(trigger.detail)}</p>
-          <p className="mt-1.5 text-[10px] text-slate-400">
-            {t('source')}: {trigger.citationIds.map((id) => CITATIONS[id]?.short).join(' · ')}
-          </p>
-        </div>
-      )}
-
-      {taskExercise && (
-        <div className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
-          <details>
-            <summary className="cursor-pointer font-semibold text-amber-200">
-              {isSolar
-                ? lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'
-                : lang === 'az' ? 'Buz emal qurğusunu hazırla · könüllü' : 'Prepare the ice extractor · optional'}
-            </summary>
-            <div className="mt-2">{taskExercise}</div>
-          </details>
-          {(taskAvailable || taskEnabled) && (
-            <label className="mt-2 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={taskEnabled && (isSolar || inspectedIdx === 0)}
-                disabled={!canChoose || (!isSolar && inspectedIdx !== 0)}
-                onChange={(event) => setTaskOverride(event.target.checked)}
-                className="accent-amber-300"
-              />
-              {isSolar
-                ? lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'
-                : lang === 'az' ? 'A variantında hazırlanmış emal qurğusundan istifadə et' : 'Use the prepared extractor with option A'}
-            </label>
-          )}
-          <p className="mt-1 text-slate-300">
-            {isSolar
-              ? lang === 'az'
-                ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
-                : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`
-              : lang === 'az'
-                ? `Hazırlıq A variantında model üzrə buzdan su əldəetməni ${ICE_TREATMENT_RECOVERY.standard * 100}%-dən ${ICE_TREATMENT_RECOVERY.prepared * 100}%-ə artırır. Nümunə kütləsi və enerji büdcəsi eyni qalır.`
-                : `Preparation raises modeled recovery from ${ICE_TREATMENT_RECOVERY.standard * 100}% to ${ICE_TREATMENT_RECOVERY.prepared * 100}% in option A. Sample mass and power budget stay fixed.`}
-          </p>
-        </div>
-      )}
 
       <p className="text-xs text-slate-300">
         {lang === 'az'
@@ -320,7 +238,6 @@ export default function DecisionCard(props: DecisionCardProps) {
       </p>
       <div className="grid gap-2.5 md:grid-cols-3">
         {decision.choices.map((c, i) => {
-          const preview = previewChoiceEffects(step, i, flagsBefore);
           const forecast = forecasts[i];
           const isA = choiceA === i;
           const isB = mode === 'branch' && choiceB === i;
@@ -365,16 +282,22 @@ export default function DecisionCard(props: DecisionCardProps) {
 
               <span className="text-sm font-semibold leading-snug text-white">{tr(c.label)}</span>
               {forecast && (
-                <span className="grid w-full gap-1 border-t border-white/10 pt-2 text-[11px]">
+                <span className="mt-auto grid w-full gap-1 border-t border-white/10 pt-2 text-[12px]">
                   {METRICS.map((metric) => (
                     <span key={metric.key} className="flex items-center justify-between gap-2">
                       <span className="text-slate-300">{t(metric.labelKey)}</span>
                       <span className={`shrink-0 rounded px-1 font-mono tabular-nums ${deltaTone(forecast.delta[metric.key], metric.higherIsBetter)}`}>
                         {signed(forecast.delta[metric.key])}{' '}
-                        {metric.key === 'lifeSupportPct' ? (lang === 'az' ? 'faiz b.' : 'pp') : t(metric.unitKey)}
+                        {metric.key === 'lifeSupportPct' ? pp : t(metric.unitKey)}
                       </span>
                     </span>
                   ))}
+                  {step === 4 && i === 0 && (
+                    <span className="flex items-center justify-between gap-2 text-sky-200">
+                      {lang === 'az' ? 'Təmiz su' : 'Treated water'}
+                      <span className="shrink-0 font-mono font-semibold">{fmt(forecast.resourceFlows.waterExtractedKg, 2)} {kg}</span>
+                    </span>
+                  )}
                 </span>
               )}
 
@@ -385,18 +308,6 @@ export default function DecisionCard(props: DecisionCardProps) {
                 </p>
               )}
 
-              {preview.conditionals.map((cd) => (
-                <span
-                  key={cd.flag}
-                  className={`rounded-md border px-1.5 py-1 text-[10px] leading-snug ${
-                    cd.active
-                      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
-                      : 'border-slate-700 text-slate-500'
-                  }`}
-                >
-                  {t('ifEarlier')} ({cd.active ? t('active') : t('inactive')}): {tr(cd.note)}
-                </span>
-              ))}
             </button>
           );
         })}
@@ -411,6 +322,11 @@ export default function DecisionCard(props: DecisionCardProps) {
         <p className="mt-1.5 text-sm leading-relaxed text-slate-200">
           {tr(decision.choices[inspectedIdx].causeAndEffectExplanation)}
         </p>
+        {conditionals.map(({ flag, active, note }) => (
+          <p key={flag} className={`mt-2 text-xs ${active ? 'text-emerald-200' : 'text-slate-300'}`}>
+            {t('ifEarlier')} ({active ? t('active') : t('inactive')}) · {tr(note)}
+          </p>
+        ))}
         <p className="mt-2 flex items-start gap-1.5 text-[11px] text-slate-400">
           <BookMarked className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
@@ -419,31 +335,122 @@ export default function DecisionCard(props: DecisionCardProps) {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-sky-400/25 bg-sky-950/30 px-3 py-2">
-        <p className="text-xs text-slate-300">
-          {lang === 'az'
-            ? 'İzahı və ətraflı proqnozu görmək üçün variant seçin. Tətbiq etdikdə missiya irəliləyir.'
-            : 'Select an option for its explanation and detailed forecast. Apply it to advance the mission.'}
-        </p>
-        {canChoose && (
-          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared })} className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-amber-200">
-            {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
-          </button>
+      {taskExercise && (isSolar || step === 4) && (
+        <div className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs text-slate-200">
+          <details>
+            <summary className="cursor-pointer font-semibold text-amber-200">
+              {isSolar
+                ? lang === 'az' ? 'Günəş panelini kalibrlə · könüllü' : 'Calibrate the solar array · optional'
+                : lang === 'az' ? 'Buz emal qurğusunu hazırla · könüllü' : 'Prepare the ice extractor · optional'}
+            </summary>
+            <div className="mt-2">{taskExercise}</div>
+          </details>
+          {(taskAvailable || taskEnabled) && (
+            <label className="mt-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={taskEnabled && (isSolar || inspectedIdx === 0)}
+                disabled={!canChoose || (!isSolar && inspectedIdx !== 0)}
+                onChange={(event) => setTaskOverride(event.target.checked)}
+                className="accent-amber-300"
+              />
+              {isSolar
+                ? lang === 'az' ? 'Bu gedişdə kalibrləməni istifadə et' : 'Use calibration in this run'
+                : lang === 'az' ? 'A variantında hazırlanmış emal qurğusundan istifadə et' : 'Use the prepared extractor with option A'}
+            </label>
+          )}
+          <p className="mt-1 text-slate-300">
+            {isSolar
+              ? lang === 'az'
+                ? `Təlim modelində kalibrləmə panelin yönəlmə xətasını ən çox ${CALIBRATED_INCIDENCE_LIMIT_DEG}° edir. Relyef kölgəsi dəyişmir.`
+                : `The training model caps panel pointing error at ${CALIBRATED_INCIDENCE_LIMIT_DEG}° after calibration. The ridge still blocks the same sunlight.`
+              : lang === 'az'
+                ? `Hazırlıq A variantında model üzrə buzdan su əldəetməni ${ICE_TREATMENT_RECOVERY.standard * 100}%-dən ${ICE_TREATMENT_RECOVERY.prepared * 100}%-ə artırır. Nümunə kütləsi və enerji büdcəsi eyni qalır.`
+                : `Preparation raises modeled recovery from ${ICE_TREATMENT_RECOVERY.standard * 100}% to ${ICE_TREATMENT_RECOVERY.prepared * 100}% in option A. Sample mass and power budget stay fixed.`}
+          </p>
+        </div>
+      )}
+
+      {taskExercise && !isSolar && step !== 4 && (
+        <details className="rounded-lg border border-amber-300/25 bg-slate-950/50 px-3 py-2 text-xs">
+          <summary className="cursor-pointer font-semibold text-amber-200">
+            {lang === 'az' ? 'Stansiya məşqi · könüllü' : 'Station exercise · optional'}
+          </summary>
+          <div className="mt-2">{taskExercise}</div>
+        </details>
+      )}
+
+      {step === 1 && <LunarSiteIntelligence />}
+      <details className="rounded-lg border border-slate-600 bg-slate-950/45 p-3">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-200">
+          {lang === 'az' ? 'Ssenari və elmi mənbələr' : 'Scenario background and science'}
+        </summary>
+        <div className="mt-2 grid gap-2">
+        {/* RPG Crew Radio Comms Banner */}
+        <div className="flex items-center gap-3 rounded-xl border border-sky-500/30 bg-slate-950/75 p-2.5">
+          <img
+            src={step === 4 ? `${import.meta.env.BASE_URL}assets/rover_viper.svg` : `${import.meta.env.BASE_URL}assets/astronaut_companion.svg`}
+            alt=""
+            className="h-12 w-12 shrink-0 rounded-xl border border-sky-400/50 bg-slate-900 p-1"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                <Radio className="h-3 w-3 text-emerald-400" />
+                {tr(advisory.speaker)}
+              </p>
+              <button
+                type="button"
+                onClick={() => soundFX.speakRadio(tr(advisory.tip), lang)}
+                className="inline-flex items-center gap-1 rounded border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-[10px] text-sky-200 hover:bg-sky-500/20"
+                title={lang === 'az' ? 'Radio məsləhətinə qulaq asın' : 'Listen to the crew advisory'}
+              >
+                <Volume2 size={11} className="text-sky-300" />
+                <span className="hidden sm:inline">
+                  {lang === 'az' ? 'Rabitəni Dinlə' : 'Radio Call'}
+                </span>
+              </button>
+            </div>
+            <p className="mt-0.5 text-xs italic leading-relaxed text-slate-200">{tr(advisory.tip)}</p>
+          </div>
+        </div>
+
+        <p className="text-sm leading-relaxed text-slate-300">{tr(decision.context)}</p>
+
+        {trigger && (
+          <div
+            className={`rounded-xl border p-3 ${
+              trigger.source === 'LRO_SHADOW'
+                ? 'border-amber-500/40 bg-amber-500/10'
+                : 'border-rose-500/40 bg-rose-500/10'
+            }`}
+          >
+            <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-300">
+              <Satellite className="h-3.5 w-3.5" /> {t('nasaDataTrigger')}
+            </p>
+            <p
+              className={`mt-1 flex items-center gap-1.5 text-sm font-semibold ${
+                trigger.source === 'LRO_SHADOW' ? 'text-amber-200' : 'text-rose-200'
+              }`}
+            >
+              {trigger.source === 'LRO_SHADOW' ? <SunDim className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+              {tr(trigger.headline)}
+            </p>
+            <p className="mt-1 text-xs text-slate-300">{tr(trigger.detail)}</p>
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              {t('source')}: {trigger.citationIds.map((id) => CITATIONS[id]?.short).join(' · ')}
+            </p>
+          </div>
         )}
-      </div>
+        </div>
+      </details>
 
       {/* Deterministic forecast for the selected option. */}
       {forecastStep && (
-        <div className="rounded-xl border border-sky-500/35 bg-slate-950/70 p-3 shadow-lg">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
-            <span className="font-mono text-[10.5px] font-bold uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5 text-amber-400" />
-              {t('whatIfForecast')} · {CHOICE_LETTERS[inspectedIdx]}
-            </span>
-            <div className="text-[10px] font-mono text-slate-400">
-              {tr(decision.choices[inspectedIdx].label)}
-            </div>
-          </div>
+        <details className="rounded-xl border border-sky-500/35 bg-slate-950/70 p-3">
+          <summary className="cursor-pointer text-sm font-semibold text-sky-200">
+            {lang === 'az' ? 'Ətraflı proqnoz' : 'Detailed forecast'} · {CHOICE_LETTERS[inspectedIdx]}
+          </summary>
 
           <div className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {/* Power Forecast */}
@@ -459,7 +466,7 @@ export default function DecisionCard(props: DecisionCardProps) {
               <div className="mt-1 font-mono text-xs font-semibold text-white">
                 {fmt(forecastStep.before.powerKwh)} →{' '}
                 <span
-                  className={forecastStep.after.powerKwh < 20 ? 'text-rose-400 font-bold' : 'text-amber-200'}
+                  className={forecastStep.after.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh ? 'text-rose-400 font-bold' : 'text-amber-200'}
                 >
                   {fmt(forecastStep.after.powerKwh)}
                 </span>{' '}
@@ -474,13 +481,13 @@ export default function DecisionCard(props: DecisionCardProps) {
                   <HeartPulse className="h-3 w-3" /> {t('lifeSupport')}
                 </span>
                 <span className="font-mono font-bold text-emerald-300">
-                  {signed(forecastStep.delta.lifeSupportPct)} %
+                  {signed(forecastStep.delta.lifeSupportPct)} {pp}
                 </span>
               </div>
               <div className="mt-1 font-mono text-xs font-semibold text-white">
                 {fmt(forecastStep.before.lifeSupportPct)}% →{' '}
                 <span
-                  className={forecastStep.after.lifeSupportPct < 40 ? 'text-rose-400 font-bold' : 'text-emerald-200'}
+                  className={forecastStep.after.lifeSupportPct < GAME_CONSTANTS.survivalFocusThresholdPct ? 'text-rose-400 font-bold' : 'text-emerald-200'}
                 >
                   {fmt(forecastStep.after.lifeSupportPct)}%
                 </span>
@@ -541,9 +548,9 @@ export default function DecisionCard(props: DecisionCardProps) {
               [lang === 'az' ? 'Günəş + ehtiyat' : 'Solar + backup', `${fmt(forecastStep.env.generationKwh)} + ${fmt(forecastStep.env.supplementalGenerationKwh)} ${t('unitKwh')}`],
               [lang === 'az' ? 'Baza + isitmə' : 'Base + heaters', `${fmt(forecastStep.env.loadKwh - forecastStep.env.loadReductionKwh)} + ${fmt(forecastStep.env.heaterKwh)} ${t('unitKwh')}`],
               [lang === 'az' ? 'Tapşırıq + istixana' : 'Task + greenhouse', `${fmt(forecastStep.env.taskLoadKwh)} + ${fmt(forecastStep.env.greenhouseLoadKwh)} ${t('unitKwh')}`],
-              [lang === 'az' ? 'Oksigen ehtiyatı' : 'Oxygen reserve', `${fmt(forecastStep.resourcesAfter.oxygenKg)} O₂`],
-              [lang === 'az' ? 'Su ehtiyatı' : 'Water reserve', `${fmt(forecastStep.resourcesAfter.waterKg)} H₂O`],
-              [lang === 'az' ? 'Qida ehtiyatı' : 'Food reserve', `${fmt(forecastStep.resourcesAfter.foodKg)} ${lang === 'az' ? 'kq' : 'kg'}`],
+              [lang === 'az' ? 'Oksigen ehtiyatı' : 'Oxygen reserve', `${fmt(forecastStep.resourcesAfter.oxygenKg)} ${kg}`],
+              [lang === 'az' ? 'Su ehtiyatı' : 'Water reserve', `${fmt(forecastStep.resourcesAfter.waterKg)} ${kg}`],
+              [lang === 'az' ? 'Qida ehtiyatı' : 'Food reserve', `${fmt(forecastStep.resourcesAfter.foodKg)} ${kg}`],
             ].map(([label, value]) => (
               <div key={label}>
                 <dt className="text-slate-400">{label}</dt>
@@ -570,7 +577,7 @@ export default function DecisionCard(props: DecisionCardProps) {
               {forecastStep.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}
             </p>
           )}
-        </div>
+        </details>
       )}
 
       {/* Interactive Commander Hypothesis / Prediction Card (NASA Scientific Method) */}
@@ -659,6 +666,24 @@ export default function DecisionCard(props: DecisionCardProps) {
             </li>
           </ul>
         </div>
+      )}
+      </div>
+      </div>
+      {canChoose && (
+        <footer className="decision-footer">
+          <div className="min-w-0" role="status">
+            <p className="text-sm font-semibold text-white">
+              {lang === 'az' ? `Seçilmiş variant · ${CHOICE_LETTERS[inspectedIdx]}` : `Selected option ${CHOICE_LETTERS[inspectedIdx]}`}
+            </p>
+            <p className="text-xs text-slate-300">
+              {lang === 'az' ? 'Tətbiq etdikdə missiya irəliləyir.' : 'Apply this option to advance the mission.'}
+            </p>
+          </div>
+          <button type="button" onClick={() => onChoose(inspectedIdx, { solarCalibrated, icePrepared: step === 4 ? inspectedIdx === 0 && icePrepared : icePrepared })}
+            className="shrink-0 rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-bold text-slate-950 hover:bg-amber-200">
+            {lang === 'az' ? `${CHOICE_LETTERS[inspectedIdx]} variantını tətbiq et` : `Apply option ${CHOICE_LETTERS[inspectedIdx]}`}
+          </button>
+        </footer>
       )}
     </section>
   );

@@ -336,6 +336,7 @@ export default function App() {
     if (ds.progress >= 100) {
       ds.progress = 0;
       setDrillProgressPct(0);
+      world.current?.setDrillHeld(false);
       const nextMined = [...ds.mined];
       nextMined[crystalIdx] = true;
       ds.mined = nextMined;
@@ -664,6 +665,11 @@ export default function App() {
   ]);
 
   const activeStation = STATIONS[Math.min(DECISION_COUNT - 1, Math.max(0, viewStep - 1))];
+  const atActiveStation = nearbyStation?.decisionId === activeStation.decisionId;
+  function followStationRoute() {
+    world.current?.walkTo(activeStation);
+    world.current?.focus();
+  }
   const currentDecision = MISSION_DECISIONS[viewStep - 1];
   const minedCount = minedCrystals.filter(Boolean).length;
   const calibratedCount = calibratedTasks.filter(Boolean).length;
@@ -1164,14 +1170,14 @@ export default function App() {
         </button>
       </section>
 
-      {!guideDismissed && (
+      {!guideDismissed && !demoStage && (
         <aside className="guide-banner" aria-label={t('guideTitle')}>
           <strong className="flex items-center gap-1.5 text-[#c0e6aa]">
             <Sparkles size={13} aria-hidden="true" />
             {t('guideTitle')} · {runA.complete ? 3 : completedPhases > 0 ? 2 : 1}/3
           </strong>
           <span className="flex-1 text-slate-100" role="status">
-            {t(runA.complete ? 'guideReplay' : completedPhases > 0 ? 'guideAfterChoice' : 'guideStart')}
+            {t(runA.complete ? 'guideReplay' : completedPhases > 0 ? 'guideAfterChoice' : atActiveStation ? 'guideAtSolar' : 'guideStart')}
           </span>
           <button
             type="button"
@@ -1262,8 +1268,17 @@ export default function App() {
 
         <div className="world-vignette" />
 
-        {/* TOP-LEFT: Among-Us Style Task Tracker & Crew Radio Card */}
-        <aside className="objective-card">
+        {demoStage && !anyOverlayOpen && (
+          <JudgeTourBanner
+            stage={demoStage}
+            baseline={runA}
+            onAdvance={(useBackup) => handleAdvanceTour(demoStage, useBackup)}
+            onOpenScience={() => setSensorDeckOpen(true)}
+            onClose={() => setDemoStage(null)}
+          />
+        )}
+
+        {!demoStage && <aside className="objective-card">
           <div className="eyebrow accent">
             <Radio size={13} />
             <span>{tr(activeStation.code)}</span>
@@ -1302,6 +1317,12 @@ export default function App() {
                   : 'Solar panels charge the battery that runs heaters and life support. Choose a setup before the shadow arrives.'
                 : tr(activeStation.objectiveBody)}
           </p>
+
+          {viewStep === 1 && completedPhases === 0 && !atActiveStation && !guideDismissed && (
+            <div className="objective-controls-note">
+              <kbd>WASD</kbd> {lang === 'az' ? 'ilə və ya xəritəyə klikləyərək hərəkət edin.' : 'or click the ground to move.'}
+            </div>
+          )}
 
           <div
             role="status"
@@ -1361,25 +1382,24 @@ export default function App() {
               {t('compareTitle')}
             </button>
           ) : (
-            <div className="mt-2.5 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => world.current?.walkTo({ x: activeStation.x, y: activeStation.y })}
-                className="inline-flex items-center gap-1 rounded-md border border-[#c0e6aa]/40 bg-[#c0e6aa]/15 px-2 py-1 font-mono text-[10px] font-semibold text-[#c0e6aa] hover:bg-[#c0e6aa]/25 transition"
-                title={lang === 'az' ? 'Hədəf sektora avtomatik yeri' : 'Auto-walk to target sector'}
-              >
-                <Compass size={11} />
-                <span>{t('jumpToActive')}</span>
-                <small className="opacity-80">({distanceMeters}m)</small>
-              </button>
+            <div className="objective-actions">
+              {!atActiveStation && (
+                <button
+                  type="button"
+                  onClick={followStationRoute}
+                  className="objective-action objective-action--primary"
+                >
+                  <Compass size={14} aria-hidden="true" />
+                  <span>{t('jumpToActive')}<small>{distanceMeters} m</small></span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => handleWorldInteract(activeStation)}
-                className="inline-flex items-center gap-1 rounded-md border border-amber-400/40 bg-amber-400/15 px-2 py-1 font-mono text-[10px] font-semibold text-amber-200 hover:bg-amber-400/25 transition"
-                title={lang === 'az' ? 'Konsolu birbaşa aç' : 'Open console directly'}
+                className={`objective-action ${atActiveStation ? 'objective-action--primary' : ''}`}
               >
-                <Wrench size={11} />
-                <span>{t('openConsole')}</span>
+                <Wrench size={14} aria-hidden="true" />
+                <span>{t('openConsole')}{atActiveStation && <small>[E]</small>}</span>
               </button>
             </div>
           )}
@@ -1491,7 +1511,7 @@ export default function App() {
               {lang === 'az' ? '90K Buz:' : 'Ice Cores:'} {minedCount}/5
             </span>
           </div>
-        </aside>
+        </aside>}
 
         {/* TOP-RIGHT: Live Tactical Base Radar + [M] Full Schematic Modal */}
         <BaseMap
@@ -1533,14 +1553,31 @@ export default function App() {
 
         {/* BOTTOM-CENTER: Contextual USE [E] Prompt, Ice Laser Bar, or Wayfinding */}
         {!anyOverlayOpen && ready && (
-          <div className="interaction-area" aria-live="polite">
+          <div className="interaction-area">
             {nearIceIdx >= 0 ? (
               <div className="flex items-center gap-3 rounded-xl border border-sky-400/50 bg-[#0d2231]/95 px-4 py-2.5 shadow-xl">
                 <button
                   type="button"
-                  onPointerDown={() => world.current?.setDrillHeld(true)}
+                  onPointerDown={(event) => {
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    world.current?.setDrillHeld(true);
+                  }}
                   onPointerUp={() => world.current?.setDrillHeld(false)}
-                  onPointerLeave={() => world.current?.setDrillHeld(false)}
+                  onPointerCancel={() => world.current?.setDrillHeld(false)}
+                  onLostPointerCapture={() => world.current?.setDrillHeld(false)}
+                  onBlur={() => world.current?.setDrillHeld(false)}
+                  onKeyDown={(event) => {
+                    if (event.key === ' ' || event.key === 'Enter') {
+                      event.preventDefault();
+                      world.current?.setDrillHeld(true);
+                    }
+                  }}
+                  onKeyUp={(event) => {
+                    if (event.key === ' ' || event.key === 'Enter') {
+                      event.preventDefault();
+                      world.current?.setDrillHeld(false);
+                    }
+                  }}
                   className="rounded-lg border border-sky-300/60 bg-sky-400/20 px-3 py-1.5 font-mono text-xs font-bold text-sky-100 hover:bg-sky-400/30"
                 >
                   {drillOverheated
@@ -1548,17 +1585,19 @@ export default function App() {
                       ? 'SOYUYUR…'
                       : 'COOLING…'
                     : lang === 'az'
-                      ? '[SPACE] BUZ QAZ'
-                      : 'HOLD [SPACE] LASER'}
+                      ? 'QAZMAQ ÜÇÜN BASILI SAXLA [SPACE]'
+                      : 'HOLD TO DRILL [SPACE]'}
                 </button>
                 <div className="w-36">
                   <div className="flex justify-between font-mono text-[9.5px] text-sky-200">
-                    <span>H₂O {drillProgressPct}%</span>
+                    <span>{lang === 'az' ? 'Nümunə' : 'Core'} {drillProgressPct}%</span>
                     <span className={drillTempPct > 80 ? 'text-rose-300' : 'text-slate-300'}>
-                      {drillTempPct}°
+                      {lang === 'az' ? 'Qızma' : 'Heat'} {drillTempPct}%
                     </span>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/40">
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/40" role="progressbar"
+                    aria-label={lang === 'az' ? 'Nümunənin götürülməsi' : 'Core collection'}
+                    aria-valuemin={0} aria-valuemax={100} aria-valuenow={drillProgressPct}>
                     <div
                       className="h-full bg-sky-400 transition-all"
                       style={{ width: `${drillProgressPct}%` }}
@@ -1593,8 +1632,8 @@ export default function App() {
                 <span>
                   <small>{tr(nearbyStation.code)}</small>
                   {lang === 'az'
-                    ? `${tr(nearbyStation.name)} Konsolunu Aç`
-                    : `Use ${tr(nearbyStation.name)} Console`}
+                    ? `${tr(nearbyStation.roomName)} konsolunu aç`
+                    : `Open ${tr(nearbyStation.roomName)} console`}
                 </span>
                 <ChevronRight size={19} />
               </button>
@@ -1602,7 +1641,7 @@ export default function App() {
               <button
                 type="button"
                 className="wayfinding"
-                onClick={() => world.current?.walkTo({ x: activeStation.x, y: activeStation.y })}
+                onClick={followStationRoute}
                 title={
                   lang === 'az'
                     ? 'Avtopilotla getmək üçün klikləyin'
@@ -1616,8 +1655,8 @@ export default function App() {
                 />
                 <span>
                   {lang === 'az'
-                    ? `Növbəti: ${tr(activeStation.name)}`
-                    : `Next Task: ${tr(activeStation.name)}`}
+                    ? `D${viewStep} istiqaməti`
+                    : `Route to D${viewStep}`}
                 </span>
                 <small className="ml-1 font-mono text-[10px] text-[#9fb4b5]">
                   {distanceMeters} m
@@ -1764,8 +1803,8 @@ export default function App() {
             if (e.target === e.currentTarget) returnToWorld();
           }}
         >
-          <div className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-[#b6cec3]/30 bg-[#14222b] p-5 shadow-2xl scrollbar-thin">
-            <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="relative flex max-h-[92dvh] w-full max-w-[860px] flex-col overflow-hidden rounded-2xl border border-[#b6cec3]/30 bg-[#14222b] p-4 shadow-2xl sm:p-5">
+            <div className="mb-3 flex shrink-0 items-center justify-between gap-3 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-[#c0e6aa]">
                 <Sparkles size={14} />
                 <span>{tr(activeStation.code)}</span>
@@ -1791,7 +1830,7 @@ export default function App() {
               priorChoices={activeChoices}
               taskSettings={activeTasks}
               taskAvailable={calibratedTasks[viewStep - 1]}
-              taskExercise={viewStep === 1 || viewStep === 4 ? stationExercise : undefined}
+              taskExercise={stationExercise}
               canChoose={canChoose}
               onChoose={handleChoose}
               onPrev={() => setViewStep((s) => Math.max(1, s - 1))}
@@ -1804,8 +1843,6 @@ export default function App() {
                 }
               }}
             />
-
-            {viewStep !== 1 && viewStep !== 4 && <div className="mt-3.5">{stationExercise}</div>}
           </div>
         </div>
       )}
@@ -2029,16 +2066,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {demoStage && !anyOverlayOpen && (
-        <JudgeTourBanner
-          stage={demoStage}
-          baseline={runA}
-          onAdvance={(useBackup) => handleAdvanceTour(demoStage, useBackup)}
-          onOpenScience={() => setSensorDeckOpen(true)}
-          onClose={() => setDemoStage(null)}
-        />
       )}
 
       {/* =====================================================================
