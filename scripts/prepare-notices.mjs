@@ -1,4 +1,5 @@
 // Collect notices from the actual Vite/Rollup runtime module graph, offline.
+// Regenerate with: node scripts/prepare-notices.mjs
 import { build } from 'vite';
 import fs from 'node:fs';
 import path from 'node:path';
