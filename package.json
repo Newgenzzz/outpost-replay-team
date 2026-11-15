@@ -1,0 +1,37 @@
+{
+  "name": "outpost-replay",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Outpost Replay — Junior Astronaut Mission Trainer (NASA Space Apps Challenge). Static, deterministic, bilingual EN/AZ.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/simulation.test.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.120.4",
+    "@react-three/fiber": "^8.17.10",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/three": "^0.187.0",
+    "canvas-confetti": "^1.9.4",
+    "gsap": "^3.15.1",
+    "lucide-react": "^0.468.0",
+    "phaser": "^4.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~5.6.3",
+    "vite": "^6.0.0"
+  }
+}
