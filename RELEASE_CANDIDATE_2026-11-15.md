@@ -60,3 +60,7 @@ Baseline: **79/79 tests**, TypeScript and production build passed. Final post-ch
 6. Rehearsal/listening on the actual presentation laptop and final recorded-file review. No learner study or physical-device audio/GPU certification has been performed.
 
 There is no demonstrated need for another graphics/audio/gameplay redesign. Resolve the external blockers, publish only the chosen artifact after authorization, verify that exact host, and enter the tested links and references in the official project form. No submission-complete or public-ready claim is made prematurely.
+
+## GitHub repository strategy (`Kenan22w/outpost-replay-team`)
+
+Keep and brand `Kenan22w/outpost-replay-team` (`# OUTPOST REPLAY — Team Brochachos`)—or rename it in GitHub Settings once approved—rather than creating a fresh history-less repository. Preserving the complete commit graph (`fd05999`–`09e9e10` pre-event practice/audits, `35f3349` transition checkpoint, `8ace633`–`HEAD` Nov 14–15 event work) keeps provenance transparent; visibility changes (`private` → `public`), pushes, and licensing (`LICENSE`) remain gated on team rights-holder and organizer approval.

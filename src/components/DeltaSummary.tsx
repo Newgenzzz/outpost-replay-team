@@ -3,10 +3,37 @@ import { useI18n } from '../i18n/LanguageContext';
 import { ENGINEERING_LESSONS } from '../data/engineeringLessons';
 import { MISSION_DECISIONS } from '../data/missionDecisions';
 import { RULE_LABELS, compareRuns, type ComparisonReason, type SimulationResult } from '../engine/simulation';
-import type { TrainingMode } from '../types';
+import type { Bilingual, TrainingMode } from '../types';
 import { OutcomeBadge } from './MetricGauges';
 import { ABORT_CAUSES } from './MissionResults';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
+
+const DECISION_SCIENCE_BRIDGE: Record<number, Bilingual> = {
+  1: {
+    en: 'NASA context: LRO/LOLA illumination studies (Mazarico et al. 2011; Gläser et al. 2018) motivate mast-height & site storage planning; the 15% vs 40% shadow factors are scenario assumptions.',
+    az: 'NASA konteksti: LRO/LOLA işıqlanma tədqiqatları (Mazarico və b. 2011; Gläser və b. 2018) dirək hündürlüyü və baza yerini əsaslandırır; 15% və 40% kölgə əmsalları təlim fərziyyəsidir.',
+  },
+  2: {
+    en: 'NASA context: NASA BVAD (0.82 kg O₂/crew-day), LRO/CRaTER shielding context, and OSDR VEG-01A (33-day ISS lettuce water-stress trial) inform habitat upgrades; ×0.06 berm factor, +3 kg O₂ ISRU yield, and 25+5 d crop costs are assumptions.',
+    az: 'NASA konteksti: NASA BVAD (0.82 kq O₂/nəfər-gün), LRO/CRaTER mühit konteksti və OSDR VEG-01A (33 günlük BKS kahı sınağı) quraşdırmanı əsaslandırır; ×0.06 sədd, +3 kq O₂ və 25+5 gün bitki dəyərləri fərziyyədir.',
+  },
+  3: {
+    en: 'NASA context: LRO/LOLA & Diviner polar studies (~38 K Cabeus reference) frame the 72 h shadow & heating demand; the 90 K curve and 18 kWh backup fuel cell are scenario assumptions.',
+    az: 'NASA konteksti: LRO/LOLA və Diviner qütb tədqiqatları (~38 K Kabeus istinadı) 72 saatlıq kölgə və qızdırma yükünü izah edir; 90 K əyrisi və 18 kVt·s ehtiyat yanacaq elementi ssenari fərziyyəsidir.',
+  },
+  4: {
+    en: 'NASA context: LCROSS Cabeus water-ice estimate (5.6 ± 2.9% by mass) supplies the extraction feedstock fraction; batch mass (20 kg + cores) and 60%/75% recovery efficiency are classroom assumptions.',
+    az: 'NASA konteksti: LCROSS Kabeus su-buzu qiymətləndirməsi (kütləcə 5.6 ± 2.9%) emal xammalı payını verir; partiya kütləsi (20 kq + nüvələr) və 60%/75% emal səmərəliliyi təlim fərziyyəsidir.',
+  },
+  5: {
+    en: 'NASA context: NASA CCMC DONKI (20240516-7D-001 / Alert #30944) & NOAA GOES (207 pfu May 10, 2024 near-Earth peak) anchor the warning; the 48 h pulse, 0.015 mSv·h⁻¹·pfu⁻¹ scale, shielding multipliers, and 50 mSv rule (vs NASA-STD-3001 600 mSv career limit) are assumptions.',
+    az: 'NASA konteksti: NASA CCMC DONKI (20240516-7D-001 / #30944) və NOAA GOES (10 may 2024 Yerə yaxın 207 pfu piki) xəbərdarlığı əsaslandırır; 48 s əyri, 0.015 əmsalı, qalxan vuruqları və 50 mSv həddi (NASA-STD-3001 600 mSv həddindən ayrı) fərziyyədir.',
+  },
+  6: {
+    en: 'NASA context: NASA BVAD crew consumables and NASA-STD-3001 exposure principles frame close-out trade-offs between crew margin and final science return.',
+    az: 'NASA konteksti: NASA BVAD sərfiyyat göstəriciləri və NASA-STD-3001 radiasiya prinsipləri son gündə ekipaj ehtiyatı ilə elm balansı arasındakı seçimi izah edir.',
+  },
+};
 
 export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
   a: SimulationResult;
@@ -224,6 +251,13 @@ export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
                             : (az ? '≥20 kVt·s ehtiyat' : '≥20 kWh reserve')}
                         </span>
                       )}
+                      {!showWaterYield && primaryKey === 'radiationMsv' && (
+                        <span className={`font-mono text-[10px] font-semibold ${value >= 50 ? 'text-rose-200' : 'text-emerald-200'}`}>
+                          {value >= 50
+                            ? (az ? '≥50 mSv məhdudiyyət həddi' : '≥50 mSv warning limit')
+                            : (az ? '<50 mSv təhlükəsiz hədd' : '<50 mSv below warning')}
+                        </span>
+                      )}
                     </div>
                     <p className="font-mono text-2xl font-semibold tracking-tight text-white">
                       {fmt(value, showWaterYield ? 2 : 1)} <span className="text-sm text-slate-300">{phaseUnit}</span>
@@ -236,6 +270,14 @@ export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
                           title={az ? '20 kVt·s həddi' : '20 kWh brownout threshold'}
                           className="absolute bottom-0 top-0 w-0.5 bg-white/80"
                           style={{ left: '20%' }}
+                        />
+                      )}
+                      {!showWaterYield && primaryKey === 'radiationMsv' && (
+                        <span
+                          aria-hidden="true"
+                          title={az ? '50 mSv təlim xəbərdarlıq həddi' : '50 mSv classroom warning threshold'}
+                          className="absolute bottom-0 top-0 w-0.5 bg-white/80"
+                          style={{ left: '83.3%' }}
                         />
                       )}
                     </div>
@@ -293,6 +335,9 @@ export default function DeltaSummary({ a, b, trainingMode = 'engineer' }: {
             {az ? 'ÖYRƏN · Mühəndislik prinsipi' : 'LEARN · Engineering principle'}
           </p>
           <p>{tr(ENGINEERING_LESSONS[firstChange - 1])}</p>
+          {DECISION_SCIENCE_BRIDGE[firstChange] && (
+            <p className="mt-1 text-xs text-sky-100/90">{tr(DECISION_SCIENCE_BRIDGE[firstChange])}</p>
+          )}
           {sameEndpoint && lowReserveA !== lowReserveB && (
             <p className="mt-0.5 text-xs text-amber-100">
               {az

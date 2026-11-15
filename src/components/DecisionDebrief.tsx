@@ -33,8 +33,9 @@ export function DecisionDebrief({
     result = az ? `Emaldan alınan su · ${fmt(step.resourceFlows.waterExtractedKg, 2)} ${kg}`
       : `Water recovered · ${fmt(step.resourceFlows.waterExtractedKg, 2)} ${kg}`;
   } else if (step.step === 5) {
-    result = az ? `Mərhələnin model dozası · ${fmt(step.delta.radiationMsv)} mSv`
-      : `Modeled dose this phase · ${fmt(step.delta.radiationMsv)} mSv`;
+    result = az
+      ? `Mərhələnin model dozası · +${fmt(step.delta.radiationMsv)} mSv (Cəmi: ${fmt(step.after.radiationMsv)} / 50 mSv həddi)`
+      : `Modeled dose this phase · +${fmt(step.delta.radiationMsv)} mSv (Total: ${fmt(step.after.radiationMsv)} / 50 mSv warning)`;
   }
 
   const consequenceBanner = decisionConsequenceFeedback(step);
@@ -98,7 +99,7 @@ export function DecisionDebrief({
           <p className="mt-2 text-amber-100">{step.rulesTriggered.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}</p>
         )}
       </details>
-      {onOpenRewind && step.step >= 3 && (
+      {onOpenRewind && step.step >= 1 && (
         <button
           type="button"
           onClick={onOpenRewind}

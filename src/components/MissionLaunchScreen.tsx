@@ -163,7 +163,7 @@ export function MissionLaunchScreen({
               OUTPOST <span className="font-light text-[#c0e6aa]">REPLAY</span>
             </h1>
             <span className="font-mono text-xs text-sky-300">
-              {az ? 'Gənc Astronavt Missiya Trenajoru' : 'Junior Astronaut Mission Trainer · NASA-informed'}
+              {az ? 'Gənc Astronavt Missiya Trenajoru · Team Brochachos' : 'Junior Astronaut Mission Trainer · Team Brochachos'}
             </span>
           </div>
 
@@ -248,32 +248,32 @@ export function MissionLaunchScreen({
             </div>
           </div>
 
-          {/* 3-Pillar Learning Loop Strip */}
-          <div className="mt-3.5 grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 text-[11px] text-slate-200">
-            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 font-mono text-[10px] font-bold text-emerald-300">
-                1
-              </span>
-              <span>
-                {az ? 'Nə dəyişəcək? Proqnoz verin' : 'Predict what will change'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/20 font-mono text-[10px] font-bold text-cyan-300">
-                2
-              </span>
-              <span>
-                {az ? 'Bir qərarı sınayın' : 'Try an engineering decision'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] px-2.5 py-1.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/20 font-mono text-[10px] font-bold text-amber-300">
-                3
-              </span>
-              <span>
-                {az ? 'Geri sarıb fayda və əvəzini müqayisə edin' : 'Rewind and compare the benefit and cost'}
-              </span>
-            </div>
+          {/* 6-Step Core Innovation Loop Strip */}
+          <div
+            className="mt-3.5 grid grid-cols-2 gap-1.5 rounded-xl border border-white/10 bg-slate-950/60 p-2 text-[10.5px] text-slate-200 sm:grid-cols-3 lg:grid-cols-6"
+            role="list"
+            aria-label={az ? 'Əsas təlim dövrəsi' : 'Core learning sequence'}
+          >
+            {[
+              { n: '1', keyEn: 'PREDICT', keyAz: 'PROQNOZ', subEn: 'What will happen?', subAz: 'Nə baş verəcək?', cls: 'bg-emerald-400/20 text-emerald-300' },
+              { n: '2', keyEn: 'DECIDE', keyAz: 'QƏRAR', subEn: 'Pick Plan A, B, or C', subAz: 'A, B və ya C seçin', cls: 'bg-cyan-400/20 text-cyan-300' },
+              { n: '3', keyEn: 'OBSERVE', keyAz: 'MÜŞAHİDƏ', subEn: 'Check crew reserves', subAz: 'Ehtiyatları yoxlayın', cls: 'bg-sky-400/20 text-sky-300' },
+              { n: '4', keyEn: 'REWIND', keyAz: 'GERİ SAR', subEn: 'Change 1 choice', subAz: '1 qərarı dəyişin', cls: 'bg-amber-400/20 text-amber-300' },
+              { n: '5', keyEn: 'COMPARE', keyAz: 'MÜQAYİSƏ', subEn: 'Run A vs. Run B', subAz: 'A və B müqayisəsi', cls: 'bg-fuchsia-400/20 text-fuchsia-300' },
+              { n: '6', keyEn: 'LEARN', keyAz: 'ÖYRƏN', subEn: 'Benefit, cost & NASA', subAz: 'Fayda, itki və NASA', cls: 'bg-[#c0e6aa]/20 text-[#c0e6aa]' },
+            ].map((step) => (
+              <div key={step.n} role="listitem" className="flex items-start gap-1.5 rounded-lg bg-white/[0.03] px-2 py-1.5">
+                <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-mono text-[9.5px] font-bold ${step.cls}`}>
+                  {step.n}
+                </span>
+                <div className="min-w-0 leading-tight">
+                  <strong className="block font-mono text-[9.5px] tracking-wider text-white">
+                    {az ? step.keyAz : step.keyEn}
+                  </strong>
+                  <span className="block text-[10px] text-slate-300">{az ? step.subAz : step.subEn}</span>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Primary Launch Actions */}

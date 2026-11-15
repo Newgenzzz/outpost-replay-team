@@ -465,6 +465,11 @@ export default function DecisionCard(props: DecisionCardProps) {
 
       {step === 5 && (
         <div className="rounded-lg border border-cyan-400/35 bg-cyan-950/30 px-3 py-2.5 text-[11px] text-slate-200">
+          <div className="mb-2 flex flex-wrap items-center gap-1 rounded-md border border-cyan-300/30 bg-slate-950/65 px-2 py-1 font-mono text-[9.5px] font-semibold text-cyan-100">
+            {lang === 'az'
+              ? '1. NASA DONKI / NOAA Müşahidəsi → 2. Fırtına Xəbərdarlığı → 3. Qalxan Qərarı → 4. Model Doza Nəticəsi → 5. Geri Sar və Müqayisə Et [R]'
+              : '1. NASA DONKI / NOAA Observation → 2. Storm Warning → 3. Shielding Decision → 4. Modeled Dose Outcome → 5. Rewind & Compare [R]'}
+          </div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300">
               {lang === 'az'
@@ -486,8 +491,8 @@ export default function DecisionCard(props: DecisionCardProps) {
             <div className="mb-1 flex flex-wrap items-center justify-between gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-300">
               <span>
                 {lang === 'az'
-                  ? 'Müqayisə et: Ay Qalxanı və 48 Saatlıq Model Dozası'
-                  : 'Interactive Shielding Check · Modeled 48 h Lunar Dose'}
+                  ? '3. Qərarı Yoxla · Ay Qalxanı və 48 Saatlıq Model Dozası'
+                  : '3. Test Decision · Shielding & Modeled 48 h Lunar Dose'}
               </span>
               <span className="font-mono text-cyan-200">
                 {lang === 'az' ? 'Ssenari piki:' : 'Scenario peak:'} {runInput.scenario.stormPeakPfu} pfu
@@ -521,6 +526,7 @@ export default function DecisionCard(props: DecisionCardProps) {
               ] as const).map((tier) => {
                 const f = forecasts[tier.idx];
                 const dose = f?.delta.radiationMsv ?? 0;
+                const totalDose = f?.after.radiationMsv;
                 const active = inspectedIdx === tier.idx;
                 const pctOfMax = Math.min(100, Math.round((dose / Math.max(1, forecasts[0]?.delta.radiationMsv ?? 45)) * 100));
                 return (
@@ -547,11 +553,65 @@ export default function DecisionCard(props: DecisionCardProps) {
                       />
                     </div>
                     <span className="mt-1 block font-mono text-[9.5px] text-slate-400">{tier.factor}</span>
+                    {totalDose !== undefined && (
+                      <span
+                        className={`mt-0.5 block font-mono text-[9.5px] font-semibold ${
+                          totalDose >= RADIATION_LIMITS.missionWarningMsv ? 'text-rose-200' : 'text-emerald-200'
+                        }`}
+                      >
+                        {lang === 'az'
+                          ? `Cəmi: ${fmt(totalDose)} / ${RADIATION_LIMITS.missionWarningMsv} mSv`
+                          : `Total: ${fmt(totalDose)} / ${RADIATION_LIMITS.missionWarningMsv} mSv`}
+                      </span>
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {ledgerRecord && (() => {
+            const totalAfter = ledgerRecord.after.radiationMsv;
+            const hitsWarning = totalAfter >= RADIATION_LIMITS.missionWarningMsv;
+            const prepNotes: string[] = [];
+            if (inspectedIdx === 2 && flagsBefore.includes('regolithBerm')) {
+              prepNotes.push(lang === 'az' ? 'D2 reqolit səddi aktivdir (×0.06)' : 'D2 regolith berm active (×0.06)');
+            }
+            if (stepTaskEnabled) {
+              prepNotes.push(
+                lang === 'az'
+                  ? 'D5 germetik kilid aktivdir (sığınacaqda −15% fırtına dozası)'
+                  : 'D5 bulkhead clamp active (−15% sheltered storm dose)',
+              );
+            }
+            return (
+              <div
+                className={`mt-2 rounded-md border px-2.5 py-2 text-[10.5px] leading-snug ${
+                  hitsWarning
+                    ? 'border-rose-400/45 bg-rose-950/35 text-rose-100'
+                    : 'border-emerald-400/35 bg-emerald-950/30 text-emerald-100'
+                }`}
+              >
+                <p className="font-semibold">
+                  {hitsWarning
+                    ? lang === 'az'
+                      ? `4. Nəticə (${CHOICE_LETTERS[inspectedIdx]} variantı): Cəmi doza ${fmt(totalAfter)} mSv (≥ ${RADIATION_LIMITS.missionWarningMsv} mSv təlim həddi) — 9-cu gündə (D6) elm xalı qazancı −50% məhdudlaşdırılır.`
+                      : `4. Outcome (Option ${CHOICE_LETTERS[inspectedIdx]}): Cumulative dose reaches ${fmt(totalAfter)} mSv (≥ ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning) — triggers the Day 9 (D6) −50% science restriction.`
+                    : lang === 'az'
+                      ? `4. Nəticə (${CHOICE_LETTERS[inspectedIdx]} variantı): Cəmi doza ${fmt(totalAfter)} mSv (< ${RADIATION_LIMITS.missionWarningMsv} mSv təlim həddi) — 9-cu gündə (D6) elm məhdudiyyətindən yayınır.`
+                      : `4. Outcome (Option ${CHOICE_LETTERS[inspectedIdx]}): Cumulative dose stays at ${fmt(totalAfter)} mSv (< ${RADIATION_LIMITS.missionWarningMsv} mSv classroom warning) — avoids the Day 9 (D6) science restriction.`}
+                </p>
+                {prepNotes.length > 0 && (
+                  <p className="mt-0.5 font-mono text-[10px] text-sky-200">{prepNotes.join(' · ')}</p>
+                )}
+                <p className="mt-1 text-slate-200">
+                  {lang === 'az'
+                    ? '5. Geri Sar və Müqayisə Et [R]: Seçimi tətbiq edin, sonra D5-i (və ya D2 + D5-i) geri sarıb qalxanın toplam dozanı və D6 elmini necə dəyişdiyini müqayisə edin.'
+                    : '5. Rewind & Compare [R]: Apply a choice, then rewind D5 (or D2 + D5) to compare how shielding changes cumulative dose and D6 science while all other inputs stay fixed.'}
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Explicit 4-Category Scientific Separation */}
           <div className="mt-2 grid gap-1.5 rounded-md border border-white/10 bg-slate-950/60 p-2 text-[10px] text-slate-300 sm:grid-cols-2">
@@ -688,9 +748,10 @@ export default function DecisionCard(props: DecisionCardProps) {
           </header>
 
           {isCadet ? (
-            <p className="rounded-xl border border-[#4c6b68] bg-[#13252d] p-3 text-sm leading-relaxed text-slate-200">
-              {tr(displayedContext)}
-            </p>
+            <div className="grid gap-2.5 rounded-xl border border-[#4c6b68] bg-[#13252d] p-3">
+              <p className="text-sm leading-relaxed text-slate-200">{tr(displayedContext)}</p>
+              {briefingContent}
+            </div>
           ) : (
             <div className="grid gap-2.5 rounded-xl border border-[#4c6b68] bg-[#13252d] p-3">
               {briefingContent}
@@ -862,15 +923,6 @@ export default function DecisionCard(props: DecisionCardProps) {
               );
             })}
           </div>
-
-          {isCadet && (
-            <details className="rounded-xl border border-[#4c6b68] bg-[#13252d] p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-sky-200">
-                {lang === 'az' ? 'Missiya brifinqi · Ekipaj və elm' : 'Mission briefing · Crew and science'}
-              </summary>
-              <div className="mt-2.5 grid gap-2.5">{briefingContent}</div>
-            </details>
-          )}
 
           {/* Hands-On Station Mini-Game & Simulation Bonus Card (All 6 Steps) */}
           {taskExercise && (

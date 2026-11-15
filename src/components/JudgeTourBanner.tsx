@@ -39,9 +39,9 @@ const DEMO_STAGES = {
 } as const;
 
 const TOUR_STEPS: Array<{ id: DemoStage; num: number; en: string; az: string }> = [
-  { id: 'setup', num: 1, en: 'Plan', az: 'Plan' },
-  { id: 'shadow', num: 2, en: 'Test', az: 'Sına' },
-  { id: 'rewind', num: 3, en: 'Compare', az: 'Müqayisə' },
+  { id: 'setup', num: 1, en: 'Predict & Plan', az: 'Proqnoz və Plan' },
+  { id: 'shadow', num: 2, en: 'Decide & Observe', az: 'Qərar və Müşahidə' },
+  { id: 'rewind', num: 3, en: 'Rewind, Compare & Learn', az: 'Geri Sar, Müqayisə və Öyrən' },
 ];
 
 export function JudgeTourBanner({

@@ -2450,7 +2450,10 @@ export default function App() {
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
               <div>
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[#c0e6aa]">
-                  {tr({ en: 'CONTROLLED MISSION EXPERIMENT', az: 'NƏZARƏTLİ MİSSİYA TƏCRÜBƏSİ' })}
+                  {tr({
+                    en: 'PREDICT → DECIDE → OBSERVE → REWIND → COMPARE → LEARN · CONTROLLED EXPERIMENT',
+                    az: 'PROQNOZ → QƏRAR → MÜŞAHİDƏ → GERİ SAR → MÜQAYİSƏ → ÖYRƏN · NƏZARƏTLİ TƏCRÜBƏ',
+                  })}
                 </span>
                 <h2 className="mt-1 text-xl font-semibold text-[#e5eae4]">{t('compareTitle')}</h2>
               </div>
@@ -2676,7 +2679,7 @@ export default function App() {
                             : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
                       }`}
                     >
-                      <span className="font-mono text-[10px] text-[#9eb6b5]">D{stepNum}</span>
+                      <span className="font-mono text-[10px] text-[#9eb6b5]">D{stepNum} </span>
                       <strong className="mt-0.5 line-clamp-2 font-medium">
                         {isCadet && d.cadetTitle ? tr(d.cadetTitle) : tr(d.title)}
                       </strong>

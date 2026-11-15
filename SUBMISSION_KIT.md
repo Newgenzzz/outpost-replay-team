@@ -52,6 +52,14 @@ Other boundaries to state honestly: lossless battery storage, simplified loads, 
 
 **Publication fields to complete:** official team name; approved source URL; tested playable URL; exact release commit; video/slides link; applicable license; confirmed Universal deadline/time zone; complete resource and AI-tool list. A private team repository alone does not establish open-source submission compliance.
 
+## GitHub Repository Release Strategy (`Kenan22w/outpost-replay-team`)
+
+**Recommendation:** **Keep (and optionally rename in GitHub Settings) `Kenan22w/outpost-replay-team` rather than creating a fresh repository without history.**
+
+- **Why keep/rename `Kenan22w/outpost-replay-team`:** Renaming or keeping the existing repository with `README.md` branded as `# OUTPOST REPLAY — Team Brochachos` preserves the full, honest commit log (`fd05999`–`09e9e10` pre-event work, `35f3349` transition checkpoint, `8ace633`–`HEAD` hackathon-weekend work), branches, and attribution records. Creating a brand-new single-commit repository on November 15 to hide pre-event history (`fd05999`–`09e9e10`) would misrepresent development dates and violate honest Space Apps disclosure standards.
+- **When a separate team/org mirror would ever be justified:** Only if collaboration permissions require transferring to a Team Brochachos GitHub organization that cannot fork or transfer the existing repository; even then, transfer via GitHub Settings or mirror complete history (`git push --mirror`) while retaining `ATTRIBUTION.md` and `public/credits.html`.
+- **Action status:** No repository rename, visibility change (`private` → `public`), push, or deployment has been executed automatically. Team & rights-holder approval plus organizer pre-event clearance are required first.
+
 ## Provisional 30-second recording
 
 This is an editing template, **not a verified official duration requirement**. Adapt only after checking the current Universal guide. Use actual gameplay, readable captions and the same tested build. Do not present generated footage as working gameplay or NASA observations.
