@@ -10,12 +10,26 @@ interface WorldRendererLoop {
   wake(): void;
 }
 
+interface WorldKeyboardCapture {
+  input?: { keyboard?: { preventDefault: boolean } | null } | null;
+}
+
+/** Hand DOM controls their native keys immediately, without waiting for a world frame. */
+export function releaseWorldKeyboard(game: WorldKeyboardCapture): void {
+  if (game.input?.keyboard) game.input.keyboard.preventDefault = false;
+}
+
 /** Do not race Phaser's asynchronous boot; repeated visibility updates are harmless. */
 export function updateWorldRendering(
-  game: { isRunning: boolean; loop: WorldRendererLoop },
+  game: WorldKeyboardCapture & {
+    isRunning: boolean;
+    loop: WorldRendererLoop;
+  },
   suspended: boolean,
 ): void {
   if (!game.isRunning) return;
+  // A sleeping world has no next update to release keys for focused DOM controls.
+  if (suspended) releaseWorldKeyboard(game);
   if (suspended && game.loop.running) game.loop.sleep();
   else if (!suspended && !game.loop.running) game.loop.wake();
 }
