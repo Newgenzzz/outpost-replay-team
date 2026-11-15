@@ -3,7 +3,7 @@
 Starting checkpoint: clean `8804322` on `codex/protect-progress-and-sharing`, confirmed present. This is a local audio upgrade; no push, deployment, license or repository-visibility change is authorized or performed.
 
 > [!NOTE]
-> **Listening review still required.** Automated checks cannot establish that the soundtrack is pleasant, memorable or well mixed. See [Listening review required](#listening-review-required).
+> **Historical `8804322` audio report — later extended cleanly in `649fbf9` (PR `#4`).** Subsequent work replaced discrete rover chirps with continuous structure-borne dual-oscillator rover motor synthesis and hardened `window.blur` key/audio lifecycle handling (`82` passing tests), and published the verified public build at <https://newgenzzz.github.io/outpost-replay-team/>. Listening on physical presentation hardware remains recommended before recording the submission video. See [Listening review required](#listening-review-required).
 
 ## Contents
 

@@ -3,7 +3,7 @@
 Audited for Team Brochachos on 14 November 2026. Starting branch: `codex/protect-progress-and-sharing`; clean starting HEAD: `6977994`. That commit was confirmed with Git and remains in ancestry. This report supersedes historical verification counts for this audit; earlier handoffs remain historical evidence.
 
 > [!NOTE]
-> **Audit snapshot at `6977994`.** Technical counts and browser evidence are specific to that checkpoint; see [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) for the current state.
+> **Historical audit snapshot at `6977994` (superseded).** Technical counts and browser evidence below describe that Nov 14 snapshot; later releases published the repository at <https://github.com/Newgenzzz/outpost-replay-team>, added adaptive audio & continuous rover vibration (`be768ff`, `649fbf9`), Apache-2.0 licensing (`LICENSE` / `NOTICE`), and verified GitHub Pages deployment at <https://newgenzzz.github.io/outpost-replay-team/>. See [README.md](README.md) and [ATTRIBUTION.md](ATTRIBUTION.md) for current status.
 
 ## Contents
 
