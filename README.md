@@ -36,7 +36,9 @@ A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the 
 
 ## Run locally
 
-For the current release candidate, see [the verified release review and NASA source map](RELEASE_CANDIDATE_2026-11-15.md), [Cloudflare Pages Direct Upload instructions](CLOUDFLARE_DIRECT_UPLOAD.md), and the [27-second gameplay storyboard](DEMO_27_SECONDS.md). Publication and team licensing remain subject to the listed confirmations. The built launch screen links to credits, AI assistance and bundled software notices.
+GitHub Pages deployment is prepared for <https://newgenzzz.github.io/outpost-replay-team/>. See [GitHub Pages setup and verification](GITHUB_PAGES.md) for the official Actions workflow, owner setup, production base path, and Direct Upload fallback. Confirm a successful deployment before sharing the target as a playable demo.
+
+For the current release candidate, see [the verified release review and NASA source map](RELEASE_CANDIDATE_2026-11-15.md), [Cloudflare Pages Direct Upload instructions](CLOUDFLARE_DIRECT_UPLOAD.md), and the [27-second gameplay storyboard](DEMO_27_SECONDS.md). Public source release and the limited Apache-2.0 scope were approved on 15 November 2026. Organizer eligibility and submission-specific confirmations remain separate. The built launch screen links to credits, AI assistance and bundled software notices.
 
 For presentation drafts and remaining release gates, see [SUBMISSION_KIT.md](SUBMISSION_KIT.md). Current development state and verification limits are in [CODEX_HANDOFF.md](CODEX_HANDOFF.md).
 
@@ -53,6 +55,7 @@ Open the local URL printed by Vite. If dependencies are already installed, start
 npm test          # deterministic engine, resource accounting and mission regressions
 npm run typecheck # TypeScript
 npm run build     # type check and generate dist/
+npm run build:pages # build for /outpost-replay-team/ on GitHub Pages
 npm run preview   # serve the production build locally
 ```
 
@@ -91,6 +94,6 @@ Allow two to three minutes to talk through the planning exercise and mission com
 
 See [SPEC.md](SPEC.md) for implementation details, [NASA_SCIENCE.md](NASA_SCIENCE.md) for source provenance, and [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for completed work and verification.
 
-See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the M6 release gates, static deployment/rollback instructions, judge rehearsal and submission checklist. Prior-work eligibility and the team license require documented approval before submission. Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. Public deployment requires team approval.
+See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the M6 release gates, static deployment/rollback instructions, judge rehearsal and submission checklist. Prior-work eligibility requires organizer confirmation before submission; the original-material license scope is recorded in [ATTRIBUTION.md](ATTRIBUTION.md). Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. The team has authorized this public deployment; verify the actual HTTPS site before claiming it is playable.
 
-The setting is a fictional outpost near Shackleton’s rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the proposed license awaiting team approval.
+The setting is a fictional outpost near Shackleton’s rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the approved limited Apache-2.0 scope. Original team materials are licensed under [Apache-2.0](LICENSE), with [NOTICE](NOTICE) recording Copyright 2026 Team Brochachos contributors and the exclusions for third-party software and NASA/NOAA materials.
