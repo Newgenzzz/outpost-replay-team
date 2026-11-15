@@ -5,6 +5,7 @@ import { canPowerCrop, CROP_TRIAL } from './resources';
 const hoursPerDay = 24;
 const epsilon = 1e-9;
 export const BATTERY_CAPACITY_KWH = 100;
+export const CALIBRATED_INCIDENCE_LIMIT_DEG = 4;
 export const ESSENTIAL_BASE_KWH_PER_DAY = 4;
 
 export interface EnvironmentDetail {

@@ -1,4 +1,4 @@
-import { ArrowRight, GitBranch, Orbit, X } from 'lucide-react';
+import { ArrowRight, BookOpen, GitBranch, Orbit, X } from 'lucide-react';
 import type { SimulationResult } from '../engine/simulation';
 import { useI18n } from '../i18n/LanguageContext';
 import { fmt } from './metricMeta';
@@ -39,11 +39,13 @@ export function JudgeTourBanner({
   stage,
   baseline,
   onAdvance,
+  onOpenScience,
   onClose,
 }: {
   stage: DemoStage;
   baseline: SimulationResult;
   onAdvance: () => void;
+  onOpenScience: () => void;
   onClose: () => void;
 }) {
   const { t, tr, lang } = useI18n();
@@ -71,10 +73,22 @@ export function JudgeTourBanner({
           </p>
         )}
       </div>
-      <button type="button" onClick={onAdvance} className="inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">
-        {stage === 'rewind' ? <GitBranch size={16} /> : <ArrowRight size={16} />}
-        {tr(scene.action)}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={onAdvance} className="inline-flex items-center gap-2 rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-200">
+          {stage === 'rewind' ? <GitBranch size={16} /> : <ArrowRight size={16} />}
+          {tr(scene.action)}
+        </button>
+        {stage === 'setup' && (
+          <button
+            type="button"
+            onClick={onOpenScience}
+            className="inline-flex items-center gap-2 rounded-lg border border-sky-400/35 px-3 py-2 text-sm text-sky-100 hover:bg-sky-500/15"
+          >
+            <BookOpen size={15} aria-hidden="true" />
+            {lang === 'az' ? 'Ay məkanlarını müqayisə et' : 'Compare lunar sites'}
+          </button>
+        )}
+      </div>
     </aside>
   );
 }

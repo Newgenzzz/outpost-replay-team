@@ -37,3 +37,28 @@ Work took place in the existing `outpost-replay-practice` copy. The supplied dir
 - Recovered and reviewed the fictional rim location labels, the separation of Earth-orbit GOES data from the training dose model, and the Apache-2.0 proposal in `ATTRIBUTION.md`. In the previous session, Chromium displayed the updated science labels and reproduced the guided D3 comparison. The approval review stopped the final combined log-write and Git check. This entry restores the missing log.
 - Re-ran `npm run typecheck`, all nine existing tests, and `npm run build` against the recovered working copy. All passed. Vite reported the existing Phaser bundle-size warning.
 - Rights-holder approval for the project license and provenance for inherited artwork remain pending.
+
+## Competition upgrade
+
+- **A · Lunar Site Intelligence.** Added a keyboard-operable planning exercise in D1 and the Sunlight tab. Two Gläser et al. Table 2 rows from NASA NTRS supply long-run average visible solar-disk fractions and longest modeled shadow durations. With a 35 kWh usable reserve, the Shackleton study point has 7.5 kWh left and C1 is short 11.7 kWh. The planning calculation has its own assumptions and the mission retains its scripted hourly environment. Local checkpoint `207c26e`. See [NASA_SCIENCE.md](NASA_SCIENCE.md).
+- **B · Solar calibration.** D1's optional azimuth exercise unlocks an explicit calibration input. The training model caps incidence at 4° when applied. The choice forecast and committed run use the same input, and branching preserves or changes it at D1. Other field exercises remain optional and separate. Changes span `src/engine/{power,simulation}.ts`, `App.tsx`, `DecisionCard.tsx`, `DeltaSummary.tsx`, and the simulation tests.
+- **D · Rewind.** Moved input changes above the detailed rules, labeled metric deltas with names and units, and explained how low reserve can reduce water recovery. Different elapsed times still suppress endpoint deltas.
+- **C/E · Feedback and onboarding.** The world displays the simulated battery reserve state and dims the habitat below the configured reserve threshold. The onboarding strip points to choice previews and Apply. Debriefs show the battery left, correct units, and localized explanations for flight rules.
+- **F · Demo.** Added a route from the demo's first stage to the Sunlight planning exercise. The three-stage D3 comparison still uses the original engine fixture. The updated [README](README.md) gives a two-to-three-minute walkthrough.
+
+### Model regression
+
+The nine original tests remain, plus two covering NASA site planning and calibration replay. The existing conservation check now enumerates 729 routes for each calibration setting. Uncalibrated runs reproduce 504 successes, 126 warnings, 99 aborts, and 165 harvests. Calibrated runs give 561 successes, 90 warnings, 78 aborts, and 184 harvests. The change comes from better pointing on options A and C, which can leave more electricity for recycling and the greenhouse. Option B already points at the Sun.
+
+### Final verification
+
+- The final `npm run typecheck`, `npm test` (11 passing), and `npm run build` completed successfully. Vite continues to report the existing Phaser size warning.
+- Chromium, 1366 × 768 in English. Opened the demo's site exercise, confirmed the reserve values, and finished the guided comparison. Run A still ended with warnings and Run B succeeded. Hour-120 power was 19.9 versus 43.9 kWh and low-reserve time was 97 versus 0 hours. Captured the comparison and low-reserve world views in the browser.
+- Chromium, 1600 × 900. Checked the Azerbaijani site exercise and three decision forecasts without horizontal overflow. Captured the Azerbaijani science view. Verified rover boarding, movement, and dismount with the existing controls. No browser errors were captured in the final preview tab.
+- Completed a calibrated six-choice run in Chromium. The D1-C forecast changed from a 7.1 to a 6.0 kWh loss, and disabling calibration on a D1 branch retained the same choice while recording the setting change. In a separate run, water depletion at hour 203 rewound to a successful hour-216 branch. The comparison withheld endpoint deltas for the unequal run lengths.
+
+### Remaining work
+
+- The two research rows are long-term planning inputs. There is no verified hourly trajectory for the fictional outpost. Any follow-up that changes the mission schedule should start with a documented, dated, site-specific product and preserve the guided fixture.
+- Before submitting, record rights-holder approval for the project license, verify the inherited art and reference sources, and resolve the inactive GSAP import and dependency against the 2026 terms. Then collect required notices for the distributed bundle. See [ATTRIBUTION.md](ATTRIBUTION.md).
+- The tested browser layouts cover two desktop viewport sizes. Integrated-graphics performance and broader hardware coverage remain unmeasured.

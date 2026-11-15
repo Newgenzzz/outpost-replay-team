@@ -67,10 +67,10 @@ import {
 import { SampleDiscoveryModal } from './components/SampleDiscoveryModal';
 import { CHOICE_LETTERS, fmt, signed } from './components/metricMeta';
 import { useI18n } from './i18n/LanguageContext';
-import { runSimulation, type RuleId } from './engine/simulation';
+import { RULE_LABELS, runSimulation, type RuleId } from './engine/simulation';
 import type { MetricState } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
-import { RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
+import { GAME_CONSTANTS, RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
 
 const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string }> = {
@@ -98,6 +98,8 @@ export default function App() {
   const [baselineChoices, setBaselineChoices] = useState<number[]>([]);
   /** Run B — copy of Run A with one or more rewound decisions (null = no branch yet). */
   const [rewoundChoices, setRewoundChoices] = useState<number[] | null>(null);
+  const [baselineSolarCalibrated, setBaselineSolarCalibrated] = useState(false);
+  const [branchSolarCalibrated, setBranchSolarCalibrated] = useState(false);
   const [viewStep, setViewStep] = useState(1);
 
   // Overlays & Modals
@@ -369,10 +371,11 @@ export default function App() {
   }, []);
 
   // Deterministic Simulation Runs
-  const runA = useMemo(() => runSimulation(baselineChoices), [baselineChoices]);
+  const runA = useMemo(() => runSimulation(baselineChoices, { solarCalibrated: baselineSolarCalibrated }),
+    [baselineChoices, baselineSolarCalibrated]);
   const runB = useMemo(
-    () => (rewoundChoices ? runSimulation(rewoundChoices) : null),
-    [rewoundChoices],
+    () => (rewoundChoices ? runSimulation(rewoundChoices, { solarCalibrated: branchSolarCalibrated }) : null),
+    [rewoundChoices, branchSolarCalibrated],
   );
 
   const hasBranch = runB !== null;
@@ -388,11 +391,12 @@ export default function App() {
 
   const divergedStep = useMemo(() => {
     if (!rewoundChoices) return null;
+    if (baselineSolarCalibrated !== branchSolarCalibrated) return 1;
     for (let i = 0; i < baselineChoices.length; i++) {
       if (baselineChoices[i] !== rewoundChoices[i]) return i + 1;
     }
     return rewoundChoices.length > baselineChoices.length ? baselineChoices.length + 1 : null;
-  }, [baselineChoices, rewoundChoices]);
+  }, [baselineChoices, rewoundChoices, baselineSolarCalibrated, branchSolarCalibrated]);
 
   const runAChoiceLabel = useMemo(() => {
     if (divergedStep === null) return 'CHOICE A';
@@ -437,19 +441,24 @@ export default function App() {
     }
   }
 
-  function handleChoose(choiceIndex: number) {
+  function handleChoose(choiceIndex: number, solarCalibrated: boolean) {
     if (!canChoose) return;
 
     // Run B keeps the original plan for executed phases and can extend a rescued run.
     const nextChoices = activeChoices.slice();
     nextChoices[viewStep - 1] = choiceIndex;
-    const preview = runSimulation(nextChoices);
+    const preview = runSimulation(nextChoices, { solarCalibrated });
     const debriefStep = preview.steps[viewStep - 1];
     if (!debriefStep) return;
 
     soundFX.play(hasBranch ? 'rewind' : 'choice');
-    if (hasBranch) setRewoundChoices(nextChoices);
-    else setBaselineChoices(nextChoices);
+    if (hasBranch) {
+      setRewoundChoices(nextChoices);
+      setBranchSolarCalibrated(solarCalibrated);
+    } else {
+      setBaselineChoices(nextChoices);
+      setBaselineSolarCalibrated(solarCalibrated);
+    }
     setLastDebrief({
       step: debriefStep.step,
       choiceId: debriefStep.choiceId,
@@ -476,6 +485,7 @@ export default function App() {
     if (runA.complete && !rewoundChoices) {
       soundFX.play('rewind');
       setRewoundChoices([...baselineChoices]);
+      setBranchSolarCalibrated(baselineSolarCalibrated);
     }
   }
 
@@ -500,6 +510,8 @@ export default function App() {
     soundFX.play('StepNav');
     resetFieldwork();
     setBaselineChoices([]);
+    setBaselineSolarCalibrated(false);
+    setBranchSolarCalibrated(false);
     setRewoundChoices(null);
     setDemoStage(null);
     setViewStep(1);
@@ -533,6 +545,8 @@ export default function App() {
   function handleAdvanceTour(stage: DemoStage) {
     soundFX.play('tourChime');
     if (stage !== 'rewind') setRewoundChoices(null);
+    setBaselineSolarCalibrated(false);
+    setBranchSolarCalibrated(false);
     if (stage === 'setup') {
       setBaselineChoices(MISSION_DEMO.baseline.slice(0, 2));
       setViewStep(MISSION_DEMO.rewindStep);
@@ -561,6 +575,7 @@ export default function App() {
     if (!runB || !rewoundChoices) return;
     soundFX.play('choice');
     setBaselineChoices(rewoundChoices);
+    setBaselineSolarCalibrated(branchSolarCalibrated);
     setRewoundChoices(null);
     setViewStep(Math.min(viewStep, runB.steps.length + (runB.complete ? 0 : 1)));
   }
@@ -569,11 +584,14 @@ export default function App() {
     (station: StationNode) => {
       if (station.decisionId > lastAvailableStep) return;
       soundFX.play('hotspot');
-      if (runA.complete && !hasBranch) setRewoundChoices([...baselineChoices]);
+      if (runA.complete && !hasBranch) {
+        setRewoundChoices([...baselineChoices]);
+        setBranchSolarCalibrated(baselineSolarCalibrated);
+      }
       setViewStep(station.decisionId);
       setDecisionModalOpen(true);
     },
-    [lastAvailableStep, runA.complete, hasBranch, baselineChoices],
+    [lastAvailableStep, runA.complete, hasBranch, baselineChoices, baselineSolarCalibrated],
   );
 
   const handleNavigateFromMap = useCallback((station: StationNode, instant: boolean) => {
@@ -656,7 +674,7 @@ export default function App() {
   const worldSnapshot = useMemo(
     () => ({
       energyPercent: currentMetrics.powerKwh,
-      powerLow: currentMetrics.powerKwh < 20,
+      powerLow: currentMetrics.powerKwh < GAME_CONSTANTS.brownoutThresholdKwh,
       lifeSupportLow: currentMetrics.lifeSupportPct < 40,
       activeStep: viewStep,
       completedCount: completedPhases,
@@ -694,6 +712,16 @@ export default function App() {
     Math.round(Math.hypot(activeStation.x - position.x, activeStation.y - position.y) / 6),
   );
   const tierMeta = TIER_BADGES[currentTier];
+
+  const stationExercise = (
+    <StationTaskMiniGame
+      step={viewStep}
+      lang={lang}
+      completed={calibratedTasks[viewStep - 1]}
+      minedCount={minedCount}
+      onComplete={handleCalibrateTask}
+    />
+  );
 
   return (
     <div className="app-shell">
@@ -736,7 +764,7 @@ export default function App() {
         </div>
 
         <nav className="topbar-actions" aria-label="Mission controls">
-          {/* Executive Judge 60-Second Guided Tour */}
+          {/* Guided judge demo */}
           <button
             type="button"
             className="text-button text-button--tour"
@@ -1156,7 +1184,7 @@ export default function App() {
                 type="button"
                 onClick={() => setLastDebrief(null)}
                 className="text-slate-400 hover:text-white"
-                aria-label="Close debrief toast"
+                aria-label={t('close')}
               >
                 <X size={13} />
               </button>
@@ -1164,20 +1192,21 @@ export default function App() {
             <div className="mt-1.5 flex flex-wrap items-center gap-3 font-mono text-[11px]">
               <span className="text-amber-200">
                 {t('power')}: {signed(lastDebrief.delta.powerKwh)} {t('unitKwh')}
+                {' · '}{fmt(lastDebrief.after.powerKwh)} {t('unitKwh')} {lang === 'az' ? 'qalıb' : 'left'}
               </span>
               <span className="text-emerald-200">
-                {t('lifeSupport')}: {signed(lastDebrief.delta.lifeSupportPct)}%
+                {t('lifeSupport')}: {signed(lastDebrief.delta.lifeSupportPct)} {lang === 'az' ? 'faiz b.' : 'pp'}
               </span>
               <span className="text-rose-200">
-                {t('radiation')}: +{fmt(lastDebrief.delta.radiationMsv)} {t('unitMsv')}
+                {t('radiation')}: {signed(lastDebrief.delta.radiationMsv)} {t('unitMsv')}
               </span>
               <span className="text-purple-200">
-                {t('science')}: +{fmt(lastDebrief.delta.sciencePoints)}
+                {t('science')}: {signed(lastDebrief.delta.sciencePoints)} {t('unitPts')}
               </span>
             </div>
             {lastDebrief.rules.length > 0 && (
               <div className="mt-1 text-[10px] font-mono text-amber-300">
-                ⚠️ {lang === 'az' ? 'Uçuş Qaydası:' : 'Flight Rules:'} {lastDebrief.rules.join(', ')}
+                ⚠️ {lang === 'az' ? 'Uçuş Qaydası:' : 'Flight Rules:'} {lastDebrief.rules.map((rule) => tr(RULE_LABELS[rule])).join(' · ')}
               </div>
             )}
           </div>
@@ -1235,6 +1264,25 @@ export default function App() {
               ? t('timelineHintComplete')
               : tr(activeStation.objectiveBody)}
           </p>
+
+          <div
+            role="status"
+            className={`mt-2 inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs ${
+              worldSnapshot.powerLow
+                ? 'border-amber-300/40 bg-amber-950/70 text-amber-100'
+                : 'border-emerald-300/25 bg-emerald-950/30 text-emerald-100'
+            }`}
+          >
+            <Zap size={12} aria-hidden="true" />
+            {worldSnapshot.powerLow
+              ? lang === 'az' ? 'Aşağı enerji ehtiyatı' : 'Low battery reserve'
+              : lang === 'az' ? 'Normal enerji ehtiyatı' : 'Normal battery reserve'}
+            {worldSnapshot.powerLow && (
+              <span className="font-mono">
+                {fmt(currentMetrics.powerKwh)} {t('unitKwh')}
+              </span>
+            )}
+          </div>
 
           {/* Quick Action Navigation & Direct Console Trigger Buttons */}
           {!runA.complete && (
@@ -1666,6 +1714,9 @@ export default function App() {
               record={activeRecord}
               flagsBefore={flagsBefore}
               priorChoices={activeChoices}
+              solarCalibrated={activeRun.solarCalibrated}
+              solarCalibrationAvailable={calibratedTasks[0]}
+              solarExercise={viewStep === 1 ? stationExercise : undefined}
               canChoose={canChoose}
               onChoose={handleChoose}
               onPrev={() => setViewStep((s) => Math.max(1, s - 1))}
@@ -1679,15 +1730,7 @@ export default function App() {
               }}
             />
 
-            <div className="mt-3.5">
-              <StationTaskMiniGame
-                step={viewStep}
-                lang={lang}
-                completed={calibratedTasks[viewStep - 1]}
-                minedCount={minedCount}
-                onComplete={handleCalibrateTask}
-              />
-            </div>
+            {viewStep !== 1 && <div className="mt-3.5">{stationExercise}</div>}
           </div>
         </div>
       )}
@@ -1784,7 +1827,8 @@ export default function App() {
                   const stepNum = d.id;
                   const cA = baselineChoices[idx];
                   const cB = rewoundChoices?.[idx];
-                  const changed = hasBranch && cB !== undefined && cA !== cB;
+                  const calibrationChanged = stepNum === 1 && runB?.solarCalibrated !== runA.solarCalibrated;
+                  const changed = hasBranch && cB !== undefined && (cA !== cB || calibrationChanged);
                   const active = viewStep === stepNum;
                   const unlocked = stepNum <= lastAvailableStep;
 
@@ -1807,10 +1851,13 @@ export default function App() {
                       }`}
                     >
                       <span className="font-mono text-[10px] text-[#9eb6b5]">D{stepNum}</span>
-                      <strong className="mt-0.5 line-clamp-1 font-medium">{tr(d.title)}</strong>
+                      <strong className="mt-0.5 line-clamp-2 font-medium">{tr(d.title)}</strong>
                       <span className="mt-1.5 font-mono text-[10px] text-[#c0e6aa]">
                         {cA !== undefined ? `A: ${CHOICE_LETTERS[cA]}` : '—'}
                         {cB !== undefined ? ` → B: ${CHOICE_LETTERS[cB]}` : ''}
+                        {changed && calibrationChanged && (
+                          <span className="block">{lang === 'az' ? 'Kalibrləmə dəyişdi' : 'Calibration changed'}</span>
+                        )}
                       </span>
                     </button>
                   );
@@ -1910,6 +1957,7 @@ export default function App() {
           stage={demoStage}
           baseline={runA}
           onAdvance={() => handleAdvanceTour(demoStage)}
+          onOpenScience={() => setSensorDeckOpen(true)}
           onClose={() => setDemoStage(null)}
         />
       )}
