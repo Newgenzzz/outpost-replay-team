@@ -28,6 +28,7 @@ import {
   type StepRecord,
 } from '../engine/simulation';
 import type { Bilingual, FlagId, MetricDelta } from '../types';
+import LunarSiteIntelligence from './LunarSiteIntelligence';
 import { CHOICE_LETTERS, METRICS, deltaTone, fmt, signed } from './metricMeta';
 
 const CREW_ADVISORY: Record<number, { speaker: Bilingual; tip: Bilingual }> = {
@@ -234,6 +235,8 @@ export default function DecisionCard(props: DecisionCardProps) {
       </div>
 
       <p className="text-sm leading-relaxed text-slate-300">{tr(decision.context)}</p>
+
+      {step === 1 && <LunarSiteIntelligence />}
 
       {trigger && (
         <div

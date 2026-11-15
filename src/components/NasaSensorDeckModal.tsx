@@ -26,6 +26,7 @@ import {
   SEP_STORM_DOSE_UNSHIELDED_MSV,
   TALL_MAST_SHADOW_OUTPUT_FACTOR,
 } from '../data/nasaTelemetry';
+import LunarSiteIntelligence from './LunarSiteIntelligence';
 
 interface NasaSensorDeckModalProps {
   onClose: () => void;
@@ -212,6 +213,8 @@ export function NasaSensorDeckModal({ onClose }: NasaSensorDeckModalProps) {
             <p className="mt-1.5 text-xs leading-relaxed text-slate-200">{model}</p>
           </section>
         </div>
+
+        {activeTab === 'lola' && <div className="mt-4"><LunarSiteIntelligence /></div>}
 
         {chart ? (
           <figure className="mt-4 rounded-xl border border-white/10 bg-slate-950/60 p-3">
