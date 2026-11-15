@@ -334,3 +334,78 @@ test('leaving a console cancels pending and current radio speech without muting 
   b.engine.play('choice'); assert.ok(b.contexts[0].oscillators.length > count);
   b.engine.dispose();
 });
+
+test('continuous rover motor scales smoothly with speed, avoids overlaps, and stops across lifecycle changes', () => {
+  const b = browser();
+  b.engine.setVolume('music', 0);
+  b.engine.setRoverMotor(0.6);
+  assert.equal(b.contexts.length, 0, 'rover motor must not unlock audio before a user gesture');
+
+  b.engine.unlock();
+  const ctx = b.contexts[0];
+  const effectBus = ctx.gains[2];
+  b.engine.setRoverMotor(0.25);
+  assert.equal(ctx.oscillators.length, 2);
+  const [lowOsc, highOsc] = ctx.oscillators;
+  const [lowGain, highGain, busGain] = ctx.gains.slice(3);
+  assert.deepEqual(busGain.connections, [effectBus]);
+  assert.equal(busGain.gain.events[0][1], 0, 'rover motor starts from silence');
+  const slowLowTarget = lowOsc.frequency.events.at(-1)[1];
+  const slowGainTarget = busGain.gain.events.at(-1)[1];
+
+  b.engine.setRoverMotor(0.85);
+  assert.equal(ctx.oscillators.length, 2, 'accelerating must reuse the single motor voice without overlap');
+  const fastLowTarget = lowOsc.frequency.events.at(-1)[1];
+  const fastHighTarget = highOsc.frequency.events.at(-1)[1];
+  const fastGainTarget = busGain.gain.events.at(-1)[1];
+  assert.ok(fastLowTarget > slowLowTarget);
+  assert.ok(fastHighTarget > highOsc.frequency.events[0][1]);
+  assert.ok(fastGainTarget > slowGainTarget);
+
+  b.engine.setRoverMotor(0.2);
+  assert.equal(ctx.oscillators.length, 2);
+  assert.ok(lowOsc.frequency.events.at(-1)[1] < fastLowTarget);
+  assert.ok(busGain.gain.events.at(-1)[1] < fastGainTarget);
+
+  b.engine.setRoverMotor(0);
+  assert.equal(b.timeouts.size, 1);
+  assert.equal(busGain.gain.events.some(([type, value]) => type === 'target' && value === 0), true);
+  b.advance(40);
+  assert.equal(lowOsc.disconnected, false, 'motor remains smooth during deceleration fade');
+  b.engine.setRoverMotor(0.5);
+  assert.equal(b.timeouts.size, 0, 're-accelerating mid-fade cancels pending stop timer');
+  assert.equal(ctx.oscillators.length, 2, 're-accelerating mid-fade reuses existing oscillators');
+
+  b.engine.setRoverMotor(0);
+  b.advance(110);
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+  assert.ok([lowGain, highGain, busGain].every((gain) => gain.disconnected));
+
+  b.engine.setRoverMotor(0.7);
+  assert.equal(ctx.oscillators.length, 4);
+  b.engine.setMuted(true);
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+  assert.equal(b.timeouts.size, 0);
+
+  b.engine.setMuted(false);
+  b.engine.setRoverMotor(0.7);
+  assert.equal(ctx.oscillators.length, 6);
+  b.engine.setVolume('effects', 0);
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+
+  b.engine.setVolume('effects', 0.75);
+  b.engine.setRoverMotor(0.7);
+  b.doc.hidden = true; b.doc.emit('visibilitychange');
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+  assert.equal(b.timeouts.size, 0);
+
+  b.doc.hidden = false; b.doc.emit('visibilitychange');
+  b.engine.setRoverMotor(0.6);
+  b.engine.stopRoverMotor(true);
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+
+  b.engine.setRoverMotor(0.6);
+  b.engine.dispose();
+  assert.ok(ctx.oscillators.every((osc) => osc.disconnected));
+  assert.equal(b.timeouts.size, 0);
+});

@@ -19,6 +19,14 @@ type BrowserHost = Window & {
   SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance;
 };
 type Voice = { oscillator: OscillatorNode; gain: GainNode; channel: 'music' | 'effects'; startAt: number };
+type RoverMotorVoice = {
+  lowOsc: OscillatorNode;
+  highOsc: OscillatorNode;
+  lowGain: GainNode;
+  highGain: GainNode;
+  busGain: GainNode;
+  speed: number;
+};
 
 export const AUDIO_PREFERENCES_KEY = 'outpost_audio_preferences_v1';
 const DEFAULTS: AudioPreferences = Object.freeze({ muted: false, master: 0.8, music: 0.5, effects: 0.75 });
@@ -61,6 +69,8 @@ export class SoundEngine {
   private speechTimers = new Set<number>();
   private utterance: SpeechSynthesisUtterance | null = null;
   private speechActive = false;
+  private roverMotor: RoverMotorVoice | null = null;
+  private roverStopTimer: number | null = null;
 
   constructor(
     private readonly host: BrowserHost | null = typeof window === 'undefined' ? null : window,
@@ -136,7 +146,10 @@ export class SoundEngine {
     if (this.preferences.master === 0) this.silence();
     else {
       if (this.preferences.music === 0) this.stopMusic();
-      if (this.preferences.effects === 0) this.stopVoices('effects');
+      if (this.preferences.effects === 0) {
+        this.stopVoices('effects');
+        this.stopRoverMotor(true);
+      }
       this.updateLevels();
       if (this.unlocked) this.unlock();
     }
@@ -215,6 +228,7 @@ export class SoundEngine {
   private silence(): void {
     this.stopMusic();
     this.stopVoices('effects');
+    this.stopRoverMotor(true);
     this.cancelSpeech();
     this.recentEffects.clear();
     this.updateLevels(true);
@@ -305,6 +319,128 @@ export class SoundEngine {
           'music', offset, 'triangle', undefined, 0.025);
       }
       this.nextBeat += score.beat;
+    }
+  }
+
+  /** Continuous structure-borne electric motor vibration for driving the pressurized rover. */
+  public setRoverMotor(speedRatio: number): void {
+    const target = Number.isFinite(speedRatio) ? clamp(speedRatio) : 0;
+    if (!this.canUse('effects') || !this.ctx) {
+      this.stopRoverMotor(true);
+      return;
+    }
+    if (target <= 0.01) {
+      if (this.roverMotor && this.ctx.state === 'running' && this.host) {
+        this.roverMotor.speed = 0;
+        if (this.roverStopTimer === null) {
+          const now = this.ctx.currentTime;
+          holdLevel(this.roverMotor.busGain.gain, now);
+          this.roverMotor.busGain.gain.setTargetAtTime(0, now, 0.024);
+          this.roverMotor.busGain.gain.setValueAtTime(0, now + 0.09);
+          holdLevel(this.roverMotor.lowOsc.frequency, now);
+          this.roverMotor.lowOsc.frequency.setTargetAtTime(54, now, 0.035);
+          holdLevel(this.roverMotor.highOsc.frequency, now);
+          this.roverMotor.highOsc.frequency.setTargetAtTime(108, now, 0.035);
+          this.roverStopTimer = this.host.setTimeout(() => {
+            this.roverStopTimer = null;
+            this.stopRoverMotor(true);
+          }, 95);
+        }
+      } else if (this.roverMotor) {
+        this.stopRoverMotor(true);
+      }
+      return;
+    }
+
+    if (this.roverStopTimer !== null) {
+      this.host?.clearTimeout(this.roverStopTimer);
+      this.roverStopTimer = null;
+    }
+    const bus = this.effectsBus;
+    if (!bus) {
+      this.stopRoverMotor(true);
+      return;
+    }
+    const now = this.ctx.currentTime;
+    if (!this.roverMotor) {
+      let lowOsc: OscillatorNode | null = null;
+      let highOsc: OscillatorNode | null = null;
+      let lowGain: GainNode | null = null;
+      let highGain: GainNode | null = null;
+      let busGain: GainNode | null = null;
+      try {
+        lowOsc = this.ctx.createOscillator();
+        highOsc = this.ctx.createOscillator();
+        lowGain = this.ctx.createGain();
+        highGain = this.ctx.createGain();
+        busGain = this.ctx.createGain();
+        lowOsc.type = 'sine';
+        highOsc.type = 'triangle';
+        lowOsc.frequency.setValueAtTime(56, now);
+        highOsc.frequency.setValueAtTime(112, now);
+        lowGain.gain.setValueAtTime(0.7, now);
+        highGain.gain.setValueAtTime(0.24, now);
+        busGain.gain.setValueAtTime(0, now);
+        lowOsc.connect(lowGain);
+        highOsc.connect(highGain);
+        lowGain.connect(busGain);
+        highGain.connect(busGain);
+        busGain.connect(bus);
+        lowOsc.start(now);
+        highOsc.start(now);
+        this.roverMotor = { lowOsc, highOsc, lowGain, highGain, busGain, speed: 0 };
+      } catch {
+        for (const osc of [lowOsc, highOsc]) {
+          try { osc?.stop(); } catch { /* Ignore partial oscillator setup error. */ }
+          try { osc?.disconnect(); } catch { /* Ignore partial disconnect. */ }
+        }
+        for (const gain of [lowGain, highGain, busGain]) {
+          try { gain?.disconnect(); } catch { /* Ignore partial disconnect. */ }
+        }
+        return;
+      }
+    }
+
+    const accelerating = target >= this.roverMotor.speed;
+    this.roverMotor.speed = target;
+    const tau = accelerating ? 0.042 : 0.055;
+    const lowFreq = 56 + 38 * target;
+    const highFreq = 112 + 88 * target;
+    const harmonicGain = 0.22 + 0.14 * target;
+    const level = 0.008 + 0.026 * (target ** 0.85);
+    holdLevel(this.roverMotor.lowOsc.frequency, now);
+    this.roverMotor.lowOsc.frequency.setTargetAtTime(lowFreq, now, tau);
+    holdLevel(this.roverMotor.highOsc.frequency, now);
+    this.roverMotor.highOsc.frequency.setTargetAtTime(highFreq, now, tau);
+    holdLevel(this.roverMotor.highGain.gain, now);
+    this.roverMotor.highGain.gain.setTargetAtTime(harmonicGain, now, tau);
+    holdLevel(this.roverMotor.busGain.gain, now);
+    this.roverMotor.busGain.gain.setTargetAtTime(level, now, tau);
+  }
+
+  public stopRoverMotor(immediate = true): void {
+    if (!immediate && this.roverMotor && this.canUse('effects') && this.ctx?.state === 'running') {
+      this.setRoverMotor(0);
+      return;
+    }
+    if (this.roverStopTimer !== null) {
+      this.host?.clearTimeout(this.roverStopTimer);
+      this.roverStopTimer = null;
+    }
+    const motor = this.roverMotor;
+    if (!motor) return;
+    this.roverMotor = null;
+    if (this.ctx) {
+      const now = this.ctx.currentTime;
+      holdLevel(motor.busGain.gain, now);
+      motor.busGain.gain.setValueAtTime(0, now);
+    }
+    for (const osc of [motor.lowOsc, motor.highOsc]) {
+      try { osc.stop(); } catch { /* Already stopped. */ }
+      try { osc.disconnect(); } catch { /* Detached graph. */ }
+    }
+    for (const gain of [motor.lowGain, motor.highGain, motor.busGain]) {
+      try { gain.disconnect(); } catch { /* Detached graph. */ }
     }
   }
 

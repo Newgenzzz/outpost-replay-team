@@ -151,6 +151,7 @@ export class LunarWorld extends Phaser.Scene {
   private wheelTravel = 0;
   private reportAt = 0;
   private stepSoundAt = 0;
+  private roverMotorSpeed = 0;
   private lastSnapshot: WorldBridge['snapshot'] | null = null;
   private lastPaused = true;
   private wasControllingRover = false;
@@ -614,6 +615,7 @@ export class LunarWorld extends Phaser.Scene {
     this.scale.on('resize', this.resizeCamera, this);
 
     this.events.once('shutdown', () => {
+      soundFX.stopRoverMotor(true);
       this.input.keyboard?.removeAllKeys(true);
       this.scale.off('resize', this.resizeCamera, this);
     });
@@ -1255,6 +1257,8 @@ export class LunarWorld extends Phaser.Scene {
       this.heading = { x: 0, y: 1 };
       this.walkPace = 0;
       this.wheelTravel = 0;
+      this.roverMotorSpeed = 0;
+      soundFX.stopRoverMotor(true);
       b.drillHeld = false;
       b.resetRequested = false;
     }
@@ -1283,6 +1287,8 @@ export class LunarWorld extends Phaser.Scene {
         this.lastTrackPos = { x: this.carSprite.x, y: this.carSprite.y };
         this.wheelTravel = 0;
       } else {
+        this.roverMotorSpeed = 0;
+        soundFX.stopRoverMotor(false);
         this.carSprite.setTexture('lunar-car');
         this.carSprite.setVelocity(0, 0);
         (this.carSprite.body as Phaser.Physics.Arcade.Body).setImmovable(true);
@@ -1334,6 +1340,8 @@ export class LunarWorld extends Phaser.Scene {
     const paused = b.paused || document.hidden;
     if (paused !== this.lastPaused) {
       if (paused) {
+        this.roverMotorSpeed = 0;
+        soundFX.stopRoverMotor(true);
         this.input.keyboard?.resetKeys();
         b.direction = { x: 0, y: 0 };
         b.nudgeUntil = 0;
@@ -1439,12 +1447,28 @@ export class LunarWorld extends Phaser.Scene {
             size: 6.5,
           });
         }
-        if (!paused && time > this.stepSoundAt) {
-          soundFX.play('roverMotor');
-          this.stepSoundAt = time + 240;
-        }
+      }
+      if (paused) {
+        this.roverMotorSpeed = 0;
+        soundFX.stopRoverMotor(true);
+      } else {
+        const velocitySpeed = Math.hypot(carBody.velocity.x, carBody.velocity.y);
+        const displacedSpeed = dtSec > 0 && this.roverMotorSpeed > 0.06
+          ? Math.min(velocitySpeed, travel / dtSec)
+          : velocitySpeed;
+        const targetRatio = displacedSpeed < 8
+          ? 0
+          : Phaser.Math.Clamp(displacedSpeed / WORLD.roverSpeed, 0, 1);
+        const smoothing = 1 - Math.exp(-dtSec * (targetRatio > this.roverMotorSpeed ? 11 : 9));
+        this.roverMotorSpeed = Phaser.Math.Linear(this.roverMotorSpeed, targetRatio, smoothing);
+        if (targetRatio === 0 && this.roverMotorSpeed < 0.015) this.roverMotorSpeed = 0;
+        soundFX.setRoverMotor(this.roverMotorSpeed);
       }
     } else {
+      if (this.roverMotorSpeed > 0) {
+        this.roverMotorSpeed = 0;
+        soundFX.stopRoverMotor(false);
+      }
       const body = this.player.body as Phaser.Physics.Arcade.Body;
       this.player.setVelocity(
         paused ? 0 : Phaser.Math.Linear(body.velocity.x, movement.x, easing),
