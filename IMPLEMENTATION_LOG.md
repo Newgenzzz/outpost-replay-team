@@ -30,3 +30,10 @@ Work took place in the existing `outpost-replay-practice` copy. The supplied dir
 - Field exploration exercises have their own progress. Time and reserves advance when an engineering choice is applied.
 - The practice copy includes older, inactive world and interface components. They were retained to preserve existing project material.
 - Phaser remains the largest production chunk. Further bundle-size work can be evaluated against startup performance on classroom hardware.
+
+## Recovered scientific and licensing corrections
+
+- Preserved the practice copy's pre-edit Git checkpoint `fd05999`. The repository has no configured remote.
+- Recovered and reviewed the fictional rim location labels, the separation of Earth-orbit GOES data from the training dose model, and the Apache-2.0 proposal in `ATTRIBUTION.md`. In the previous session, Chromium displayed the updated science labels and reproduced the guided D3 comparison. The approval review stopped the final combined log-write and Git check. This entry restores the missing log.
+- Re-ran `npm run typecheck`, all nine existing tests, and `npm run build` against the recovered working copy. All passed. Vite reported the existing Phaser bundle-size warning.
+- Rights-holder approval for the project license and provenance for inherited artwork remain pending.

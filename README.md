@@ -38,3 +38,5 @@ npm run preview   # serve the production build locally
 Allow about two minutes to talk through the three steps. **Load Demo Preset** opens the finished comparison directly.
 
 See [SPEC.md](SPEC.md) for implementation details, [NASA_SCIENCE.md](NASA_SCIENCE.md) for source provenance, and [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) for completed work and verification.
+
+The setting is a fictional outpost near Shackleton’s rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the proposed license awaiting team approval.

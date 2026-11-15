@@ -13,6 +13,8 @@ import { Database, Droplet, ExternalLink, HeartPulse, Snowflake, SunDim, X, Zap 
 import { useI18n } from '../i18n/LanguageContext';
 import {
   CITATIONS,
+  DOSE_COEFF_MSV_PER_HR_PER_PFU,
+  SHIELDING,
   ECLSS_BASELINES,
   LCROSS_CABEUS,
   LRO_PROFILE,
@@ -130,11 +132,11 @@ export function NasaSensorDeckModal({ onClose }: NasaSensorDeckModalProps) {
       ? 'Təlimdə Kabeus göstəricisi ssenaridəki buzlu qrunt nümunəsinə tətbiq edilir. Çıxarılan suyun miqdarı emal edilən kütlədən, buz payından və emalın səmərəliliyindən asılıdır.'
       : 'The exercise applies the Cabeus estimate to a fictional batch of icy soil. Water yield depends on how much material is processed, its ice fraction, and the recovery efficiency.',
     donki: az
-      ? `48 saatlıq təlim əyrisi tarixi pik dəyərindən istifadə edir. Əyrinin vaxtı və forması ssenariyə aiddir. Oyun əmsalı tam məruzqalma üçün təxminən ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv verir. Həqiqi doza spektrdən, qalxanın materialı və həndəsəsindən asılıdır.`
-      : `The 48-hour training curve uses the historical peak and a scripted timeline and shape. The game’s scaling gives about ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv for full exposure. Real dose depends on the particle spectrum, shield material, and geometry.`,
+      ? `Ay üçün 48 saatlıq uydurma fırtına Yer yaxınlığında ölçülmüş pik dəyərindən istifadə edir. ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·saat⁻¹·pfu⁻¹ təlim əmsalı ilə tam məruzqalma təxminən ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv hesablanır (fon xaric). Modeldə dozanın keçən payı skafandr üçün ${SHIELDING.evaSuit * 100}%, yaşayış modulu üçün ${SHIELDING.habitat * 100}%, su divarı üçün ${SHIELDING.waterWall * 100}%, reqolit səddi üçün ${SHIELDING.regolithBerm * 100}%-dir. Həqiqi dozanı proqnozlaşdırmaq üçün zərrəciklərin spektri və radiasiyanın materialda yayılması hesablanmalıdır.`
+      : `The fictional 48-hour lunar storm borrows the observed near-Earth peak. Its classroom scale of ${DOSE_COEFF_MSV_PER_HR_PER_PFU} mSv·h⁻¹·pfu⁻¹ gives about ${SEP_STORM_DOSE_UNSHIELDED_MSV} mSv for full exposure before background. Assumed transmission is ${SHIELDING.evaSuit * 100}% in a suit, ${SHIELDING.habitat * 100}% in the habitat, ${SHIELDING.waterWall * 100}% behind a water wall, and ${SHIELDING.regolithBerm * 100}% behind a berm. Predicting real crew dose requires particle spectra and radiation transport through the actual shielding.`,
     bvad: az
-      ? `Missiyada oksigen tələbi iki ekipaj üzvü üçün gündə ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kq-dır. Bazanın su emalı ssenariyə görə dəyişir. Oyunda doza xəbərdarlığı ${RADIATION_LIMITS.missionWarningMsv} mSv-dir. NASA-nın karyera limiti ${RADIATION_LIMITS.careerLimitMsv} mSv-dir.`
-      : `Mission oxygen demand is ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kg/day for two crew. Outpost water recovery varies by scenario. The game uses a ${RADIATION_LIMITS.missionWarningMsv} mSv warning. NASA’s career limit is ${RADIATION_LIMITS.careerLimitMsv} mSv.`,
+      ? `Missiyada oksigen tələbi iki ekipaj üzvü üçün gündə ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kq-dır. Bazanın su emalı ssenariyə görə dəyişir. Oyunda təlim xəbərdarlığı ${RADIATION_LIMITS.missionWarningMsv} mSv-dir. NASA-STD-3001 ayrıca ${RADIATION_LIMITS.careerLimitMsv} mSv karyera üzrə effektiv doza həddi müəyyən edir.`
+      : `Mission oxygen demand is ${2 * ECLSS_BASELINES.o2KgPerCrewDay} kg/day for two crew. Outpost water recovery varies by scenario. The game uses a ${RADIATION_LIMITS.missionWarningMsv} mSv training warning. NASA-STD-3001 sets a separate ${RADIATION_LIMITS.careerLimitMsv} mSv career effective-dose limit.`,
   }[activeTab];
 
   return (

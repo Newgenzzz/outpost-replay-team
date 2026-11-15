@@ -381,7 +381,7 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `The model groups outside operations into the first storm day, then shelters the crew in the habitat. This can return +18 science with about ${STORM_DOSES.finishEva} mSv of modeled storm dose. Check your cumulative dose against the mission warning.`,
           az: `Model çöldəki işləri fırtınanın ilk gününə toplayır, sonra ekipaj yaşayış moduluna keçir. Bu, təxminən ${STORM_DOSES.finishEva} mSv model fırtına dozası ilə +18 elm xalı verə bilər. Toplam dozanı missiyanın xəbərdarlıq həddi ilə müqayisə edin.`,
         },
-        nasaSourceCitation: 'NASA DONKI SEP 2024-05-11 (AR 13664, X5.8); GOES ≥10 MeV proton flux; NASA-STD-3001 Vol. 1',
+        nasaSourceCitation: 'NASA CCMC DONKI and NOAA SWPC PRF 2541 — May 10, 2024 GOES event near Earth',
         riskLevel: 'critical',
         copilotTip: {
           en: 'Waiting to shelter raises cumulative exposure. The warning depends on earlier decisions as well as the storm.',
@@ -397,7 +397,7 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `The habitat walls pass about ${pct(SHIELDING.habitat)} % of the storm dose (≈ ${STORM_DOSES.habitat} mSv). Two days indoors slightly strain the air and water systems (−2 %), and only lab work continues (+4 science).`,
           az: `Yaşayış modulunun divarları fırtına dozasının təxminən ${pct(SHIELDING.habitat)} %-ni keçirir (≈ ${STORM_DOSES.habitat} mSv). İki gün içəridə qalmaq hava və su sistemlərinə bir qədər yük salır (−2 %), yalnız laboratoriya işi davam edir (+4 elm).`,
         },
-        nasaSourceCitation: 'NASA DONKI SEP 2024-05-11; habitat transmission factor 0.25 is a game simplification',
+        nasaSourceCitation: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; habitat transmission factor 0.25 is a game simplification',
         riskLevel: 'moderate',
         copilotTip: {
           en: `The habitat offers moderate modeled protection (~${STORM_DOSES.habitat} mSv storm dose).`,
@@ -423,7 +423,7 @@ export const MISSION_DECISIONS: Decision[] = [
           en: `Without a berm, the crew stacks water containers into an improvised wall (${pct(SHIELDING.waterWall)} % transmission ≈ ${STORM_DOSES.waterWall} mSv), which costs pump power (−5 kWh) and disturbs the water system (−5 %). If you built the regolith berm at Decision 2, the shelter lets through only ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) at no extra cost.`,
           az: `Sədd olmadıqda ekipaj su qablarından müvəqqəti divar düzəldir (${pct(SHIELDING.waterWall)} % keçiricilik ≈ ${STORM_DOSES.waterWall} mSv), bu da nasos enerjisi (−5 kVt·saat) tələb edir və su sistemini pozur (−5 %). 2-ci qərarda reqolit səddini tikmisinizsə, sığınacaq yalnız ${pct(SHIELDING.regolithBerm)} % (≈ ${STORM_DOSES.berm} mSv) keçirir və əlavə xərc tələb etmir.`,
         },
-        nasaSourceCitation: 'NASA DONKI SEP 2024-05-11; Schwadron et al. 2012 (LRO/CRaTER); shielding factors are game simplifications',
+        nasaSourceCitation: 'NOAA SWPC PRF 2541 — May 10, 2024 GOES peak; shielding factors are game simplifications',
         copilotRecommendation: true,
         riskLevel: 'safe',
         copilotBadge: { en: 'CapCom Recommended (Safe Bunker)', az: 'CapCom Tövsiyəsi (Təhlükəsiz Sığınacaq)' },

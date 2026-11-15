@@ -118,8 +118,8 @@ export const MISSION_STATIONS: StationMeta[] = [
     code: 'D5 · STORM BUNKER',
     name: { en: 'Water-Wall & Regolith Radiation Shelter', az: 'Su Divarı və Reqolit Radiasiya Sığınacağı' },
     actionHint: {
-      en: 'DONKI 205 pfu Storm Incoming! Rush to Storm Bunker (13,7) & press [E]',
-      az: 'DONKI 205 pfu Fırtınası Gəlir! Fırtına Sığınacağına (13,7) tələsin və [E] basın',
+      en: 'Training particle storm incoming! Rush to Storm Bunker (13,7) & press [E]',
+      az: 'Təlim zərrəcik fırtınası yaxınlaşır! Fırtına Sığınacağına (13,7) tələsin və [E] basın',
     },
     color: '#f43f5e',
   },

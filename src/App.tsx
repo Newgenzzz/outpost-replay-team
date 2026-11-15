@@ -70,7 +70,7 @@ import { useI18n } from './i18n/LanguageContext';
 import { runSimulation, type RuleId } from './engine/simulation';
 import type { MetricState } from './types';
 import { DECISION_COUNT, MISSION_DECISIONS, MISSION_DEMO } from './data/missionDecisions';
-import { RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE } from './data/nasaTelemetry';
+import { RADIATION_LIMITS, SEP_PEAK_FLUX_PFU, LRO_PROFILE, TRAINING_SITE } from './data/nasaTelemetry';
 import { soundFX } from './utils/soundEffects';
 
 const TIER_BADGES: Record<ElevationTier, { en: string; az: string; tone: string }> = {
@@ -1845,7 +1845,7 @@ export default function App() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[#c0e6aa]">
-                  SHACKLETON CRATER RIM · 89.67° S, 129.78° E
+                  {tr(TRAINING_SITE.name)}
                 </span>
                 <h2 className="mt-1 text-xl font-semibold text-[#e5eae4]">
                   {t('briefingTitle')}

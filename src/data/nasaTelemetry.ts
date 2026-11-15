@@ -99,11 +99,9 @@ export const CITATIONS: Record<string, Citation> = {
 /* Published lunar results and the scripted Shackleton rim scenario    */
 /* ------------------------------------------------------------------ */
 
-export const LRO_SITE = {
-  name: { en: 'Shackleton Crater Rim', az: 'Şeklton Krateri Kənarı' } as Bilingual,
-  latitudeDeg: -89.67,
-  longitudeDeg: 129.78,
-  coordinateLabel: '89.67° S, 129.78° E',
+/** Fictional training setting near the rim. The published crater center is documented separately. */
+export const TRAINING_SITE = {
+  name: { en: 'Fictional outpost near Shackleton’s rim', az: 'Şeklton kənarı yaxınlığında uydurma baza' } as Bilingual,
 };
 
 export const LUNAR_RESEARCH = {
@@ -191,12 +189,11 @@ export const MAY_2024_PROTON_EVENT = {
 };
 
 /**
- * Gameplay scaling from ≥10 MeV integral flux to a suit dose estimate.
- * Real dose depends on the particle spectrum and shielding geometry.
+ * Classroom scaling for the scripted flux curve. It has no radiation-transport calibration.
  */
 export const DOSE_COEFF_MSV_PER_HR_PER_PFU = 0.015;
 
-/** Radiation transmission factors (fraction of unshielded dose received). SIMPLIFIED. */
+/** Assumed fractions of the training storm dose for each shielding option. */
 export const SHIELDING = {
   evaSuit: 1.0,
   habitat: 0.25,
