@@ -1,6 +1,15 @@
 # Cloudflare Pages Direct Upload · OUTPOST REPLAY
 
-Prepared 15 November 2026. **Instructions only: no project has been created or uploaded.** Publication still needs the team's authorization and the submission blockers in [the release review](RELEASE_CANDIDATE_2026-11-15.md) resolved.
+Prepared 15 November 2026.
+
+> [!WARNING]
+> **Instructions only: no project has been created or uploaded.** Publication still needs the team's authorization and the submission blockers in [the release review](RELEASE_CANDIDATE_2026-11-15.md) resolved.
+
+## Contents
+
+- [The artifact to use](#the-artifact-to-use)
+- [Upload after authorization](#upload-after-authorization)
+- [Verify the actual public host before submission](#verify-the-actual-public-host-before-submission)
 
 ## The artifact to use
 

@@ -2,6 +2,25 @@
 
 Outpost Replay runs a fictional nine-day exercise near the rim of Shackleton crater. The game bundles selected published values and a scripted scenario in `src/data/nasaTelemetry.ts`. Gameplay runs offline; the optional DONKI flare catalog requires network access. The science panel separates published observations, estimates derived from observations, engineering references, and training assumptions.
 
+> [!NOTE]
+> **This is the source ledger for a classroom model.** It documents which values are published, which are derived, and which are training assumptions. It is not a validated lunar mission simulator or an astronaut exposure forecast.
+
+## Contents
+
+- [Scientific boundaries verified for M1 · 8 November 2026](#scientific-boundaries-verified-for-m1--8-november-2026)
+- [Published values](#published-values)
+- [Lunar Site Intelligence](#lunar-site-intelligence)
+- [Training assumptions](#training-assumptions)
+- [Where to verify](#where-to-verify)
+- [M3 engineering accounting clarification](#m3-engineering-accounting-clarification)
+- [M6 release wording review](#m6-release-wording-review)
+- [Visual relief presentation · 9 November 2026](#visual-relief-presentation--9-november-2026)
+- [Independent final science audit · 9 November 2026](#independent-final-science-audit--9-november-2026)
+- [Focused mast-height lesson · 9 November 2026](#focused-mast-height-lesson--9-november-2026)
+- [Event follow-up · 14 November 2026 · horizon illustration](#event-follow-up--14-november-2026--horizon-illustration)
+- [Independent audit follow-up · 14 November 2026 · crop evidence and rule wording](#independent-audit-follow-up--14-november-2026--crop-evidence-and-rule-wording)
+- [Source-to-Feature Map & D5 DONKI Evidence-to-Decision Chain · 15 November 2026](#source-to-feature-map--d5-donki-evidence-to-decision-chain--15-november-2026)
+
 ## Scientific boundaries verified for M1 · 8 November 2026
 
 ### Procedural 3D illustration versus NASA terrain
@@ -106,7 +125,7 @@ The mission imports **manually transcribed reference scalars**, not raw NASA ins
 | Surface temperature / `src/data/nasaTelemetry.ts` | Paige abstract confirms estimated 38 K subsurface conditions at LCROSS's Cabeus impact site. [Author paper record](https://authors.library.caltech.edu/records/d4acs-jm175), [USGS abstract](https://www.usgs.gov/publications/diviner-lunar-radiometer-observations-cold-traps-moons-south-polar-region). | Paper PDF timed out; abstract verified. The game's 218→90 K curve, 72 h event and linear heater load are assumptions, not Diviner time-series data or a thermal solution. |
 | Space weather / `src/data/nasaSpaceWeather.ts` | [NOAA PRF2541 p.1](https://www.ngdc.noaa.gov/stp/space-weather/swpc-products/weekly_reports/PRFs_of_SGD/2024/05/prf2541.pdf) freshly confirms 207 pfu at 17:45 UTC May 10, 2024 and X3.9 association. [DONKI](https://ccmc.gsfc.nasa.gov/tools/DONKI/) distinguishes FLR/SEP and states research/prototyping scope. | NOAA observation near Earth, not NASA lunar telemetry. Shape/timing of game pulse are fictional. 840/18 pfu are assumptions. |
 | Radiation / `src/data/nasaTelemetry.ts`, `src/engine/simulation.ts` | NASA [CRaTER instrument brief](https://science.nasa.gov/wp-content/uploads/2024/01/crater-litho-2023feb.pdf) describes lunar radiation measurements; none are ingested. [NASA-STD-3001 Rev C §4.8](https://standards.nasa.gov/sites/default/files/standards/NASA/C/nasa-std-3001-vol-1-rev-c-signature.pdf#page=40) gives ALARA and career effective dose <600 mSv. | 0.015 mSv·h⁻¹·pfu⁻¹, 1 mSv/day background, fixed transmissions and 50 mSv warning are assumed. No energy spectra, transport, geometry or tissue weighting. Cannot demonstrate safety or NASA compliance. No universal shielding ranking across all GCR/SEP environments. |
-| Crew / `src/engine/resources.ts` | Fresh BVAD Rev1 Table 3-22, printed p.45/PDF p.59, confirms 0.82 kg O₂ and 1.04 kg CO₂ per crewmember-day. [Original table](https://ntrs.nasa.gov/api/citations/20180001338/downloads/20180001338.pdf?attachment=true#page=59). | Reference short-mission schedule, not universal demand. CO₂ is explanatory only; no tracked CO₂ inventory/scrubber chemistry. Rev1 is a deliberately specified reference, not a claim to latest BVAD revision. |
+| Crew / `src/engine/resources.ts` | Fresh BVAD Rev1 Table 3-22, printed p. 45 / PDF p. 59, confirms 0.82 kg O₂ and 1.04 kg CO₂ per crewmember-day. [Original table](https://ntrs.nasa.gov/api/citations/20180001338/downloads/20180001338.pdf?attachment=true#page=59). | Reference short-mission schedule, not universal demand. CO₂ is explanatory only; no tracked CO₂ inventory/scrubber chemistry. Rev1 is a deliberately specified reference, not a claim to latest BVAD revision. |
 | Water / `src/engine/resources.ts` | [NASA 2023 report](https://www.nasa.gov/missions/station/iss-research/nasa-achieves-water-recovery-milestone-on-international-space-station/) confirms 98% collected-water recovery with BPA. | Game gross demand 3 kg/crew-day; recovery 85%, 55% low reserve, 20% outage with phase bonuses: classroom assumptions, not calibrated hardware. Immediate return has no wastewater delay/tank model. |
 | Crops / `src/engine/resources.ts` | [NASA VEG-01A](https://osdr.nasa.gov/bio/repo/data/payloads/VEG-01A) confirms May 8–June 10, 2014 (33 days). | Game begins with 25-day-old greens, five more powered days, assumed 1.5 kg yield/0.25 kg ration credit, 1.2 kWh/day and 0.4 kg/day. No photosynthesis, nutrient, CO₂/O₂, humidity or caloric model. Fresh crop mass is distinct from ration-equivalent credit. Pausing growth is a game abstraction, not real plant survival biology. |
 | Ice / `src/engine/resources.ts` | [NASA SMD-LUN-102 Rev A p.15](https://ntrs.nasa.gov/api/citations/20250006445/downloads/SMD-LUN-102_RevA_authors.pdf#page=15) confirms 5.6 ± 2.9% by mass at Cabeus and explicitly warns against transferring it to candidate Artemis landing sites. | Fictional batch analog only; feed mass ×0.056 ×assumed 0.60/0.75 recovery ×delivered power fraction. No excavation, thermal or purification process model. Not a Shackleton resource estimate. |
@@ -124,9 +143,9 @@ No large additional NASA dataset is necessary to make these claims defensible. I
 
 ## Focused mast-height lesson · 9 November 2026
 
-The 3D panel now opens paused at the authored Demo S/128° preset, with the 2m panel selected. The unchanged exaggerated horizon function gives indices of0% at2m and100% at10m there. This is a contrast chosen within procedural teaching terrain, **not an observed or predicted Sun position at real Shackleton**. At other directions (e.g.324°) both indices are100%; the interface explains equal results rather than hiding them. Sun animation remains opt-in, and Restart height lesson restores the preset/camera. The selected marker now identifies its mast height. A slightly shorter canvas retains the established camera while exposing more controls on laptop screens.
+The 3D panel now opens paused at the authored Demo S/128° preset, with the 2 m panel selected. The unchanged exaggerated horizon function gives indices of 0% at 2 m and 100% at 10 m there. This is a contrast chosen within procedural teaching terrain, **not an observed or predicted Sun position at real Shackleton**. At other directions (e.g. 324°) both indices are 100%; the interface explains equal results rather than hiding them. Sun animation remains opt-in, and Restart height lesson restores the preset/camera. The selected marker now identifies its mast height. A slightly shorter canvas retains the established camera while exposing more controls on laptop screens.
 
-[Mazarico et al. (2011), NASA NTRS](https://ntrs.nasa.gov/citations/20120010094), reopened for this task, supports the qualitative link between terrain horizons, height and illumination at some polar locations. It does not validate this procedural scene's128° azimuth,×14 height effect, percentages or electric output. Those remain the existing assumptions; index equations, geometric surface, lighting, published planner and mission resources are unchanged. The1.55° angle,×14 exaggeration and separation from power prediction are visible above the scene; annual-illumination limits remain explicit.
+[Mazarico et al. (2011), NASA NTRS](https://ntrs.nasa.gov/citations/20120010094), reopened for this task, supports the qualitative link between terrain horizons, height and illumination at some polar locations. It does not validate this procedural scene's 128° azimuth, ×14 height effect, percentages or electric output. Those remain the existing assumptions; index equations, geometric surface, lighting, published planner and mission resources are unchanged. The 1.55° angle, ×14 exaggeration and separation from power prediction are visible above the scene; annual-illumination limits remain explicit.
 
 ## Event follow-up · 14 November 2026 · horizon illustration
 

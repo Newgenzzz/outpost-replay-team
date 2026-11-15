@@ -4,6 +4,15 @@
 
 Shackleton Rim Survival is a fictional nine-day exercise with a two-person crew. It runs as a static Vite, React, and TypeScript application. Phaser renders the existing isometric outpost, and Recharts renders mission traces. All simulation inputs are bundled. The original assets and legacy rendering components are retained in the practice copy.
 
+## Contents
+
+- [Mission and architecture](#mission-and-architecture)
+- [Schedule](#schedule)
+- [Model](#model)
+- [Replay contract](#replay-contract)
+- [Validation](#validation)
+- [M3 accounting contract](#m3-accounting-contract)
+
 | Layer | Active entry and responsibilities |
 | --- | --- |
 | Application | `src/main.tsx` mounts `App.tsx`. React owns the baseline and branch plans, selected phase, field inventory and overlays. |

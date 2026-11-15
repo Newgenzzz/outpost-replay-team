@@ -2,6 +2,21 @@
 
 Audited for Team Brochachos on 14 November 2026. Starting branch: `codex/protect-progress-and-sharing`; clean starting HEAD: `6977994`. That commit was confirmed with Git and remains in ancestry. This report supersedes historical verification counts for this audit; earlier handoffs remain historical evidence.
 
+> [!NOTE]
+> **Audit snapshot at `6977994`.** Technical counts and browser evidence are specific to that checkpoint; see [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) for the current state.
+
+## Contents
+
+1. [Confirmed problems](#1-confirmed-problems)
+2. [Suspected problems and limits](#2-suspected-problems-and-limits)
+3. [Fixes implemented](#3-fixes-implemented)
+4. [Files changed](#4-files-changed)
+5. [Automated verification](#5-automated-verification)
+6. [Browser verification](#6-browser-verification)
+7. [Scientific validity and NASA relevance](#7-scientific-validity-and-nasa-relevance)
+8. [Competition readiness](#8-competition-readiness)
+9. [Highest-value next task](#9-highest-value-next-task)
+
 Architecture reviewed: React/TypeScript presentation and bilingual strings; Phaser exploration bridged through `PhaserWorld`; pure hourly simulation with separate power/resource ledgers and immutable per-phase `RunInput`; lazy Three.js illustration; static NASA reference scalars/planning rows plus optional DONKI fetch. The simulation owns results; world graphics illustrate snapshots and prepare drafts until Apply.
 
 ## 1. Confirmed problems

@@ -1,8 +1,20 @@
 # Release readiness · verified 9 November 2026
 
-**Current review: [15 November release candidate](RELEASE_CANDIDATE_2026-11-15.md).** It supersedes the technical checkpoint and source-retrieval limitations below, freshly verifies the official challenge Details/Resources and full terms, and provides the NASA usage map, upload runbook and 27-second storyboard. Earlier entries below remain historical. No publication or project-license approval is implied.
+> [!NOTE]
+> **Current review:** [15 November release candidate](RELEASE_CANDIDATE_2026-11-15.md). It supersedes the technical checkpoint and source-retrieval limitations below, freshly verifies the official challenge Details/Resources and full terms, and provides the NASA usage map, upload runbook and 27-second storyboard. Earlier entries below remain historical. Project licensing was subsequently approved (Apache-2.0 for original team materials; see [ATTRIBUTION.md](ATTRIBUTION.md)); no publication approval is implied by this historical review.
 
 Current gameplay/science baseline: `deca79a`, including M0–M6, visual polish, final QA and the independent scientific audit. Handoff documentation continues on `codex/final-science-audit`; see CLAUDE_HANDOFF.md. No public release, push or merge is authorized by this document. Earlier milestone audit notes below are historical; current checks appear at the end.
+
+## Contents
+
+- [Release gates](#release-gates)
+- [Official requirements and verification limits](#official-requirements-and-verification-limits)
+- [Scientific evidence and claims](#scientific-evidence-and-claims)
+- [Attribution and release contents](#attribution-and-release-contents)
+- [Static deployment runbook · execute publication only after approval](#static-deployment-runbook--execute-publication-only-after-approval)
+- [Judge walkthrough · internal 2–3 minute rehearsal](#judge-walkthrough--internal-23-minute-rehearsal)
+- [Submission checklist](#submission-checklist)
+- [Historical follow-ups](#m5-player-experience-follow-up--8-november-2026)
 
 ## Release gates
 
@@ -82,6 +94,8 @@ This rehearsal duration is not an official video allowance. Submission synopsis:
 - [ ] Final tests/build pass for the exact released commit; all required fields submitted and submission status confirmed on the official site.
 
 See IMPLEMENTATION_LOG.md for actual M6 checks and limitations. Technical local readiness does not clear the external release gates above.
+
+---
 
 ## M5 player-experience follow-up · 8 November 2026
 

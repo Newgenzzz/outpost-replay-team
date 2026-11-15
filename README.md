@@ -1,6 +1,41 @@
 # OUTPOST REPLAY — Team Brochachos
 
-A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the **2026 NASA International Space Apps Challenge — "Build a Junior Astronaut Mission Trainer"**. Lead a two-person crew through nine simulated days (216 hours) near Shackleton Crater’s sunlit south-polar rim, explore a 2.5D WebGL outpost, inspect a procedural 3D crater shadow demonstration alongside published LOLA illumination research, rewind any decision to run a controlled counterfactual experiment, and unlock **Bonus Mission 2: Mars Jezero Global Dust Storm & 14-Min Comms Delay**.
+**A bilingual (`EN · AZ`) lunar & Mars mission-engineering trainer for ages 7–12.** Built for the **2026 NASA International Space Apps Challenge — "Build a Junior Astronaut Mission Trainer."**
+
+Lead a two-person crew through nine simulated days (216 hours) near Shackleton Crater's sunlit south-polar rim. Explore a 2.5D WebGL outpost, inspect a procedural 3D crater-shadow demonstration alongside published LOLA illumination research, rewind any decision to run a controlled counterfactual experiment, and unlock **Bonus Mission 2: Mars Jezero Global Dust Storm & 14-Min Comms Delay**.
+
+![status](https://img.shields.io/badge/status-release%20candidate-f0b429)
+![license](https://img.shields.io/badge/license-Apache--2.0%20(team%20materials)-blue)
+![stack](https://img.shields.io/badge/stack-React%20%C2%B7%20TypeScript%20%C2%B7%20Vite-3178c6)
+![engine](https://img.shields.io/badge/engine-Phaser%20%2B%20Three.js-6c47ff)
+![languages](https://img.shields.io/badge/languages-EN%20%C2%B7%20AZ-2ea44f)
+
+> [!IMPORTANT]
+> **Release candidate — public source release approved; playable deployment not yet verified.** Original team materials are Apache-2.0 licensed. Organizer eligibility, submission and public-host checks remain open. See [Remaining submission blockers](RELEASE_CANDIDATE_2026-11-15.md#remaining-submission-blockers) and [Release gates](COMPETITION_READINESS.md#release-gates).
+
+## Contents
+
+- [At a glance](#at-a-glance)
+- [Core learning loop](#core-educational-innovation-predict--decide--observe--rewind--compare--learn)
+- [NASA data integration](#nasa-scientific-data-integration-source-to-feature-map)
+- [Key features](#key-features)
+- [Run locally](#run-locally)
+- [How to play](#play)
+- [Judge demo](#demo-for-judges)
+- [Documentation map](#documentation-map)
+
+## At a glance
+
+| Item | Details |
+| --- | --- |
+| **Audience** | Ages 7–12 (Cadet Mode) and educators/judges (Engineer Mode) |
+| **Languages** | English · Azerbaijani (`EN · AZ`) |
+| **Mission** | 9 simulated days / 216 hours · 6 decisions · 2-person crew |
+| **Setting** | Fictional outpost near Shackleton Crater's south-polar rim |
+| **Bonus mission** | Mars Jezero global dust storm & 14-minute comms delay |
+| **Stack** | React 18 · TypeScript · Vite 6 · Phaser 4 · Three.js |
+| **License** | Apache-2.0 for original team materials; third-party terms retained |
+| **Status** | Release candidate · source public · playable deployment unverified |
 
 ## Core Educational Innovation: PREDICT → DECIDE → OBSERVE → REWIND → COMPARE → LEARN
 
@@ -13,6 +48,8 @@ A bilingual (`EN · AZ`) lunar & Mars mission engineering trainer built for the 
 ## NASA Scientific Data Integration (Source-to-Feature Map)
 
 **Strongest challenge-listed integration:** **NASA CCMC DONKI** (`20240516-7D-001` archive + live FLR API + `D5` 5-step Evidence-to-Decision shielding workflow connected to `Rewind & Compare`) paired with **NASA OSDR** (`VEG-01A` ISS water-stress lettuce study connected to `D2-C`), supplemented by published LRO LOLA, LCROSS, Diviner, BVAD, ISS ECLSS, NASA-STD-3001, and NOAA GOES references:
+
+> Each row separates the **published observation** from the **classroom assumption**. A value appearing here does not imply that a raw instrument dataset is processed in-game.
 
 | Exact NASA / Agency Source | Official Source URL | Actual Observations or Published Data Used | Component / File Using It | Educational Interaction Influenced | What Remains an Assumption |
 | --- | --- | --- | --- | --- | --- |
@@ -42,7 +79,9 @@ For the current release candidate, see [the verified release review and NASA sou
 
 For presentation drafts and remaining release gates, see [SUBMISSION_KIT.md](SUBMISSION_KIT.md). Current development state and verification limits are in [CODEX_HANDOFF.md](CODEX_HANDOFF.md).
 
-From the project directory, with Node.js 22 or later and npm installed:
+**Prerequisites:** Node.js 22 or later and npm.
+
+From the project directory:
 
 ```sh
 npm ci
@@ -61,11 +100,24 @@ npm run preview   # serve the production build locally
 
 ## Play
 
+### Controls at a glance
+
+| Action | Input |
+| --- | --- |
+| Move | `WASD`, arrow keys, or click the terrain |
+| Open a station console | `E` |
+| Drive / leave the rover | `V` |
+| Tactical map | `M` |
+| Rewind & Compare | `R` |
+| Navigate controls / close a dialog | `Tab` / `Esc` |
+
+### Starting and saving
+
 - New players can choose **Start guided experiment** on the launch screen to predict, test a decision and compare an alternative. **Explore the full 9-day mission** retains the complete mission and fieldwork. The guided result separates battery reserve, science earned and low-reserve hours during D3 from whole-mission comparison totals.
 
 - Progress automatically saves in this browser. After refreshing, choose **Resume current mission** or **Resume Mars bonus mission** on the launch screen. Saved inputs include both lunar runs, applied preparations, completed fieldwork, preparation drafts, recorded predictions and the guided stage; results are recalculated deterministically. Avatar position, rover state, drill heat and unfinished mini-game attempts restart. A valid shared replay loads its own inputs first; once saved, subsequent refreshes resume your edits. If browser storage is unavailable, a visible message asks you to keep the tab open. A new guided experiment still asks before replacing existing lunar progress.
 
-- Open **Audio settings** / **Səs ayarları** from the speaker control on launch or the sliders icon in the HUD. Master controls the whole mix, Music controls the score, and Effects controls feedback/radio. The speaker button mutes everything without changing those levels. Music at 0% stops the score while leaving feedback available. Defaults are 80% master, 50% music and 75% effects. For classroom or judge narration, lower music or mute. Voice quality depends on installed system voices; Azerbaijani uses a short telemetry cue when no matching voice exists, with the advice still readable on screen. See [AUDIO_UPGRADE_2026-11-15.md](AUDIO_UPGRADE_2026-11-15.md) for verification and a manual listening checklist.
+### Decisions, fieldwork and rewind
 
 - Walk with **WASD**, the arrow keys, or a click on the terrain. Use **V** to drive or leave the rover.
 - Choose **Go to station** to follow a route, then open the console with **E**. You can also choose **Open console** from the mission panel. Compare the three options and choose **Apply option** to advance. Apply stays visible while you open optional exercises, science notes, and detailed forecasts. D1 calibration can improve modeled panel pointing. At D4, a field core or three console pulses unlock the option to prepare the ice extractor and recover more water with option A. Use Rewind & Compare to isolate either setting. Field samples also have a separate collection score.
@@ -73,17 +125,28 @@ npm run preview   # serve the production build locally
 - Replay marks effective preparation and fieldwork changes even when the option letter stays the same. To isolate a cause, change one option or preparation setting and Apply.
 - The mission panel keeps your last applied result and a short engineering lesson. Expand **Why it changed** for the resource changes and decision explanation.
 - At D3, optionally open **Predict → Experiment → Compare** and predict which shadow strategy leaves more battery at hour 120. Apply saves the prediction and its full setup through D3. Finish the run, rewind D3, and test the other strategy. Comparison uses the actual hour-120 results even if the missions end at different times. Changing earlier choices, relevant preparation/fieldwork, or the storm scenario invalidates the earlier setup.
-- In **Field Samples**, select the Laser Altimetry Marker and **Go to the ridge marker**. Log it with **E** on the terrain to earn the existing field points and unlock a short question about terrain and sunlight. **Open Sunlight research** connects the investigation to the site planner’s measurements, research models, and training assumptions.
+- In **Field Samples**, select the Laser Altimetry Marker and **Go to the ridge marker**. Log it with **E** on the terrain to earn the existing field points and unlock a short question about terrain and sunlight. **Open Sunlight research** connects the investigation to the site planner's measurements, research models, and training assumptions.
 - Open the tactical map with **M** and the comparison lab with **R**. **Tab** navigates controls and **Esc** closes a dialog.
 - Once Run A finishes or aborts, choose an earlier decision in **Rewind & Compare**. Try one change first. The run preserves later planned choices. If your change reaches a phase Run A never planned, choose how to handle that phase.
 - Fieldwork and console exercises prepare drafts. **Apply** records the selected phase's settings; discoveries do not rewrite earlier results. Rewinding copies the complete run, and editing one phase preserves other recorded phases. Sample bonuses are credited once, at the phase where their count is first applied.
 - **Share Replay URL** on the Flight Certificate includes both runs' complete scenario and per-phase settings. Version 2 links reproduce those inputs; older links show a warning because omitted preparations must use defaults. Callsigns are excluded.
 - Storm selections in the science deck preview a scenario. **Start new experiment with selected storm** clears A/B and starts with that peak; simply inspecting a different storm leaves the current experiment unchanged.
+
+### Language, science and audio
+
 - Use **EN · AZ** to switch languages. Open **Science** (**Elm** in Azerbaijani) to explore the sunlight experiment, NASA/NOAA references, DONKI space-weather catalog, OSDR research, educational calculations and the optional 3D crater demonstration.
+- Open **Audio settings** / **Səs ayarları** from the speaker control on launch or the sliders icon in the HUD. Master controls the whole mix, Music controls the score, and Effects controls feedback/radio. The speaker button mutes everything without changing those levels. Music at 0% stops the score while leaving feedback available. Defaults are 80% master, 50% music and 75% effects. For classroom or judge narration, lower music or mute. Voice quality depends on installed system voices; Azerbaijani uses a short telemetry cue when no matching voice exists, with the advice still readable on screen. See [AUDIO_UPGRADE_2026-11-15.md](AUDIO_UPGRADE_2026-11-15.md) for verification and a manual listening checklist.
 
 ## Demo for judges
 
 Use [JUDGE_DEMO.md](JUDGE_DEMO.md) for the timed three-minute rehearsal.
+
+| Default Guided Demo result | Keep drilling | Backup fuel cells |
+| --- | ---: | ---: |
+| Battery at hour 120 | **19.9 kWh** | **43.9 kWh** |
+| Whole-mission low-reserve hours | 97 h | 0 h |
+| Science change | — | −14 points |
+| Final score | 54 | 66 |
 
 1. Select **Start guided experiment** on the launch screen. Open **Compare lunar sites** and expand the planning exercise under Sunlight. At 35 kWh, the Shackleton study point covers its longest modeled shadow and Connecting Ridge C1 falls short despite higher average illumination. Close the panel and choose **Start the shadow test**.
 2. Ask a judge to choose **Keep drilling** or **Use backup fuel cells** for Run A. The banner shows the real result. Keeping the drill running during the modeled shadow leaves **19.9 kWh** at hour 120.
@@ -96,4 +159,27 @@ See [SPEC.md](SPEC.md) for implementation details, [NASA_SCIENCE.md](NASA_SCIENC
 
 See [COMPETITION_READINESS.md](COMPETITION_READINESS.md) for the M6 release gates, static deployment/rollback instructions, judge rehearsal and submission checklist. Prior-work eligibility requires organizer confirmation before submission; the original-material license scope is recorded in [ATTRIBUTION.md](ATTRIBUTION.md). Regenerate shipped software notices with `node scripts/prepare-notices.mjs` before the final build. The team has authorized this public deployment; verify the actual HTTPS site before claiming it is playable.
 
-The setting is a fictional outpost near Shackleton’s rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the approved limited Apache-2.0 scope. Original team materials are licensed under [Apache-2.0](LICENSE), with [NOTICE](NOTICE) recording Copyright 2026 Team Brochachos contributors and the exclusions for third-party software and NASA/NOAA materials.
+The setting is a fictional outpost near Shackleton's rim. See [source credits and licensing status](ATTRIBUTION.md) for software and asset attribution and the approved limited Apache-2.0 scope. Original team materials are licensed under [Apache-2.0](LICENSE), with [NOTICE](NOTICE) recording Copyright 2026 Team Brochachos contributors and the exclusions for third-party software and NASA/NOAA materials.
+
+## Documentation map
+
+| Document | Purpose |
+| --- | --- |
+| [RELEASE_CANDIDATE_2026-11-15.md](RELEASE_CANDIDATE_2026-11-15.md) | Current release review, NASA resource verification and submission blockers |
+| [SUBMISSION_KIT.md](SUBMISSION_KIT.md) | Copy-ready project-page drafts, disclosures, recording outline and gates |
+| [JUDGE_DEMO.md](JUDGE_DEMO.md) | Timed three-minute judge rehearsal |
+| [DEMO_27_SECONDS.md](DEMO_27_SECONDS.md) | 27-second gameplay storyboard |
+| [GITHUB_PAGES.md](GITHUB_PAGES.md) | GitHub Pages workflow, owner setup and verification |
+| [CLOUDFLARE_DIRECT_UPLOAD.md](CLOUDFLARE_DIRECT_UPLOAD.md) | Static deployment fallback via Cloudflare Pages Direct Upload |
+| [COMPETITION_READINESS.md](COMPETITION_READINESS.md) | Release gates, deployment runbook and submission checklist |
+| [NASA_SCIENCE.md](NASA_SCIENCE.md) | Source ledger, equations and scientific limitations |
+| [ATTRIBUTION.md](ATTRIBUTION.md) | Credits, dependency notices and licensing status |
+| [ASSET_PROVENANCE_2026-11-15.md](ASSET_PROVENANCE_2026-11-15.md) | Historical SVG provenance and AI-assisted origin record |
+| [INDEPENDENT_AUDIT_2026-11-14.md](INDEPENDENT_AUDIT_2026-11-14.md) | Independent code, gameplay and science audit |
+| [SPEC.md](SPEC.md) | Technical specification and replay contract |
+| [CODEX_HANDOFF.md](CODEX_HANDOFF.md) | Current development checkpoint and next actions |
+| [CLAUDE_HANDOFF.md](CLAUDE_HANDOFF.md) | Architecture, milestones and engineering constraints |
+| [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) | Chronological implementation and verification log |
+| [PLAYER_EXPERIENCE_2026-11-15.md](PLAYER_EXPERIENCE_2026-11-15.md) | Player-experience improvement report |
+| [AUDIO_UPGRADE_2026-11-15.md](AUDIO_UPGRADE_2026-11-15.md) | Audio implementation, verification and listening checklist |
+| [COMPETITION_REVIEW.md](COMPETITION_REVIEW.md) | First-round review and prioritized improvements |
