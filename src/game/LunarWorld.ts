@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_ART, svgDataUri } from './art';
-import { CHARACTER, type CrewSuitId } from './character';
+import { CHARACTER } from './character';
 import { nearestNavigablePoint, planRoute, type Rectangle } from './navigation';
+import { BATTERY_CAPACITY_KWH } from '../engine/power';
+import { fmt } from '../components/metricMeta';
 import {
   AI_CREWMATES,
   BUILDINGS,
@@ -49,6 +51,8 @@ interface TireTrack {
   bornAt: number;
 }
 
+type FacilityReadout = 'solar' | 'habitat' | 'greenhouse' | 'ice' | 'shelter';
+
 const NAV_BOUNDS: Rectangle = { left: 90, top: 150, right: WORLD.width - 90, bottom: WORLD.height - 70 };
 const CROP_DISPLAY = {
   idle: { en: 'Trial inactive', az: 'Sınaq fəal deyil', text: '#b3c9ca', light: 0x9aafb2, opacity: 0.07 },
@@ -82,6 +86,7 @@ export class LunarWorld extends Phaser.Scene {
 
   private facilityLights = new Map<number, Phaser.GameObjects.Arc[]>();
   private stationBadges = new Map<number, Phaser.GameObjects.Text>();
+  private sectorLabels: Phaser.GameObjects.Text[] = [];
   private iceSprites: Phaser.GameObjects.Image[] = [];
   private iceGlows: Phaser.GameObjects.Ellipse[] = [];
   private sampleSprites: Phaser.GameObjects.Image[] = [];
@@ -91,12 +96,17 @@ export class LunarWorld extends Phaser.Scene {
   private solarImage!: Phaser.GameObjects.Image;
   private batteryLight!: Phaser.GameObjects.Rectangle;
   private habitatLight!: Phaser.GameObjects.Ellipse;
-  private habitatWarning!: Phaser.GameObjects.Text;
+  private greenhouseImage!: Phaser.GameObjects.Image;
   private greenhouseLight!: Phaser.GameObjects.Ellipse;
-  private cropTitle!: Phaser.GameObjects.Text;
-  private cropStatus!: Phaser.GameObjects.Text;
   private cropTrack!: Phaser.GameObjects.Rectangle;
   private cropFill!: Phaser.GameObjects.Rectangle;
+  private iceFill!: Phaser.GameObjects.Rectangle;
+  private readouts = new Map<FacilityReadout, {
+    panel: Phaser.GameObjects.Container;
+    title: Phaser.GameObjects.Text;
+    value: Phaser.GameObjects.Text;
+    indicator: Phaser.GameObjects.Arc;
+  }>();
 
   private targetHighlight!: Phaser.GameObjects.Ellipse;
   private beacon!: Phaser.GameObjects.Container;
@@ -104,10 +114,9 @@ export class LunarWorld extends Phaser.Scene {
   private waypointRing!: Phaser.GameObjects.Ellipse;
   private tractionLabel!: Phaser.GameObjects.Text;
 
-  // Dynamic Graphics Overlays
   private trackGfx!: Phaser.GameObjects.Graphics;
-  private lightingCanvasTex!: Phaser.Textures.CanvasTexture;
-  private lightingOverlayImg!: Phaser.GameObjects.Image;
+  private shade!: Phaser.GameObjects.Rectangle;
+  private roverLamps: Phaser.GameObjects.Ellipse[] = [];
   private fxGfx!: Phaser.GameObjects.Graphics;
 
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -124,8 +133,9 @@ export class LunarWorld extends Phaser.Scene {
   private previewAt = 0;
   private zoomAdjustment = 0;
   private targetZoom = 1;
-  private lightRefreshAt = 0;
   private facilityPulseAt = new Map<number, number>();
+  private walkPace = 0;
+  private wheelTravel = 0;
   private reportAt = 0;
   private stepSoundAt = 0;
   private lastSnapshot: WorldBridge['snapshot'] | null = null;
@@ -195,10 +205,13 @@ export class LunarWorld extends Phaser.Scene {
         .container(building.x, building.y, [image])
         .setDepth(groundDepth(building.y));
 
-      if (building.id === 'solar') this.solarImage = image;
+      if (building.id === 'solar') {
+        this.solarImage = image;
+        this.createFacilityReadout('solar', building.x - 27, building.y + 22, 156);
+      }
       if (building.id === 'battery') {
         this.batteryLight = this.add
-          .rectangle(-25, -33, 22, 3.5, 0xb8e3a1)
+          .rectangle(-33, -33, 25, 4, 0xb8e3a1).setOrigin(0, 0.5)
           .setRotation(0.29);
         group.add(this.batteryLight);
       }
@@ -207,25 +220,26 @@ export class LunarWorld extends Phaser.Scene {
           .ellipse(-64, -71, 64, 32, 0x9ae4d4, 0.18)
           .setRotation(0.29);
         group.add(this.habitatLight);
-        this.habitatWarning = this.add
-          .text(building.x, building.y + 23, '', {
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '12px',
-            fontStyle: 'bold',
-            color: '#ffdfa0',
-            backgroundColor: '#302115f5',
-            padding: { x: 9, y: 5 },
-          })
-          .setOrigin(0.5)
-          .setDepth(2040)
-          .setVisible(false);
+        this.createFacilityReadout('habitat', building.x - 118, building.y + 15, 168);
       }
       if (building.id === 'greenhouse') {
+        this.greenhouseImage = image;
         this.greenhouseLight = this.add
           .ellipse(-13, -55, 106, 34, 0xa7dab6, 0.16)
           .setRotation(0.3);
         group.add(this.greenhouseLight);
-        this.createCropDisplay(building.x - 12, building.y + 27);
+        const panel = this.createFacilityReadout('greenhouse', building.x - 12, building.y + 27, 172, 49);
+        this.cropTrack = this.add.rectangle(-76, 16, 152, 3, 0x314950).setOrigin(0, 0.5);
+        this.cropFill = this.add.rectangle(-76, 16, 152, 3, 0x87cebd).setOrigin(0, 0.5);
+        panel.add([this.cropTrack, this.cropFill]);
+      }
+      if (building.id === 'iceProcessor') {
+        this.iceFill = this.add.rectangle(24, -13, 11, 16, 0x7dd3fc, 0.85).setOrigin(0.5, 1);
+        group.add(this.iceFill);
+        this.createFacilityReadout('ice', building.x + 119, building.y - 72, 179);
+      }
+      if (building.id === 'shelter') {
+        this.createFacilityReadout('shelter', building.x + 111, building.y - 30, 171);
       }
 
       if (building.stationStep !== undefined) {
@@ -253,10 +267,11 @@ export class LunarWorld extends Phaser.Scene {
     this.walkingObstacles = this.navigationObstacles(CHARACTER.bodyWidth / 2 + 5, 10, 10);
     this.drivingObstacles = this.navigationObstacles(39, 13, 23);
 
-    // 5 Interactive Glowing 90 K Water-Ice Crystal Clusters in Sector 04
+    // Five marked regolith sampling points in the training basin.
     ICE_DEPOSITS.forEach((pt) => {
       const glow = this.add
-        .ellipse(pt.x, pt.y - 6, 56, 22, 0x38bdf8, 0.22)
+        .ellipse(pt.x, pt.y, 56, 22, 0x72c5d8, 0.06)
+        .setStrokeStyle(1, 0x9adce7, 0.52)
         .setDepth(groundDepth(pt.y) - 4);
       const crystal = this.add
         .image(pt.x, pt.y, 'ice-crystal')
@@ -371,26 +386,21 @@ export class LunarWorld extends Phaser.Scene {
       .setDepth(2090)
       .setVisible(false);
 
-    // Register Walk & Idle Animations for Commander + AI Crewmates
-    const suits: CrewSuitId[] = ['commander', 'engineer', 'scientist'];
-    for (const suit of suits) {
-      const prefix = suit === 'commander' ? 'astronaut' : `crew-${suit}`;
-      for (const direction of ['down', 'up', 'left', 'right'] as const) {
-        this.anims.create({
-          key: `${suit}-walk-${direction}`,
-          frames: Array.from({ length: CHARACTER.walkFrames }, (_, i) => ({
-            key: `${prefix}-${direction}-${i}`,
-          })),
-          frameRate: 12,
-          repeat: -1,
-        });
-        this.anims.create({
-          key: `${suit}-idle-${direction}`,
-          frames: [0, 1].map((i) => ({ key: `${prefix}-${direction}-idle-${i}` })),
-          frameRate: 1.2,
-          repeat: -1,
-        });
-      }
+    for (const direction of ['down', 'up', 'left', 'right'] as const) {
+      this.anims.create({
+        key: `commander-walk-${direction}`,
+        frames: Array.from({ length: CHARACTER.walkFrames }, (_, i) => ({
+          key: `astronaut-${direction}-${i}`,
+        })),
+        frameRate: 12,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: `commander-idle-${direction}`,
+        frames: [0, 1].map((i) => ({ key: `astronaut-${direction}-idle-${i}` })),
+        frameRate: 1.2,
+        repeat: -1,
+      });
     }
 
     // Driveable 2.5D Lunar Car / Pressurized Rover
@@ -534,18 +544,11 @@ export class LunarWorld extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(2080);
 
-    // Dynamic FX & Step 3 Polar "Lights Out" Darkness Overlay
     this.fxGfx = this.add.graphics().setDepth(1950);
-    const lightTex = this.textures.createCanvas('polar-shadow-mask', 460, 280);
-    if (lightTex) {
-      this.lightingCanvasTex = lightTex;
-      this.lightingOverlayImg = this.add
-        .image(0, 0, 'polar-shadow-mask')
-        .setOrigin(0)
-        .setScale(4)
-        .setDepth(1920)
-        .setVisible(false);
-    }
+    this.shade = this.add.rectangle(0, 0, WORLD.width, WORLD.height, 0x101e30)
+      .setOrigin(0).setDepth(1850).setVisible(false);
+    this.roverLamps = [-1, 1].map(() => this.add.ellipse(0, 0, 90, 31, 0xf8e2b3)
+      .setDepth(-8).setVisible(false));
 
     // Keyboard & Pointer Controls
     this.keys = this.input.keyboard!.addKeys(
@@ -585,13 +588,7 @@ export class LunarWorld extends Phaser.Scene {
 
     const camera = this.cameras.main;
     camera.setBounds(0, 0, WORLD.width, WORLD.height);
-    camera.startFollow(
-      this.player,
-      true,
-      this.bridge.reducedMotion ? 1 : 0.09,
-      this.bridge.reducedMotion ? 1 : 0.09,
-    );
-    camera.setFollowOffset(0, 35);
+    this.follow(this.player, false);
     this.resizeCamera();
     camera.setZoom(this.targetZoom);
     this.scale.on('resize', this.resizeCamera, this);
@@ -610,19 +607,38 @@ export class LunarWorld extends Phaser.Scene {
     if (this.bridge.reducedMotion) this.cameras.main.setZoom(this.targetZoom);
   }
 
-  private createCropDisplay(x: number, y: number) {
+  private follow(entity: Phaser.Physics.Arcade.Sprite, transition = true) {
+    const camera = this.cameras.main;
+    const { scrollX, scrollY } = camera;
+    const lerp = this.bridge.reducedMotion ? 1 : 0.09;
+    camera.startFollow(entity, true, lerp, lerp, 0, 35);
+    if (transition && !this.bridge.reducedMotion) camera.setScroll(scrollX, scrollY);
+  }
+
+  private createFacilityReadout(key: FacilityReadout, x: number, y: number, width: number, height = 41) {
     const backing = this.add
-      .rectangle(0, 0, 152, 47, 0x10212c, 0.97)
-      .setStrokeStyle(1, 0x49656d, 0.9);
-    this.cropTitle = this.add
-      .text(-66, -18, '', { fontFamily: 'monospace', fontSize: '10px', color: '#a9c8c5' });
-    this.cropStatus = this.add
-      .text(-66, -5, '', { fontFamily: 'Inter, sans-serif', fontSize: '12px', fontStyle: 'bold' });
-    this.cropTrack = this.add.rectangle(-66, 15, 132, 3, 0x314950).setOrigin(0, 0.5);
-    this.cropFill = this.add.rectangle(-66, 15, 132, 3, 0x87cebd).setOrigin(0, 0.5);
-    this.add
-      .container(x, y, [backing, this.cropTitle, this.cropStatus, this.cropTrack, this.cropFill])
-      .setDepth(2040);
+      .rectangle(0, 0, width, height, 0x0c1c25, 0.97)
+      .setStrokeStyle(1, 0x60818a, 0.9);
+    const title = this.add.text(19 - width / 2, 5 - height / 2, '', {
+      fontFamily: 'monospace', fontSize: '10px', color: '#b4c9c8',
+    });
+    const value = this.add.text(9 - width / 2, 19 - height / 2, '', {
+      fontFamily: 'Inter, sans-serif', fontSize: '12.5px', fontStyle: 'bold',
+    });
+    const indicator = this.add.circle(10 - width / 2, 11 - height / 2, 2.6, 0x8bb8b4);
+    const panel = this.add.container(x, y, [backing, indicator, title, value]).setDepth(2030);
+    this.readouts.set(key, { panel, title, value, indicator });
+    return panel;
+  }
+
+  private setReadout(key: FacilityReadout, title: string, value: string, color: string, visible = true) {
+    const readout = this.readouts.get(key)!;
+    readout.panel.setVisible(visible);
+    if (visible) {
+      readout.title.setText(title);
+      readout.value.setText(value).setColor(color);
+      readout.indicator.setFillStyle(Phaser.Display.Color.HexStringToColor(color).color);
+    }
   }
 
   private navigationObstacles(x: number, top: number, bottom: number): Rectangle[] {
@@ -748,13 +764,14 @@ export class LunarWorld extends Phaser.Scene {
       for (const [x, y] of points.slice(1)) g.lineTo(x, y);
       g.strokePath();
 
-      g.lineStyle(1.2, 0xd4cfc0, 0.26).beginPath().moveTo(points[0][0] - 14, points[0][1]);
-      for (const [x, y] of points.slice(1)) g.lineTo(x - 14, y);
-      g.strokePath();
-
-      g.lineStyle(1.2, 0xd4cfc0, 0.2).beginPath().moveTo(points[0][0] + 14, points[0][1]);
-      for (const [x, y] of points.slice(1)) g.lineTo(x + 14, y);
-      g.strokePath();
+      for (let i = 1; i < points.length; i++) {
+        const [x0, y0] = points[i - 1];
+        const [x1, y1] = points[i];
+        const edge = movementVector(y0 - y1, x1 - x0, 14);
+        g.lineStyle(1.2, 0xe2d5b9, 0.49)
+          .lineBetween(x0 + edge.x, y0 + edge.y, x1 + edge.x, y1 + edge.y)
+          .lineBetween(x0 - edge.x, y0 - edge.y, x1 - edge.x, y1 - edge.y);
+      }
     }
 
     // Ramp caution chevrons on NW Ridge Ramp & SE Cold-Trap Rover Ramp
@@ -787,7 +804,12 @@ export class LunarWorld extends Phaser.Scene {
     }
 
     // Rover Staging Pad Outline
-    g.lineStyle(1.8, 0x38bdf8, 0.35).strokeRoundedRect(995, 598, 120, 74, 8);
+    g.fillStyle(0x243744, 0.48).fillRoundedRect(995, 598, 120, 74, 8);
+    g.lineStyle(1.8, 0x9dc1c5, 0.65).strokeRoundedRect(995, 598, 120, 74, 8);
+    for (const x of [1005, 1094]) {
+      g.lineStyle(2, 0xe1bb7d, 0.8).lineBetween(x, 605, x + 11, 605)
+        .lineBetween(x, 665, x + 11, 665);
+    }
 
     // HVDC Power & Cryo Fluid Conduits connecting sectors
     const conduits: number[][][] = [
@@ -833,7 +855,7 @@ export class LunarWorld extends Phaser.Scene {
     for (const [x, y] of bollards) {
       g.fillStyle(0x142434, 0.4).fillEllipse(x + 5, y + 4, 16, 5);
       g.fillStyle(0x7c9096, 1).fillRect(x - 2, y - 8, 4, 11);
-      g.fillStyle(0x9eead9, 0.9).fillRect(x - 2, y - 9, 4, 2.5);
+      g.fillStyle(0xd3d6bb).fillRect(x - 2, y - 9, 4, 2.5);
     }
 
     // Bake static infrastructure into one GPU/Canvas texture
@@ -842,33 +864,35 @@ export class LunarWorld extends Phaser.Scene {
     this.add.image(0, 0, 'infrastructure').setOrigin(0).setDepth(-10);
 
     // Sector Stencil Labels on Lunar Regolith
-    const stencils: Array<[number, number, string, string]> = [
-      [335, 462, 'SEC-01 · SOLAR RIM (+2)', '#d8d2be'],
-      [895, 584, 'SEC-02 · COMMAND PLAZA', '#9ab0b4'],
-      [425, 852, 'SEC-03 · CRYO FUEL CELLS', '#9bd2d4'],
-      [1365, 995, 'SEC-04 · 90K COLD-TRAP ICE (-2)', '#7dd3fc'],
-      [795, 968, 'SEC-05 · STORM BUNKER', '#eab87d'],
-      [1530, 535, 'SEC-06 · ASCENT & BIO', '#b8e0b9'],
-      [1055, 684, 'LUNAR CAR PAD [V]', '#7dd3fc'],
+    const stencils: Array<[number, number, string]> = [
+      [335, 462, '#eee4c9'],
+      [895, 584, '#e0dfc8'],
+      [425, 852, '#c0e0da'],
+      [1365, 995, '#b7e1e6'],
+      [795, 968, '#f4d3a6'],
+      [1530, 535, '#c6e2c8'],
+      [1055, 684, '#badde5'],
     ];
-    for (const [x, y, label, color] of stencils) {
-      this.add
-        .text(x, y, label, {
-          fontFamily: 'monospace',
-          fontSize: '10px',
-          color,
-          letterSpacing: 2,
-        })
+    this.sectorLabels = stencils.map(([x, y, color]) =>
+      this.add.text(x, y, '', {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        fontStyle: 'bold',
+        color,
+        letterSpacing: 1,
+        stroke: '#263743',
+        strokeThickness: 2,
+      })
         .setOrigin(0.5)
-        .setAlpha(0.58)
-        .setDepth(-4);
-    }
+        .setAlpha(0.83)
+        .setDepth(-4),
+    );
   }
 
   private updateAiCrewmates(time: number, dtSec: number, snap: WorldBridge['snapshot'], activePos: Point) {
     let closestSpeech: { speaker: string; role: string; text: string; color: string } | null = null;
     let closestDist = 142;
-    const isStormEmergency = snap.activeStep === 5 && snap.completedCount < 5;
+    const isStormEmergency = snap.stormPending;
 
     for (const crew of this.aiCrew) {
       const targetPt = isStormEmergency
@@ -901,14 +925,14 @@ export class LunarWorld extends Phaser.Scene {
             crew.facing,
           );
         }
-        const idleFrame = Math.floor(time / 650) % 2;
+        const idleFrame = this.bridge.reducedMotion ? 0 : Math.floor(time / 650) % 2;
         crew.sprite.setTexture(`crew-${crew.def.suit}-${crew.facing}-idle-${idleFrame}`);
       } else if (dist <= 8) {
         if (!isStormEmergency) {
           crew.waypointIdx = (crew.waypointIdx + 1) % crew.def.patrol.length;
           crew.pauseUntil = time + 2200;
         }
-        const idleFrame = Math.floor(time / 650) % 2;
+        const idleFrame = this.bridge.reducedMotion ? 0 : Math.floor(time / 650) % 2;
         crew.sprite.setTexture(`crew-${crew.def.suit}-${crew.facing}-idle-${idleFrame}`);
       } else {
         const vx = (dx / dist) * speed;
@@ -946,8 +970,8 @@ export class LunarWorld extends Phaser.Scene {
     this.dronePos.x = Phaser.Math.Linear(this.dronePos.x, goalX, lerp);
     this.dronePos.y = Phaser.Math.Linear(this.dronePos.y, goalY, lerp);
 
-    const bob = Math.sin(time * 0.005) * 4.5;
-    const rotorIdx = Math.floor(time / 90) % 2;
+    const bob = this.bridge.reducedMotion ? 0 : Math.sin(time * 0.005) * 4.5;
+    const rotorIdx = this.bridge.reducedMotion ? 0 : Math.floor(time / 90) % 2;
     this.droneSprite
       .setPosition(this.dronePos.x, this.dronePos.y + bob)
       .setTexture(`ai-drone-${rotorIdx}`)
@@ -956,106 +980,36 @@ export class LunarWorld extends Phaser.Scene {
     this.droneTag.setPosition(this.dronePos.x, this.dronePos.y - 54 + bob);
   }
 
-  private renderPolarShadowAndStormFX(
+  private renderFieldFeedback(
     time: number,
     snap: WorldBridge['snapshot'],
     activePos: Point,
-    inCar: boolean,
     nearIceIdx: number,
     drilling: boolean,
   ) {
     this.fxGfx.clear();
 
-    // Mission shadow mask. Refresh at 30 Hz as the camera and sprites render independently.
-    const isShadowCrisis = snap.activeStep === 3 && snap.completedCount < 3;
-    if (this.lightingOverlayImg && this.lightingCanvasTex) {
-      this.lightingOverlayImg.setVisible(isShadowCrisis);
-      if (!isShadowCrisis) this.lightRefreshAt = 0;
-      if (isShadowCrisis && time >= this.lightRefreshAt) {
-        this.lightRefreshAt = time + 33;
-        const ctx = this.lightingCanvasTex.getContext();
-        const w = 460;
-        const h = 280;
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'rgba(6, 15, 26, 0.68)';
-        ctx.fillRect(0, 0, w, h);
-
-        ctx.globalCompositeOperation = 'destination-out';
-        const punchLight = (wx: number, wy: number, radiusWorld: number, strength = 1) => {
-          const cx = wx / 4;
-          const cy = wy / 4;
-          const r = radiusWorld / 4;
-          const grad = ctx.createRadialGradient(cx, cy, r * 0.12, cx, cy, r);
-          grad.addColorStop(0, `rgba(0,0,0,${strength})`);
-          grad.addColorStop(0.65, `rgba(0,0,0,${strength * 0.55})`);
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.fill();
-        };
-
-        // Player / Lunar Car Vision Radius + Forward Headlamp Pool
-        punchLight(activePos.x, activePos.y - 16, inCar ? 275 : 215, 1);
-        punchLight(activePos.x + this.heading.x * 105, activePos.y + this.heading.y * 105, inCar ? 220 : 145, 0.85);
-
-        // The reactor keeps an emergency marker while the main lamps follow battery status.
-        const power = snap.energyPercent <= 0 ? 0 : snap.powerLow ? 0.32 : 0.88;
-        punchLight(895, 395, 185, power);
-        punchLight(425, 775, 165, 0.92); // D3 Cryo-Fuel Reactor Target
-        punchLight(1290, 445, 140, power * 0.8);
-        for (const c of this.aiCrew) {
-          punchLight(c.sprite.x, c.sprite.y - 15, 105, 0.72);
-        }
-        this.lightingCanvasTex.refresh();
+    // Lamps illuminate a patch of ground ahead of the rover.
+    const { x: dx, y: dy } = this.heading;
+    this.roverLamps.forEach((lamp, index) => {
+      const side = index === 0 ? -1 : 1;
+      lamp.setVisible(snap.controllingRover);
+      if (snap.controllingRover) {
+        lamp.setPosition(activePos.x + dx * 80 - dy * side * 12, activePos.y + dy * 61 + dx * side * 12)
+          .setRotation(Math.atan2(dy, dx))
+          .setAlpha(0.06 + 0.23 * (1 - snap.sunlightFraction));
       }
-    }
+    });
 
-    // Headlight footprint follows the rover's direction, including diagonal travel.
-    if (inCar) {
-      const { x: dx, y: dy } = this.heading;
-      const x = activePos.x + dx * 44;
-      const y = activePos.y + dy * 23;
-      const beamLength = isShadowCrisis ? 170 : 100;
-      this.fxGfx.fillStyle(0xffe9ae, isShadowCrisis ? 0.14 : 0.08);
-      for (const side of [-1, 1]) {
-        const lampX = x - dy * side * 9;
-        const lampY = y + dx * side * 9;
-        const endX = lampX + dx * beamLength;
-        const endY = lampY + dy * beamLength * 0.75;
-        this.fxGfx.fillTriangle(lampX, lampY, endX - dy * 25, endY + dx * 25, endX + dy * 25, endY - dx * 25);
-      }
-    }
-
-    // Outlined shelter areas and stylized warnings during the training storm.
-    const isStormActive = snap.activeStep === 5 && snap.completedCount < 5;
-    if (isStormActive) {
-      const pulse = this.bridge.reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(time * 0.006);
-      // Safe Cyan Shield Zones over D5 Storm Bunker & D2 Habitat
-      this.fxGfx
-        .lineStyle(2.5, 0x38bdf8, 0.55 + pulse * 0.35)
-        .strokeEllipse(795, 885, 255, 130);
-      this.fxGfx.fillStyle(0x38bdf8, 0.07 + pulse * 0.05).fillEllipse(795, 885, 255, 130);
-
-      this.fxGfx
-        .lineStyle(2, 0x2dd4bf, 0.45 + pulse * 0.25)
-        .strokeEllipse(895, 395, 285, 140);
-      this.fxGfx.fillStyle(0x2dd4bf, 0.05 + pulse * 0.04).fillEllipse(895, 395, 285, 140);
-
-    }
-
-    // 4. Active Cryo-Laser Ice Mining Beam ([Space] near Sector 04 90 K Ice Crystal)
+    // Show the contact point while the training drill is in use.
     if (drilling && nearIceIdx >= 0) {
-      const icePt = ICE_DEPOSITS[nearIceIdx];
-      const ox = activePos.x + (icePt.x >= activePos.x ? 22 : -22);
-      const oy = activePos.y - 24;
-      this.fxGfx.lineStyle(5, 0x0ea5e9, 0.42).lineBetween(ox, oy, icePt.x, icePt.y - 18);
-      this.fxGfx.lineStyle(2.2, 0xe0f2fe, 0.95).lineBetween(ox, oy, icePt.x, icePt.y - 18);
-      const sparkR = this.bridge.reducedMotion ? 7 : 7 + Math.sin(time * 0.04) * 3;
-      this.fxGfx.fillStyle(0x67e8f9, 0.85).fillCircle(icePt.x, icePt.y - 18, sparkR);
+      const point = ICE_DEPOSITS[nearIceIdx];
+      const radius = this.bridge.reducedMotion ? 5 : 5 + Math.sin(time * 0.015) * 1.8;
+      this.fxGfx.lineStyle(1.6, 0xb0e8ed, 0.95).strokeCircle(point.x, point.y - 12, radius + 2);
+      this.fxGfx.fillStyle(0xe0f6ef, 0.95).fillCircle(point.x, point.y - 12, 2);
     }
 
-    // 5. Render Fading Lunar Car Tire Tracks
+    // Fade the tracks left by actual rover movement.
     this.trackGfx.clear();
     this.tireTracks = this.tireTracks.filter((tr) => time - tr.bornAt < 9000);
     for (const tr of this.tireTracks) {
@@ -1136,6 +1090,8 @@ export class LunarWorld extends Phaser.Scene {
       this.resizeCamera();
       this.facing = 'down';
       this.heading = { x: 0, y: 1 };
+      this.walkPace = 0;
+      this.wheelTravel = 0;
       b.drillHeld = false;
       b.resetRequested = false;
     }
@@ -1160,13 +1116,9 @@ export class LunarWorld extends Phaser.Scene {
         (this.carSprite.body as Phaser.Physics.Arcade.Body).setImmovable(false);
         this.player.setVisible(false);
         (this.player.body as Phaser.Physics.Arcade.Body).enable = false;
-        this.cameras.main.startFollow(
-          this.carSprite,
-          true,
-          b.reducedMotion ? 1 : 0.09,
-          b.reducedMotion ? 1 : 0.09,
-        );
+        this.follow(this.carSprite);
         this.lastTrackPos = { x: this.carSprite.x, y: this.carSprite.y };
+        this.wheelTravel = 0;
       } else {
         this.carSprite.setTexture('lunar-car');
         this.carSprite.setVelocity(0, 0);
@@ -1181,12 +1133,13 @@ export class LunarWorld extends Phaser.Scene {
         this.player.setVisible(true);
         (this.player.body as Phaser.Physics.Arcade.Body).enable = true;
         (this.player.body as Phaser.Physics.Arcade.Body).reset(exit.x, exit.y);
-        this.cameras.main.startFollow(
-          this.player,
-          true,
-          b.reducedMotion ? 1 : 0.09,
-          b.reducedMotion ? 1 : 0.09,
-        );
+        this.follow(this.player);
+        this.walkPace = 0;
+      }
+      if (!b.reducedMotion && !resetting) {
+        this.tweens.killTweensOf(this.playerMarker);
+        this.playerMarker.setScale(1.28).setAlpha(0.6);
+        this.tweens.add({ targets: this.playerMarker, scale: 1, alpha: 1, duration: 260, ease: 'Sine.Out' });
       }
       this.previewAt = 0;
       if (destination) this.setDestination(destination);
@@ -1295,8 +1248,10 @@ export class LunarWorld extends Phaser.Scene {
       }
       this.facing = facingDirection(movement, this.facing);
       this.player.setPosition(this.carSprite.x, this.carSprite.y);
-      const rolling = !b.reducedMotion && Math.hypot(carBody.velocity.x, carBody.velocity.y) > 24;
-      this.carSprite.setTexture(rolling && Math.floor(time / 90) % 2 ? 'lunar-car-rolling' : 'lunar-car-occupied');
+      const travel = Math.hypot(carBody.deltaXFinal(), carBody.deltaYFinal());
+      const rolling = !b.reducedMotion && !paused && travel > 0.08;
+      if (rolling) this.wheelTravel = (this.wheelTravel + travel) % 24;
+      this.carSprite.setTexture(rolling && this.wheelTravel >= 12 ? 'lunar-car-rolling' : 'lunar-car-occupied');
 
       const movedDist = Math.hypot(
         this.carSprite.x - this.lastTrackPos.x,
@@ -1324,15 +1279,22 @@ export class LunarWorld extends Phaser.Scene {
       );
       if (!horizontal && !vertical) this.player.setVelocity(0, 0);
 
+      const travel = Math.hypot(body.deltaXFinal(), body.deltaYFinal());
+      const actualPace = (movement.x || movement.y) && dtSec > 0 ? travel / dtSec : 0;
+      this.walkPace = Phaser.Math.Linear(this.walkPace, actualPace, 1 - Math.exp(-dtSec * 15));
       this.facing = facingDirection(movement, this.facing);
-      if (movement.x || movement.y) {
-        this.player.play(`commander-walk-${this.facing}`, true);
+      if ((movement.x || movement.y) && this.walkPace > 14) {
+        const { currentAnim, currentFrame } = this.player.anims;
+        const startFrame = currentAnim?.key.startsWith('commander-walk-') ? (currentFrame?.index ?? 1) - 1 : 0;
+        this.player.play({ key: `commander-walk-${this.facing}`, startFrame }, true);
+        this.player.anims.timeScale = Phaser.Math.Clamp(this.walkPace / WORLD.speed, 0.55, 1.12);
         if (time > this.stepSoundAt) {
           soundFX.play('footstep');
           this.stepSoundAt = time + 310;
         }
       } else if (!b.reducedMotion && !paused) {
         this.player.play(`commander-idle-${this.facing}`, true);
+        this.player.anims.timeScale = 1;
       } else {
         this.player.anims.stop();
         this.player.setTexture(`astronaut-${this.facing}-idle-0`);
@@ -1384,7 +1346,7 @@ export class LunarWorld extends Phaser.Scene {
       );
 
     // Check Station Proximity & USE [E] Interaction
-    const near = findNearbyStation(activePos, snap.activeStep);
+    const near = findNearbyStation(activePos, snap.activeStep, snap.lastAvailableStep);
     if (near?.decisionId !== this.nearStation?.decisionId) {
       this.nearStation = near;
       b.onNearby(near);
@@ -1437,39 +1399,76 @@ export class LunarWorld extends Phaser.Scene {
         : planRoute(activePos, targetSt, NAV_BOUNDS, snap.controllingRover ? this.drivingObstacles : this.walkingObstacles);
     }
 
-    // Render Polar Shadow ("Lights Out"), Headlights, Storm Shields & Laser FX
-    this.renderPolarShadowAndStormFX(
-      time,
-      snap,
-      activePos,
-      snap.controllingRover,
-      nearIceIdx,
-      drilling,
-    );
+    this.renderFieldFeedback(time, snap, activePos, nearIceIdx, drilling);
 
     // Sync Deterministic World Snapshot Visuals
     if (snap !== this.lastSnapshot) {
       const previous = this.lastSnapshot;
       this.lastSnapshot = snap;
 
-      const powerFrac = Math.max(0, Math.min(1, snap.energyPercent / 100));
-      this.habitatLight.setFillStyle(snap.lifeSupportLow ? 0xe7af64 : 0x9ae4d4)
-        .setAlpha(snap.powerLow ? 0.025 : 0.11 + powerFrac * 0.34);
-      this.habitatWarning
-        .setText(snap.lang === 'az' ? 'Həyat təminatı zəifləyib' : 'Life support under stress')
-        .setVisible(snap.lifeSupportLow);
+      const az = snap.lang === 'az';
+      const powerFrac = Phaser.Math.Clamp(snap.batteryKwh / BATTERY_CAPACITY_KWH, 0, 1);
+      const lowLight = snap.sunlightFraction < 1;
+      this.shade.setAlpha(0.44 * (1 - snap.sunlightFraction)).setVisible(lowLight);
+      this.solarImage.setTexture(lowLight ? 'solar-off' : 'solar');
+      this.setReadout('solar', az ? 'GÜNƏŞ PANELLƏRİ' : 'SOLAR ARRAY', snap.solarOutputPct === null
+        ? az ? 'Quraşdırma gözlənilir' : 'Setup pending'
+        : az ? `Nominal gücün ${snap.solarOutputPct}%-i` : `${snap.solarOutputPct}% of nominal output`,
+      lowLight ? '#f6d99e' : '#c6e9d1');
+
+      this.habitatLight.setFillStyle(snap.powerLow ? 0xe7af64 : 0xa4eadc)
+        .setAlpha(snap.powerLow ? 0.05 : 0.19 + powerFrac * 0.32);
+      const habitatStatus = snap.lifeSupportLow
+        ? az ? `Həyat təminatı zəif · ${fmt(snap.lifeSupportPct)}%` : `Life support low · ${fmt(snap.lifeSupportPct)}%`
+        : snap.powerLow
+          ? az ? 'Batareya ehtiyatı azdır' : 'Battery reserve low'
+          : az ? `Həyat təminatı · ${fmt(snap.lifeSupportPct)}%` : `Life support · ${fmt(snap.lifeSupportPct)}%`;
+      this.setReadout('habitat', az ? 'YAŞAYIŞ MODULU' : 'HABITAT', habitatStatus,
+        snap.lifeSupportLow || snap.powerLow ? '#f6d59b' : '#c6e9d1');
+
       const crop = CROP_DISPLAY[snap.cropStatus];
       const cropProgress = Phaser.Math.Clamp(snap.cropProgress, 0, 1);
-      const progressLabel = snap.cropStatus === 'idle' ? '' : ` · ${Math.round(cropProgress * 100)}%`;
+      const cropDetail = snap.harvestedFoodKg > 0 ? ` · ${fmt(snap.harvestedFoodKg)} ${az ? 'kq' : 'kg'}`
+        : snap.cropStatus === 'idle' ? '' : ` · ${Math.round(cropProgress * 100)}%`;
+      const hasCrop = snap.cropStatus !== 'idle' && snap.cropStatus !== 'harvested';
+      this.greenhouseImage.setTexture(hasCrop
+        ? cropProgress >= 0.5 ? 'greenhouse-growing' : 'greenhouse-tray'
+        : 'greenhouse');
       this.greenhouseLight.setFillStyle(crop.light).setAlpha(crop.opacity);
-      this.cropTitle.setText(snap.lang === 'az' ? 'İSTİXANA' : 'GREENHOUSE');
-      this.cropStatus.setText(`${crop[snap.lang]}${progressLabel}`).setColor(crop.text);
+      this.setReadout('greenhouse', az ? 'İSTİXANA' : 'GREENHOUSE', `${crop[snap.lang]}${cropDetail}`, crop.text);
       this.cropTrack.setVisible(snap.cropStatus !== 'idle');
       this.cropFill.setFillStyle(crop.light).setScale(cropProgress, 1).setVisible(cropProgress > 0);
+
+      const water = snap.iceWaterKg;
+      const iceStatus = water !== null
+        ? az ? `${fmt(water, 2)} kq təmiz su` : `${fmt(water, 2)} kg water recovered`
+        : snap.iceBypassed ? az ? 'Emal seçilmədi' : 'Processing skipped'
+          : snap.activeStep === 4 ? az ? 'Nümunə gözlənilir' : 'Awaiting sample'
+            : az ? 'Gözləmə rejimi' : 'Standby';
+      this.setReadout('ice', az ? 'BUZ EMAL QURĞUSU' : 'ICE PROCESSOR', iceStatus,
+        water !== null && water > 0 ? '#bceaf5' : '#c0d0d1');
+      if (water !== previous?.iceWaterKg) {
+        this.tweens.killTweensOf(this.iceFill);
+        const level = Phaser.Math.Clamp(water ?? 0, 0, 1);
+        this.iceFill.setVisible(level > 0).setScale(1, b.reducedMotion ? level : 0);
+        if (level > 0 && !b.reducedMotion) {
+          this.tweens.add({ targets: this.iceFill, scaleY: level, duration: 480, ease: 'Sine.Out' });
+        }
+      }
+      this.setReadout('shelter', az ? 'D5 · SIĞINACAQ' : 'D5 · SHELTER',
+        az ? 'Qorunma planını seçin' : 'Choose a shielding plan', '#f6d59b', snap.stormPending);
+
       this.batteryLight
-        .setScale(Math.max(0.1, powerFrac), 1)
+        .setVisible(powerFrac > 0)
+        .setScale(powerFrac, 1)
         .setFillStyle(snap.powerLow ? 0xf2916d : 0xb8e3a1);
-      this.solarImage.setTexture(snap.activeStep === 3 && snap.completedCount < 3 ? 'solar-off' : 'solar');
+
+      if (previous?.lang !== snap.lang) {
+        STATIONS.forEach((station, idx) => {
+          this.sectorLabels[idx].setText(`${station.sectorCode} / ${station.roomName[snap.lang].toLocaleUpperCase(snap.lang)}`);
+        });
+        this.sectorLabels[6].setText(az ? 'AY MAŞINININ DAYANACAĞI' : 'ROVER PARKING');
+      }
 
       // Update Ice Crystal Sprites
       snap.minedCrystals.forEach((mined, idx) => {
@@ -1490,10 +1489,12 @@ export class LunarWorld extends Phaser.Scene {
         const calibrated = snap.calibratedTasks[st.decisionId - 1];
         const lights = this.facilityLights.get(st.decisionId) ?? [];
         const changed = previous && previous.choices[st.decisionId - 1] !== snap.choices[st.decisionId - 1];
-        if (previous && (changed || previous.powerLow !== snap.powerLow)) {
+        const harvest = st.decisionId === 6 && previous?.harvestedFoodKg === 0 && snap.harvestedFoodKg > 0;
+        if (previous && (changed || harvest || previous.powerLow !== snap.powerLow)) {
           this.facilityPulseAt.set(st.decisionId, time);
         }
-        const status = snap.energyPercent <= 0 ? 0xf87171
+        const status = st.decisionId === 5 && snap.stormPending ? 0xf8bd74
+          : snap.batteryKwh <= 0 ? 0xf87171
           : snap.powerLow ? 0xfb923c
           : done ? 0x86efac
           : isCurrent ? 0xfde047
@@ -1525,11 +1526,11 @@ export class LunarWorld extends Phaser.Scene {
       this.beacon.setPosition(activeSt.x, activeSt.y);
       this.targetHighlight
         .setPosition(activeSt.x, activeSt.y)
-        .setStrokeStyle(2, snap.activeStep === 5 ? 0xfb923c : 0xc0e6aa, 0.85);
+        .setStrokeStyle(2, snap.stormPending ? 0xfb923c : 0xc0e6aa, 0.85);
       this.terminalLabel
         .setPosition(activeSt.x, activeSt.y - 98)
         .setText(`${activeSt.code[snap.lang]}`)
-        .setColor(snap.activeStep === 5 ? '#fdba74' : '#d9f99d');
+        .setColor(snap.stormPending ? '#fdba74' : '#d9f99d');
 
       // Run A Temporal Ghost Crewmate at Diverged Rewind Station
       if (snap.hasBranch && snap.divergedStep !== null) {

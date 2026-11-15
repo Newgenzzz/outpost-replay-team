@@ -33,7 +33,8 @@ const finishes: Record<string, string> = {
 };
 
 export function detailFacility(asset: SvgAsset): SvgAsset {
-  const detail = (details[asset.key] ?? '') + (finishes[asset.key] ?? '');
+  const key = asset.key.startsWith('greenhouse') ? 'greenhouse' : asset.key;
+  const detail = (details[key] ?? '') + (finishes[key] ?? '');
   if (!detail) return asset;
   const defs = `<defs><linearGradient id="solar-finish" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#89d7e2" stop-opacity=".35"/><stop offset=".45" stop-color="#233e68" stop-opacity=".05"/><stop offset="1" stop-color="#425e93" stop-opacity=".4"/></linearGradient></defs>`;
   return { ...asset, svg: asset.svg.replace('</svg>', defs + detail + '</svg>') };

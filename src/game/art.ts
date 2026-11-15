@@ -108,9 +108,9 @@ function solar(active: boolean): SvgAsset {
     <g transform="translate(${x} ${y})">
       <path d="M43 22v24m28-31v22" stroke="#5f7f8a" stroke-width="5"/>
       <path d="m-4 28 87-25 36 20-88 26Z" fill="#0d2533" opacity=".3" transform="translate(5 15)"/>
-      <path d="m0 0 78-22 31 17-78 23Z" fill="${active ? '#244e67' : '#243847'}" stroke="${active ? '#99bfc7' : '#7c9299'}" stroke-width="2"/>
+      <path d="m0 0 78-22 31 17-78 23Z" fill="${active ? '#163e59' : '#243847'}" stroke="${active ? '#dbd2ae' : '#7c9299'}" stroke-width="2"/>
       <path d="m0 0 78-22 31 17-78 23Z" fill="url(#${key}-cells)" opacity="${active ? '.9' : '.25'}"/>
-      <path d="m12 7 78-22m-64 30 78-23M19-5l31 17m-11-23 31 17m-11-23 31 17" stroke="${active ? '#94c7d3' : '#7b8d96'}" stroke-width=".7" opacity="${active ? '.7' : '.25'}"/>
+      <path d="m12 7 78-22m-64 30 78-23M19-5l31 17m-11-23 31 17m-11-23 31 17" stroke="${active ? '#a5d5dc' : '#7b8d96'}" stroke-width=".85" opacity="${active ? '.82' : '.5'}"/>
       <path d="m2 0 76-21" stroke="${active ? '#c1ece5' : '#7c9299'}" stroke-width="1.4"/>
       <circle cx="34" cy="21" r="2.3" fill="${active ? '#91e9c7' : '#c5a270'}"/>
     </g>`,
@@ -162,13 +162,15 @@ function water(): SvgAsset {
   );
 }
 
-function greenhouse(): SvgAsset {
+function greenhouse(key: string, plantScale: number): SvgAsset {
   const plants = Array.from(
     { length: 5 },
     (_, i) => `<g transform="translate(${47 + i * 23} ${91 + i * 7})">
-    <path d="m-12 10 12-7 16 5-12 8Z" fill="#203f36" stroke="#6d8b70"/>
-    <path d="M1 7V-15" stroke="#b5d99e" stroke-width="1.5"/>
-    ${[-1, 1]
+    <path d="m-12 10 12-7 16 5-12 8Z" fill="#263e3b" stroke="#9ab5a4"/>
+    <path d="m-12 10 16 6 12-8v4l-12 8-16-6Z" fill="#143038"/>
+    ${plantScale > 0 ? `<g transform="translate(0 ${7 * (1 - plantScale)}) scale(1 ${plantScale})">
+      <path d="M1 7V-15" stroke="#c7e3a5" stroke-width="1.5"/>
+      ${[-1, 1]
       .map((side) =>
         [0, 1, 2]
           .map(
@@ -178,10 +180,11 @@ function greenhouse(): SvgAsset {
           .join(''),
       )
       .join('')}
+    </g>` : ''}
   </g>`,
   ).join('');
   return asset(
-    'greenhouse',
+    key,
     220,
     170,
     `
@@ -189,11 +192,12 @@ function greenhouse(): SvgAsset {
     <path d="m17 97 65-42 121 39-65 45Z" fill="#153e43" stroke="#5d8f91" stroke-width="2"/>
     <path d="m17 97 121 42v19L17 116Zm121 42 65-45v19l-65 45Z" fill="#62858a" stroke="#a5c5bb" stroke-width="1.4"/>
     <path d="M17 97V72c0-32 31-49 58-31l128 53-65 45Z" fill="url(#greenhouse-dome)"/>
+    <path d="m32 92 111 37m-108-25 111 37" stroke="#1b393d" stroke-width="4"/>
     ${plants}
     <path d="M17 72c0-32 31-49 58-31l128 53" stroke="#d0ded0" stroke-width="3"/>
     <path d="M17 72v25m24-30c0-18 7-27 16-31m10 40c0-18 7-27 16-31m10 40c0-18 7-27 16-31m10 40c0-18 7-27 16-31m10 40c0-18 7-27 16-31m10 40c0-18 7-27 16-31" stroke="#aecdc0" stroke-width="2.2"/>
     <path d="m21 70 121 45 55-34" stroke="#e3f2d8" stroke-opacity=".35" stroke-width="1.2"/>
-    <path d="m24 112 106 37" stroke="#9ce0b1" stroke-width="3"/>
+    <path d="m24 112 106 37" stroke="#91b9af" stroke-width="3"/>
     <path d="m150 133 32-22v19l-32 22Z" fill="#1c4550" stroke="#c2d5c7" stroke-width="2"/>
     <path d="m156 132 19-13v10l-19 13Z" fill="#8ac7ba"/>
     <path d="m143 154 30 8 22-15-13-13" fill="#63808a" stroke="#92b0ac" stroke-width="1.3"/>
@@ -246,6 +250,29 @@ function terminal(): SvgAsset {
   `,
     { x: 21, y: 57, width: 34, height: 24 },
   );
+}
+
+/** Compact regolith processor and clear collection cylinder on the D4 console footprint. */
+function iceProcessor(): SvgAsset {
+  return asset('ice-processor', 74, 94, `
+    <ellipse cx="40" cy="80" rx="33" ry="10" fill="#122532" opacity=".6"/>
+    <path d="m7 69 28-16 34 11-28 17Z" fill="#6d8b8f" stroke="#b8c7b6"/>
+    <path d="m7 69 34 12 28-17v5L41 86 7 74Z" fill="#294654" stroke="#829da1"/>
+    <path d="m10 27 16-11 25 7-15 12Z" fill="#dddecb" stroke="#b4c3b7"/>
+    <path d="m10 27 26 8v28L10 55Z" fill="#9cafa7" stroke="#d7dccc"/>
+    <path d="m36 35 15-12v28L36 63Z" fill="#456570" stroke="#8faeb0"/>
+    <path d="m13 32 19 6v15l-19-6Z" fill="#173947"/>
+    <path d="m16 40 3-3 3 6 3-2 4 3" stroke="#b2d9d3" stroke-width="1.4"/>
+    <path d="m16 56 16 5" stroke="#dfb475" stroke-width="2.6"/>
+    <path d="m18 23 4-14 21 5-4 13Z" fill="#223d4d" stroke="#d7dbce"/>
+    <path d="m23 14 14 4m-15 0 14 4" stroke="#9ba9a5" stroke-width="1.5"/>
+    <path d="M45 41l13-7q5-3 5 2v11" stroke="#1d3546" stroke-width="5"/>
+    <path d="M45 41l13-7q5-3 5 2v11" stroke="#d7ac71" stroke-width="2"/>
+    <path d="M53 47h16v19c0 7-16 7-16 0Z" fill="#2a5467" stroke="#a1c7cc" stroke-width="1.5"/>
+    <path d="M57 51v15m7-11h3m-3 5h3" stroke="#d2e9e4" stroke-width="1" opacity=".74"/>
+    <ellipse cx="61" cy="47" rx="8" ry="3.5" fill="#a3bdb9" stroke="#d1d9ca"/>
+    <path d="m19 72 16 6m-12-8 16 6" stroke="#ded1a4" stroke-width="1.5"/>
+  `, { x: 21, y: 57, width: 34, height: 24 });
 }
 
 function battery(): SvgAsset {
@@ -386,36 +413,20 @@ function lunarCar(occupied: boolean, rolling = false): SvgAsset {
   );
 }
 
-/** 90 K Cold-Trap Crystalline Water-Ice Deposit (intact & harvested states) */
+/** Survey marker at a fictional icy regolith sampling point. */
 function iceCrystal(mined: boolean): SvgAsset {
-  const key = mined ? 'ice-crystal-mined' : 'ice-crystal';
-  if (mined) {
-    return asset(
-      key,
-      68,
-      72,
-      `
-      <ellipse cx="34" cy="58" rx="24" ry="8" fill="#0b1d2b" opacity=".55"/>
-      <path d="m16 56 10-8 18-2 10 9-16 6Z" fill="#29485c" stroke="#5b8ca6" stroke-width="1.5"/>
-      <path d="m25 53 5-9 6 7m4-5 5-6 4 8" stroke="#7dd3fc" stroke-width="2" opacity=".65"/>
-      <circle cx="34" cy="53" r="3" fill="#38bdf8" opacity=".6"/>
-    `,
-    );
-  }
   return asset(
-    key,
+    mined ? 'ice-crystal-mined' : 'ice-crystal',
     68,
     72,
     `
-    <ellipse cx="34" cy="59" rx="27" ry="9" fill="#0ea5e9" opacity=".28"/>
-    <path d="m28 58-8-26 9-19 9 15-2 30Z" fill="url(#ice-grad)" stroke="#bae6fd" stroke-width="1.5"/>
-    <path d="m34 60 4-36 11-12 6 19-9 29Z" fill="url(#ice-grad)" stroke="#e0f2fe" stroke-width="1.5"/>
-    <path d="m19 57-7-17 7-10 9 11-1 16Z" fill="#38bdf8" opacity=".85" stroke="#bae6fd" stroke-width="1.3"/>
-    <path d="m43 59 8-20 8-5 2 13-10 12Z" fill="#0284c7" opacity=".88" stroke="#bae6fd" stroke-width="1.3"/>
-    <path d="M29 16v28m19-30-4 28" stroke="#ffffff" stroke-width="1.5" opacity=".7"/>
+    <ellipse cx="34" cy="60" rx="29" ry="9" fill="#142733" opacity=".68"/>
+    <path d="m8 57 10-13 12-3 12 4 9-1 10 14-20 6-22-2Z" fill="#526370" stroke="#283e4d" stroke-width="1.4"/>
+    <path d="m9 56 10-12 12-3-6 10 15 4 12-10 7 13-21 4-19-2Z" fill="#809195"/>
+    ${mined
+      ? '<ellipse cx="34" cy="52" rx="7" ry="3.3" fill="#20313f" stroke="#adb9b3"/><path d="m46 40 4 4 7-9" stroke="#c2e5cb" stroke-width="2"/>'
+      : '<path d="m14 55 9-5 3 4 7 1m6 2 8-7 5 2" stroke="#b8d6df" stroke-width="2"/><path d="M34 50V23" stroke="#c8d4ce" stroke-width="2"/><path d="m34 24 14 3-14 7Z" fill="#8ecfdf" stroke="#d1e6e7" stroke-width=".9"/>'}
   `,
-    undefined,
-    `<linearGradient id="ice-grad" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ecfeff"/><stop offset=".45" stop-color="#38bdf8"/><stop offset="1" stop-color="#0369a1"/></linearGradient>`,
   );
 }
 
@@ -462,9 +473,12 @@ export const GAME_ART: SvgAsset[] = [
     solar(true),
     solar(false),
     water(),
-    greenhouse(),
+    greenhouse('greenhouse', 0),
+    greenhouse('greenhouse-tray', 0.6),
+    greenhouse('greenhouse-growing', 1),
     shelter(),
     terminal(),
+    iceProcessor(),
     battery(),
     lifeSupport(),
     ascent(),
