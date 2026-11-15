@@ -244,7 +244,6 @@ export const STRINGS = {
   dismissGuide: { en: 'Hide guide', az: 'Bələdçini gizlət' },
   jumpToActive: { en: 'Go to station', az: 'Stansiyaya get' },
   openConsole: { en: 'Open console', az: 'Konsolu aç' },
-  debriefTitle: { en: 'Phase Telemetry Debrief', az: 'Mərhələ Telemetriya Yekunu' },
 
   // Championship Tools & Modals
   judgeTourButton: { en: 'Guided Demo', az: 'Bələdçili Demo' },

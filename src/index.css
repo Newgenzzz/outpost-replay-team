@@ -493,32 +493,14 @@ button:disabled {
   animation: slide-down 240ms ease-out;
 }
 
-/* Post-Decision Causal Telemetry Toast */
-.telemetry-toast {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  min-width: 320px;
-  max-width: 90vw;
-  padding: 10px 16px;
-  background: rgba(14, 28, 36, 0.96);
-  border: 1.5px solid rgba(192, 230, 170, 0.6);
-  border-radius: 12px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(192, 230, 170, 0.2);
-  backdrop-filter: blur(12px);
-  animation: slide-down 240ms ease-out;
-}
-
 @keyframes slide-down {
   from {
     opacity: 0;
-    transform: translate(-50%, -12px);
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 
@@ -574,6 +556,9 @@ button:disabled {
   top: 18px;
   z-index: 3;
   width: 296px;
+  max-height: calc(100% - 76px);
+  overflow-y: auto;
+  scrollbar-width: thin;
   padding: 16px 18px;
   border: 1px solid rgba(189, 208, 195, 0.22);
   border-radius: 12px;
@@ -666,6 +651,16 @@ button:disabled {
 .objective-action:hover { background: #2d4a4f; }
 .objective-action--primary { border-color: #b5d7a2; background: #c5e2b3; color: #152723; }
 .objective-action--primary:hover { background: #d7edc9; }
+
+.decision-debrief {
+  margin-top: 12px;
+  padding: 9px 10px;
+  border: 1px solid #5b8275;
+  border-radius: 8px;
+  background: #142d30;
+}
+
+.decision-debrief [role='status'] p { margin-top: 4px; }
 
 .decision-scroll {
   scrollbar-gutter: stable;
@@ -1132,7 +1127,6 @@ button:disabled {
   .nasa-physics-strip,
   .guide-banner,
   .game-surface,
-  .telemetry-toast,
   .objective-card,
   .base-map-radar,
   .interaction-area,

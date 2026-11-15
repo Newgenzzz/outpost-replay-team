@@ -44,4 +44,6 @@ NASA PGDA Product 69 provides separate surface illumination rasters averaged ove
 
 ## Where to verify
 
+Facility readouts visualize the selected simulation snapshot. The shade layer follows the scripted sunlight, crop trays follow modeled growth and harvest, and the processor displays the calculated treated-water yield. Survey flags identify fictional icy-soil sampling points. These graphics illustrate the exercise and its results.
+
 Open **Science & Sources** in the game to see how the published values relate to the scenario. The end-of-mission Evidence panel lists the training equations and source links. The code separates the power budget, resource ledger, and deterministic mission calculation under `src/engine/`.

@@ -3,7 +3,7 @@ import type { SimulationResult } from '../engine/simulation';
 import { OutcomeBadge } from './MetricGauges';
 import { fmt } from './metricMeta';
 
-const ABORT_CAUSES = {
+export const ABORT_CAUSES = {
   oxygen: { en: 'Oxygen reserve depleted', az: 'Oksigen ehtiyatı tükəndi' },
   water: { en: 'Water reserve depleted', az: 'Su ehtiyatı tükəndi' },
   food: { en: 'Food reserve depleted', az: 'Qida ehtiyatı tükəndi' },
