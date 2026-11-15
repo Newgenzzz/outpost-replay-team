@@ -140,6 +140,7 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [achievementToast]);
   const [lastDebrief, setLastDebrief] = useState<StepRecord | null>(null);
+  const [trackedSample, setTrackedSample] = useState<number | null>(null);
   const [shadowPrediction, setShadowPrediction] = useState<ShadowPrediction | null>(null);
 
   // 2.5D Phaser World Live State
@@ -352,6 +353,7 @@ export default function App() {
     soundFX.play('hotspot');
     setInspectSampleIdx(idx);
     setSampleModalOpen(true);
+    setTrackedSample((current) => current === idx ? null : current);
   }, []);
 
   const handleToggleRover = useCallback(() => {
@@ -494,6 +496,7 @@ export default function App() {
     setDrillTempPct(18);
     setDrillOverheated(false);
     setInspectSampleIdx(null);
+    setTrackedSample(null);
     setSampleModalOpen(false);
     setLastDebrief(null);
     setShadowPrediction(null);
@@ -656,6 +659,7 @@ export default function App() {
   const activeStation = STATIONS[Math.min(DECISION_COUNT - 1, Math.max(0, viewStep - 1))];
   const atActiveStation = nearbyStation?.decisionId === activeStation.decisionId;
   function followStationRoute() {
+    setTrackedSample(null);
     world.current?.walkTo(activeStation);
     world.current?.focus();
   }
@@ -1394,6 +1398,13 @@ export default function App() {
             </div>
           )}
 
+          {trackedSample !== null && <section className="mt-3 rounded-lg border border-amber-200/30 bg-amber-950/20 p-2.5 text-xs text-amber-100">
+            <strong>{lang === 'az' ? 'Silsilə araşdırması' : 'Ridge investigation'}</strong>
+            <p className="mt-1">{lang === 'az' ? 'Qızılı nişanın yanında E basın.' : 'Press E beside the gold marker to log it.'}</p>
+            <button type="button" className="mt-1 underline" onClick={() => { world.current?.walkTo(FIELD_SAMPLES[trackedSample]); world.current?.focus(); }}>
+              {lang === 'az' ? 'Marşrutu davam etdir' : 'Resume sample route'}
+            </button>
+          </section>}
           {lastDebrief && <DecisionDebrief key={lastDebrief.choiceId} step={lastDebrief} onDismiss={() => setLastDebrief(null)} />}
 
           {nearbyCrewSpeech && (
@@ -2065,6 +2076,13 @@ export default function App() {
           collectedSamples={collectedSamples}
           onSelectSample={(idx) => setInspectSampleIdx(idx)}
           onClose={() => setSampleModalOpen(false)}
+          onRouteToSample={(idx) => {
+            setTrackedSample(idx);
+            setSampleModalOpen(false);
+            world.current?.walkTo(FIELD_SAMPLES[idx]);
+            requestAnimationFrame(() => world.current?.focus());
+          }}
+          onOpenScience={() => { setSampleModalOpen(false); setSensorDeckOpen(true); }}
         />
       )}
 

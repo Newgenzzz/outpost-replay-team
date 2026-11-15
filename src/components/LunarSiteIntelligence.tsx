@@ -8,6 +8,7 @@ import { useI18n } from '../i18n/LanguageContext';
 export default function LunarSiteIntelligence() {
   const { lang, t, tr } = useI18n();
   const [reserve, setReserve] = useState(35);
+  const [evidence, setEvidence] = useState(0);
   const reserveId = useId();
   const az = lang === 'az';
   const kwh = t('unitKwh');
@@ -27,6 +28,23 @@ export default function LunarSiteIntelligence() {
       </summary>
 
       <div className="mt-3 space-y-3 text-xs text-slate-300">
+        <div className="rounded-lg border border-white/15 bg-slate-950/50 p-3">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={az ? 'Elmi sübutun yolunu izlə' : 'Trace the evidence'}>
+            {(az ? ['1 · Ölçmələr', '2 · Tədqiqat modeli', '3 · Sizin qərarınız'] : ['1 · Measurements', '2 · Research model', '3 · Your decision']).map((label, index) => (
+              <button type="button" key={label} aria-pressed={evidence === index} onClick={() => setEvidence(index)}
+                className={`rounded border px-2 py-1.5 ${evidence === index ? 'border-sky-200 bg-sky-800/40 text-white' : 'border-slate-600 text-slate-200 hover:bg-white/5'}`}>{label}</button>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-slate-100" aria-live="polite">{(az ? [
+            'LRO-nun LOLA cihazı səthdən əks olunan lazer impulslarının qayıtma vaxtını ölçdü. Bu məlumatlar relyef modelləri qurmağa kömək edir.',
+            'Tədqiqatçılar LOLA relyefi ilə bu iki nöqtədə 2017–2037-ci illərin işıqlanmasını modelləşdirdilər. 66 və 112 saat ən uzun model kölgələridir.',
+            'Sürgü ilə ehtiyatı dəyişin. Bu hesab sabit yük və kölgədə sıfır istehsal fərz edir. Oyunun doqquz günlük missiyası ayrıca 72 saatlıq azalmış işıq ssenarisidir.',
+          ] : [
+            'LRO’s LOLA instrument measured the return times of laser pulses reflected by the surface. Those measurements help build terrain models.',
+            'Researchers used LOLA terrain to model illumination at these two points over 2017–2037. The 66 h and 112 h values are the longest modeled shadows.',
+            'Move the reserve slider. This calculation assumes a constant load and no generation in shadow. The game’s nine-day mission has a separate, scripted 72-hour period of reduced light.',
+          ])[evidence]}</p>
+        </div>
         <p>
           {az
             ? `LOLA relyefindən modelləşdirilib · səthdən ${panelHeightMeters} m yuxarı · ${startYear}–${endYear}. Batareya ehtiyatını dəyişib hansı məkanın ən uzun kölgə dövründə baza yükünü qarşıladığını yoxlayın.`

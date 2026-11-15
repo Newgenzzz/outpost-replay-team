@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Award,
   Compass,
@@ -16,6 +16,8 @@ interface SampleDiscoveryModalProps {
   collectedSamples: boolean[];
   onSelectSample: (idx: number) => void;
   onClose: () => void;
+  onRouteToSample: (idx: number) => void;
+  onOpenScience: () => void;
 }
 
 export function SampleDiscoveryModal({
@@ -23,6 +25,8 @@ export function SampleDiscoveryModal({
   collectedSamples,
   onSelectSample,
   onClose,
+  onRouteToSample,
+  onOpenScience,
 }: SampleDiscoveryModalProps) {
   const { lang } = useI18n();
 
@@ -152,9 +156,14 @@ export function SampleDiscoveryModal({
             </div>
           </div>
           <span className="rounded-md border border-current/30 px-2 py-0.5 font-mono text-[11px] font-bold uppercase">
-            +{activeSample.scienceBonus} {lang === 'az' ? 'elmi xal' : 'field points'}
+            {isCollected
+              ? lang === 'az' ? `+${activeSample.scienceBonus} xal qazanıldı` : `Earned +${activeSample.scienceBonus}`
+              : lang === 'az' ? `Topladıqda +${activeSample.scienceBonus} xal` : `+${activeSample.scienceBonus} when collected`}
           </span>
         </div>
+
+        {activeSample.id === 'sample_lola' && <RidgeInvestigation collected={isCollected}
+          onRoute={() => onRouteToSample(activeIdx)} onOpenScience={onOpenScience} />}
 
         {/* Core Geological & Science Dossier */}
         <div className="grid gap-4 md:grid-cols-2">
@@ -216,5 +225,35 @@ export function SampleDiscoveryModal({
         </div>
       </div>
     </div>
+  );
+}
+
+function RidgeInvestigation({ collected, onRoute, onOpenScience }: {
+  collected: boolean; onRoute: () => void; onOpenScience: () => void;
+}) {
+  const { lang } = useI18n();
+  const az = lang === 'az';
+  const [answer, setAnswer] = useState<'terrain' | 'average' | null>(null);
+  return (
+    <section className="mb-4 space-y-2 rounded-xl border border-sky-200/30 bg-sky-950/30 p-3 text-sm text-slate-200">
+      <h3 className="font-semibold text-sky-100">{az ? 'Silsilə araşdırması · İşıq üçün yer seçin' : 'Ridge investigation · Find a place for solar power'}</h3>
+      <p>{collected
+        ? az ? 'Nişan qeydə alındı. Hündürlük və yaxınlıqdakı maneələr panelin Günəşi görməsinə təsir edir.' : 'Marker logged. Height and nearby obstructions affect whether a panel can see the Sun.'
+        : az ? 'Günəşli silsiləyə gedin, qızılı altimetriya nişanını tapın və E düyməsi ilə qeydə alın.' : 'Follow the route up to the sunlit ridge. Find the gold altimetry marker and press E to log it.'}</p>
+      {!collected ? <button type="button" onClick={onRoute} className="rounded-lg bg-sky-200 px-3 py-2 font-semibold text-slate-950">
+        {az ? 'Silsilə nişanına get' : 'Go to the ridge marker'}
+      </button> : <>
+        <p className="font-medium text-white">{az ? 'Kölgənin panelə çatıb-çatmadığını anlamaq üçün nəyi yoxlayardınız?' : 'What would you check to understand whether a panel falls into shadow?'}</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" aria-pressed={answer === 'terrain'} onClick={() => setAnswer('terrain')} className="rounded border border-sky-300/40 px-2.5 py-2 hover:bg-sky-700/20">{az ? 'Hündürlük və yerli üfüq' : 'Height and the local horizon'}</button>
+          <button type="button" aria-pressed={answer === 'average'} onClick={() => setAnswer('average')} className="rounded border border-sky-300/40 px-2.5 py-2 hover:bg-sky-700/20">{az ? 'Yalnız orta işıqlanma' : 'Average sunlight alone'}</button>
+        </div>
+        {answer && <p role="status" className="rounded bg-white/5 p-2 text-sky-100">{answer === 'terrain'
+          ? az ? 'Bəli. Yerli relyef işığın qarşısını kəsə bilər. Orta işıqlanma ən uzun kölgə müddətini göstərmir.' : 'Yes. Local terrain can block the light. Average illumination does not tell you the longest shadow duration.'
+          : az ? 'Yerli üfüqü də yoxlayın. Daha yüksək orta işıqlanma uzun bir kölgə dövrünü istisna etmir.' : 'Check the local horizon too. Higher average illumination can still include a long shadow.'}</p>}
+        <button type="button" onClick={onOpenScience} className="rounded-lg bg-sky-200 px-3 py-2 font-semibold text-slate-950">{az ? 'Günəş işığı araşdırmasını aç' : 'Open Sunlight research'}</button>
+      </>}
+      <p className="text-xs text-slate-300">{az ? 'Bu nişan uydurma təlim nöqtəsidir. LOLA lazer ölçmələri real Ay relyefinin modellərini qurmağa kömək edir.' : 'This marker is a fictional training point. LOLA laser measurements help build models of the real lunar terrain.'}</p>
+    </section>
   );
 }
